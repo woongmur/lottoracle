@@ -50,8 +50,28 @@ python3 tools/gen_golden.py    # 저장소 루트에서
 | `explain.js` | 완료 — 골든 대조 |
 | `grade.js` | 완료 — 실제 당첨금·평균치 양쪽 |
 | `qr.js` | 완료 — 거절 경로까지 |
-| `engine.js` (조합·저장소) | 예정 |
+| `storage.js` | 완료 — localStorage, 막힌 브라우저는 메모리로 물러섬 |
+| `dhlottery.js` | 완료 — 회차 조회·파싱·병합 (가짜 fetch 로 검사) |
+| `engine.js` | 완료 — 추천·통계·채점·운세·내 번호·갱신 |
 | UI (`index.html`) · PWA · 배포 | 예정 |
+
+## 서버가 없어도 되는 이유
+
+동행복권 회차 API 가 `Access-Control-Allow-Origin` 을 돌려주기 때문에 **브라우저에서 직접**
+호출할 수 있다. 중계 서버가 필요 없다. 받은 회차는 localStorage 에 캐시해 다음 방문에 쓴다.
+
+초기화(1,239회차 기준)는 합계 80ms 남짓이다.
+
+| 단계 | 시간 |
+|---|---|
+| JSON 파싱 (209KB) | 2ms |
+| 번호 통계 | 11ms |
+| 경험 분포 | 22ms |
+| 참조 점수 | 23ms |
+| 규칙 보정 | 15ms |
+| 회차 평균치 | 8ms |
+
+`engine.js` 가 이 결과를 캐싱하므로 두 번째 추천부터는 추첨 부분만 다시 돈다.
 
 ## public/
 
