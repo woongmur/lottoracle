@@ -316,11 +316,17 @@ def daily_fortune(profile: Profile | None, today: date | None = None) -> Fortune
     )
 
 
-def zodiac_table(today: date | None = None) -> list[dict[str, Any]]:
-    """열두 띠의 오늘 등급. 프로필 없이도 볼 수 있다."""
+def zodiac_table(today: date | None = None, exclude: str = "") -> list[dict[str, Any]]:
+    """띠로만 보는 오늘. 프로필 없이도 볼 수 있다.
+
+    개인 운세(daily_fortune)와는 씨앗이 달라 서로 다른 결과가 나온다. 같은 화면에서
+    두 값이 어긋나 보이지 않도록, 프로필이 있으면 그 띠를 exclude 로 빼고 보여 준다.
+    """
     today = today or date.today()
     out = []
     for z in ("쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양", "원숭이", "닭", "개", "돼지"):
+        if z == exclude:
+            continue
         rng = random.Random(_seed("zodiac", today.isoformat(), z))
         grade = _pick_grade(rng)
         sentence = rng.choice(SENTENCES[grade])

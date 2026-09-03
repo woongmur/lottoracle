@@ -116,6 +116,10 @@ class FortuneTest(unittest.TestCase):
         table = zodiac_table(date(2026, 9, 3))
         self.assertEqual([z["zodiac"] for z in table],
                          ["쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양", "원숭이", "닭", "개", "돼지"])
+        # 내 띠는 위쪽 개인 운세와 결과가 어긋나 보이므로 표에서 뺀다
+        mine = zodiac_table(date(2026, 9, 3), exclude="말")
+        self.assertEqual(len(mine), 11)
+        self.assertNotIn("말", [z["zodiac"] for z in mine])
         for z in table:
             self.assertIn(z["grade"], range(1, 6))
             self.assertEqual(len(z["numbers"]), 2)
@@ -250,6 +254,8 @@ class WebNewApiTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(r["has_profile"])
         self.assertEqual(r["fortune"]["zodiac"], "말")
+        self.assertEqual(len(r["zodiac_table"]), 11)      # 내 띠(말)는 빠진다
+        self.assertNotIn("말", [z["zodiac"] for z in r["zodiac_table"]])
         self.assertEqual(r["profile"]["hour_label"], "인시(호랑이)")
         self.assertEqual(r["recommend_inputs"]["birthday"], "1990-05-21")
         self.assertEqual(len(r["recommend_inputs"]["lucky"]), 3)
@@ -280,6 +286,18 @@ class WebNewApiTest(unittest.TestCase):
         self.assertTrue(r["ok"])
         status, m = self._req("/api/meta")
         self.assertFalse(m["has_profile"])
+
+    def test_qr_endpoint(self):
+        status, r = self._req("/api/qr", {"text": "https://m.dhlottery.co.kr/qr.do?method=winQr&v=1239m111322323336"})
+        self.assertEqual(status, 200)
+        self.assertEqual(r["best_rank"], 1)
+        status, r = self._req("/api/qr", {"text": "https://example.com/?v=1"})
+        self.assertEqual(status, 400)
+        self.assertIn("동행복권", r["error"])
+
+    def test_meta_has_buy_url(self):
+        status, m = self._req("/api/meta")
+        self.assertIn("dhlottery.co.kr", m["buy_url"])
 
     def test_refresh_network_failure_is_502(self):
         with mock.patch("lottoracle.engine.data.update_cache", side_effect=OSError("boom")):

@@ -104,6 +104,21 @@
   .badge.wait{background:#2a2f3a;color:var(--muted)}
   .badge.win{background:#1f5a36;color:#b8f0cf}
   .badge.lose{background:#3a2a2a;color:#e8b4b4}
+  /* 당첨 축하 */
+  #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:none}
+  .celebrate{border-radius:16px;padding:22px 24px;margin-bottom:14px;text-align:center;border:2px solid transparent}
+  .celebrate .big{font-size:30px;font-weight:900;letter-spacing:2px;margin-bottom:6px}
+  .celebrate .sub{font-size:14px;opacity:.85}
+  .celebrate.rank-gold{background:linear-gradient(160deg,#4a3a10,#2a2008);border-color:#f5d76e}
+  .celebrate.rank-gold .big{color:#f7d774;text-shadow:0 0 18px rgba(245,215,110,.55)}
+  .celebrate.rank-silver{background:linear-gradient(160deg,#3a3f47,#23272d);border-color:#d8dde3}
+  .celebrate.rank-silver .big{color:#e6ebf1;text-shadow:0 0 16px rgba(216,221,227,.45)}
+  .celebrate.rank-bronze{background:linear-gradient(160deg,#4a3222,#2b1d14);border-color:#cd7f32}
+  .celebrate.rank-bronze .big{color:#e2a06a;text-shadow:0 0 14px rgba(205,127,50,.45)}
+  .celebrate.rank-plain{background:var(--panel);border-color:var(--line)}
+  .celebrate.rank-plain .big{color:var(--text);font-size:24px;letter-spacing:1px}
+  .celebrate.rank-none{background:var(--panel);border-color:var(--line)}
+  .celebrate.rank-none .big{color:var(--muted);font-size:20px;font-weight:700;letter-spacing:0}
   #map{width:100%;height:440px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
   .shop{padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
   .shop:hover{background:rgba(255,255,255,.03)}
@@ -111,6 +126,7 @@
 </style>
 </head>
 <body>
+<canvas id="confetti"></canvas>
 <header>
   <h1>lotto<span>racle</span></h1>
   <div class="meta" id="meta">불러오는 중…</div>
@@ -121,7 +137,7 @@
   <button data-tab="recommend">번호 추천</button>
   <button data-tab="picks">내 번호</button>
   <button data-tab="stats">통계</button>
-  <button data-tab="grade">채점</button>
+  <button data-tab="grade">당첨 확인</button>
   <button data-tab="backtest">백테스트</button>
   <button data-tab="draws">회차</button>
   <button data-tab="shops">복권방</button>
@@ -132,7 +148,9 @@
   <!-- ============ 운세 ============ -->
   <section id="tab-fortune" class="active">
     <div id="fortune-body"><span class="spin"></span>오늘의 기운을 읽는 중…</div>
-    <div class="panel" style="margin-top:6px"><h3>열두 띠의 오늘</h3><div id="zodiac-table" class="ztable"></div></div>
+    <div class="panel" style="margin-top:6px"><h3>띠로만 보는 오늘</h3>
+      <p class="kv" style="margin:-4px 0 12px">생년월일·태어난 시를 뺀 <b>띠 하나만</b>으로 본 오늘입니다. 위의 내 운세와는 보는 방식이 달라 결과도 따로 나옵니다. 가족·친구 띠를 찾아보세요.</p>
+      <div id="zodiac-table" class="ztable"></div></div>
   </section>
 
   <!-- ============ 추천 ============ -->
@@ -181,6 +199,7 @@
     <div class="panel">
       <h3>내 번호 <button class="ghost" id="picks-reload" style="float:right">새로고침</button></h3>
       <p class="kv">추천 탭에서 저장한 조합입니다. 목표 회차가 추첨되면 자동으로 채점됩니다. 이 컴퓨터의 data 폴더에만 저장됩니다.</p>
+      <div id="buy-msg"></div>
       <div id="picks-error"></div>
       <div id="picks-body"></div>
     </div>
@@ -191,18 +210,19 @@
     <div id="stats-body"><span class="spin"></span>통계 계산 중…</div>
   </section>
 
-  <!-- ============ 채점 ============ -->
+  <!-- ============ 당첨 확인 ============ -->
   <section id="tab-grade">
     <div class="grid">
       <div class="panel">
-        <h3>채점</h3>
+        <h3>당첨 확인</h3>
+        <p class="kv">번호를 넣고 채점하면 등수를 판정합니다. 당첨이면 축하 연출이 나옵니다.</p>
         <label>기준 회차 (비우면 최신)</label><input type="number" id="grade-draw" placeholder="예: 1239">
         <label>조합 (한 줄에 6개, 최대 10줄)</label>
         <div id="grade-lines"></div>
         <div class="row" style="margin-top:8px">
           <button class="ghost" id="grade-add">줄 추가</button>
-          <button class="ghost" id="grade-sample">사진 속 5조합 불러오기</button>
           <button class="ghost" id="grade-from-rec">추천 결과 가져오기</button>
+          <button class="ghost" id="grade-from-picks">내 번호 가져오기</button>
         </div>
         <button class="primary" id="run-grade">채점하기</button>
       </div>
@@ -312,6 +332,64 @@
   const showErr = (id, e) => { $(id).innerHTML = e ? `<div class="err">${esc(e.message || e)}</div>` : ''; };
   const dots = g => '●'.repeat(g) + '○'.repeat(5 - g);
   const SWATCH = {'노랑':'var(--yellow)','파랑':'var(--blue)','빨강':'var(--red)','회색':'var(--gray)','초록':'var(--green)'};
+
+  // ---- 축하 컨페티: 양쪽 하단에서 쏘아 올린다. 등수가 높을수록 크고 오래.
+  const CONFETTI_COLORS = ['#fbc400','#69c8f2','#ff7272','#b0d840','#f5d76e','#e6ebf1','#cd7f32','#7aa2ff'];
+  function fireConfetti(rank){
+    const cv = $('#confetti'), ctx = cv.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const W = cv.clientWidth || window.innerWidth, H = cv.clientHeight || window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cv.style.display = 'block';
+    const bursts = rank <= 3 ? 3 : 1;                 // 1~3등은 세 번 연달아
+    const per = rank === 1 ? 130 : rank === 2 ? 110 : rank === 3 ? 90 : 60;
+    const parts = [];
+    const launch = () => {
+      [[0, 1], [W, -1]].forEach(([x0, dir]) => {      // 왼쪽·오른쪽 하단
+        for (let i = 0; i < per; i++) {
+          const a = (Math.random() * 0.55 + 0.30) * Math.PI;   // 위로 비스듬히
+          const sp = 11 + Math.random() * 13;
+          parts.push({
+            x: x0, y: H, vx: Math.cos(a) * sp * dir, vy: -Math.sin(a) * sp,
+            w: 5 + Math.random() * 6, h: 8 + Math.random() * 8,
+            rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4,
+            color: CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0], life: 0,
+          });
+        }
+      });
+    };
+    launch();
+    for (let b = 1; b < bursts; b++) setTimeout(launch, b * 420);
+    if (confettiTimer) cancelAnimationFrame(confettiTimer);
+    const started = performance.now();
+    const tick = now => {
+      ctx.clearRect(0, 0, W, H);
+      let alive = 0;
+      for (const p of parts) {
+        p.life++; p.vy += 0.32; p.vx *= 0.995; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        if (p.y > H + 60) continue;
+        alive++;
+        ctx.save();
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.globalAlpha = Math.max(0, 1 - p.life / 260);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (alive && now - started < 9000) confettiTimer = requestAnimationFrame(tick);
+      else { ctx.clearRect(0, 0, W, H); cv.style.display = 'none'; confettiTimer = null; }
+    };
+    confettiTimer = requestAnimationFrame(tick);
+  }
+  let confettiTimer = null;
+
+  // 등수별 축하 배너. 1등 금 · 2등 은 · 3등 동 · 4~5등 기본 · 낙첨은 담백하게.
+  const RANK_STYLE = {1: 'rank-gold', 2: 'rank-silver', 3: 'rank-bronze', 4: 'rank-plain', 5: 'rank-plain'};
+  function celebrateBanner(rank, prize){
+    if (!rank) return `<div class="celebrate rank-none"><div class="big">아쉽지만 이번엔 낙첨</div><div class="sub">다음 회차가 남아 있습니다</div></div>`;
+    return `<div class="celebrate ${RANK_STYLE[rank]}"><div class="big">축 ${rank}등 당첨</div>
+      <div class="sub">${prize ? '약 ' + fmt(prize) + '원 · 1~3등 금액은 회차별로 달라집니다' : ''}</div></div>`;
+  }
 
   // ---- 탭
   const goto = name => {
@@ -514,11 +592,14 @@
   });
 
   // ---- 내 번호
+  let celebratedPick = null;   // 같은 기록으로 컨페티가 반복되지 않게
   async function loadPicks(){
     showErr('#picks-error', null);
     try {
       const r = await api('/api/picks');
       renderPicks(r.picks);
+      const won = r.picks.find(p => p.results && p.best_rank);
+      if (won && celebratedPick !== won.id) { celebratedPick = won.id; fireConfetti(won.best_rank); }
     } catch (e) { showErr('#picks-error', e); }
   }
   function renderPicks(picks){
@@ -529,19 +610,33 @@
       if (p.results) {
         const best = p.best_rank;
         badge = best ? `<span class="badge win">${best}등${p.total_prize ? ' · 약 ' + fmt(p.total_prize) + '원' : ''}</span>` : '<span class="badge lose">낙첨</span>';
-        detail = `<div class="kv" style="margin:6px 0">${p.draw.no}회 당첨번호 ${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonus_color, null, true)}</div>` +
+        detail = (best ? celebrateBanner(best, p.total_prize) : '') + `<div class="kv" style="margin:6px 0">${p.draw.no}회 당첨번호 ${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonus_color, null, true)}</div>` +
           p.results.map((g, i) => `<div class="kv">${i+1}줄 ${balls(g.numbers, null, null, null, g.hit, true)} <span class="rank-${g.rank}">${g.label}</span>${g.bonus_hit ? ' +보너스' : ''}</div>`).join('');
       } else {
         badge = `<span class="badge wait">추첨 전 · ${p.draw_date} (토)</span>`;
         detail = p.lines.map((row, i) => `<div class="kv">${i+1}줄 ${balls(row, p.colors[i], null, null, null, true)}</div>`).join('');
       }
-      return `<div class="card"><div class="head"><div class="title">${p.target_draw}회 목표 <small>${esc(p.saved_at.replace('T',' '))} 저장${p.note ? ' · ' + esc(p.note) : ''}</small></div><div>${badge} <button class="ghost" data-del="${p.id}" title="삭제">✕</button></div></div>${detail}</div>`;
+      const buy = p.results ? '' : `<button class="ghost" data-buy="${p.id}" style="margin-top:10px">이 번호로 로또 사기</button>`;
+      return `<div class="card"><div class="head"><div class="title">${p.target_draw}회 목표 <small>${esc(p.saved_at.replace('T',' '))} 저장${p.note ? ' · ' + esc(p.note) : ''}</small></div><div>${badge} <button class="ghost" data-del="${p.id}" title="삭제">✕</button></div></div>${detail}${buy}</div>`;
     }).join('');
+    body.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => buyWith(picks.find(x => x.id === b.dataset.buy))));
     body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
       if (!confirm('이 기록을 삭제할까요?')) return;
       try { const r = await api('/api/picks/delete', {id: b.dataset.del}); renderPicks(r.picks); } catch (e) { showErr('#picks-error', e); }
     }));
   }
+  // 동행복권은 번호를 주소로 받는 공식 방법이 없어서, 번호를 복사해 두고 구매 화면만 열어 준다.
+  async function buyWith(pick){
+    if (!pick) return;
+    const text = pick.lines.map(row => row.join(' ')).join('\n');
+    let copied = false;
+    try { await navigator.clipboard.writeText(text); copied = true; } catch (e) { copied = false; }
+    $('#buy-msg').innerHTML = `<div class="okbox">동행복권 구매 화면을 열었습니다. ${copied ? '번호를 클립보드에 복사해 두었습니다 — 화면에서 직접 선택해 주세요.' : '아래 번호를 보고 직접 선택해 주세요.'}
+      <div class="kv" style="margin-top:6px;white-space:pre-line;color:var(--text)">${esc(text)}</div>
+      <div class="kv" style="margin-top:6px">구매에는 동행복권 로그인과 예치금이 필요합니다. 지출은 잃어도 괜찮은 금액까지만 · 상담 1336</div></div>`;
+    window.open(META.buy_url, '_blank', 'noopener');
+  }
+
   $('#picks-reload').addEventListener('click', loadPicks);
 
   // ---- 통계
@@ -582,7 +677,6 @@
   }
 
   // ---- 채점
-  const SAMPLE = [[11,13,22,32,36,45],[2,13,20,33,36,42],[13,18,25,33,38,41],[3,13,27,33,36,37],[30,33,36,37,38,45]];
   function addGradeLine(vals){
     const box = $('#grade-lines'); if (box.children.length >= 10) return;
     const d = el('div', 'gradeline');
@@ -592,20 +686,32 @@
   }
   addGradeLine();
   $('#grade-add').addEventListener('click', () => addGradeLine());
-  $('#grade-sample').addEventListener('click', () => { $('#grade-lines').innerHTML=''; SAMPLE.forEach(addGradeLine); $('#grade-draw').value = 1239; });
   $('#grade-from-rec').addEventListener('click', () => { if (!LAST) return alert('먼저 추천을 실행하세요.'); $('#grade-lines').innerHTML=''; LAST.lines.forEach(L => addGradeLine(L.numbers)); });
+  $('#grade-from-picks').addEventListener('click', async () => {
+    try {
+      const r = await api('/api/picks');
+      if (!r.picks.length) return alert('저장한 번호가 없습니다.');
+      const p = r.picks[0];
+      $('#grade-lines').innerHTML = ''; p.lines.slice(0, 10).forEach(addGradeLine);
+      $('#grade-draw').value = p.target_draw;
+    } catch (e) { showErr('#grade-error', e); }
+  });
   $('#run-grade').addEventListener('click', async () => {
     showErr('#grade-error', null);
     const lines = [...document.querySelectorAll('#grade-lines .gradeline')].map(d => [...d.querySelectorAll('input')].map(i => +i.value)).filter(r => r.some(Boolean));
     try {
       const r = await api('/api/grade', {lines, draw_no: $('#grade-draw').value});
       const d = r.draw;
-      $('#grade-results').innerHTML = `<div class="card"><div class="title">${d.no}회차 (${d.date}) 당첨번호</div><div class="balls">${balls(d.numbers, d.colors, d.bonus, d.bonus_color)}</div>
+      const ranks = r.results.map(g => g.rank).filter(Boolean);
+      const best = ranks.length ? Math.min(...ranks) : 0;
+      $('#grade-results').innerHTML = celebrateBanner(best, r.total_prize) +
+        `<div class="card"><div class="title">${d.no}회차 (${d.date}) 당첨번호</div><div class="balls">${balls(d.numbers, d.colors, d.bonus, d.bonus_color)}</div>
         ${d.first_winners >= 0 ? `<div class="kv">1등 ${d.first_winners}명 · 1게임당 ${fmt(d.first_prize)}원</div>` : ''}</div>` +
         r.results.map((g, i) => `<div class="card"><div class="head"><div class="title">${i+1}줄</div><div class="rank-${g.rank}">${g.label}${g.prize ? ' · 약 ' + fmt(g.prize) + '원' : ''}</div></div>
           <div class="balls">${balls(g.numbers, null, null, null, g.hit)}</div>
           <div class="kv">일치 ${g.hit.length}개 ${g.hit.length ? '[' + g.hit.join(', ') + ']' : ''}${g.bonus_hit ? ' + 보너스' : ''}</div></div>`).join('') +
         `<div class="card"><b>합계 약 ${fmt(r.total_prize)}원</b> <span class="kv">(1~3등 금액은 회차별 변동, 평균치)</span></div>`;
+      if (best) fireConfetti(best);
     } catch (e) { showErr('#grade-error', e); }
   });
 

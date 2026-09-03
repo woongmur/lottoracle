@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Any, Sequence
 
-from . import __version__, backtest as bt, data, model, stats as stats_mod
+from . import __version__, backtest as bt, data, model, qr as qr_mod, stats as stats_mod
 from .data import Draw
 from .explain import analysis_note, zone_phrase
 from .folklore import Folklore, color_signature, ball_color
@@ -265,10 +265,44 @@ class Engine:
             "has_profile": not profile.is_empty,
             "fortune": f.to_dict(),
             "recommend_inputs": profile.recommend_inputs(today) if not profile.is_empty else None,
-            "zodiac_table": zodiac_table(today),
+            "zodiac_table": zodiac_table(today, exclude=profile.zodiac),
             "next_draw_no": (prev.no + 1) if prev else None,
             "next_draw_date": draw_date_of(prev.no + 1) if prev else None,
         }
+
+    # ---------------------------------------------------------- QR 당첨 확인
+    def qr_payload(self, text: str) -> dict[str, Any]:
+        """로또 용지 QR 을 읽어 그 자리에서 채점한다.
+
+        아직 추첨 전이거나 캐시에 없는 회차면 조합만 돌려주고 status 로 알린다.
+        """
+        ticket = qr_mod.parse(text)
+        draw = self.find_draw(ticket.draw_no)
+        out: dict[str, Any] = {
+            "ticket": ticket.to_dict(),
+            "draw_date": draw_date_of(ticket.draw_no),
+            "colors": [[ball_color(n) for n in row] for row in ticket.lines],
+        }
+        if draw is None:
+            newest = self.previous
+            out["status"] = "pending" if (newest and ticket.draw_no > newest.no) else "missing"
+            out["latest_draw"] = newest.no if newest else None
+            return out
+
+        graded = bt.grade(ticket.lines, draw)
+        ranks = [g.rank for g in graded if g.rank]
+        out.update({
+            "status": "graded",
+            "draw": self.draw_payload(draw),
+            "results": [
+                {"numbers": list(g.numbers), "hit": list(g.hit), "bonus_hit": g.bonus_hit,
+                 "rank": g.rank, "label": g.label, "prize": g.prize}
+                for g in graded
+            ],
+            "best_rank": min(ranks) if ranks else 0,
+            "total_prize": sum(g.prize for g in graded),
+        })
+        return out
 
     # ---------------------------------------------------------- 내 번호
     def picks_payload(self) -> list[dict[str, Any]]:
