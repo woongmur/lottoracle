@@ -333,6 +333,18 @@
   const dots = g => '●'.repeat(g) + '○'.repeat(5 - g);
   const SWATCH = {'노랑':'var(--yellow)','파랑':'var(--blue)','빨강':'var(--red)','회색':'var(--gray)','초록':'var(--green)'};
 
+  // ---- 1~5등 당첨 현황 표 (회차 탭과 당첨 확인에서 같이 쓴다)
+  const RANK_MATCH = {1:'6개', 2:'5개+보너스', 3:'5개', 4:'4개', 5:'3개'};
+  function prizeTable(draw){
+    if (!draw || !draw.has_prizes) return `<p class="kv">이 회차의 등수별 당첨 현황은 아직 받아오지 못했습니다. 네트워크를 확인하고 다시 열어 보세요.</p>`;
+    return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨 게임 수</th><th class="num">1게임당</th><th class="num">등수별 총액</th></tr>` +
+      draw.prizes.map(p => `<tr><td class="rank-${p.rank}">${p.rank}등</td><td class="kv">${RANK_MATCH[p.rank] || ''}</td>
+        <td class="num">${fmt(p.winners)}</td><td class="num">${p.amount ? fmt(p.amount) + '원' : '-'}</td>
+        <td class="num kv">${p.total ? fmt(p.total) + '원' : '-'}</td></tr>`).join('') +
+      (draw.total_sales > 0 ? `<tr><th colspan="4">이 회차 총 판매금액</th><td class="num">${fmt(draw.total_sales)}원</td></tr>` : '') +
+      `</table>`;
+  }
+
   // ---- 축하 컨페티: 양쪽 하단에서 쏘아 올린다. 등수가 높을수록 크고 오래.
   const CONFETTI_COLORS = ['#fbc400','#69c8f2','#ff7272','#b0d840','#f5d76e','#e6ebf1','#cd7f32','#7aa2ff'];
   function fireConfetti(rank){
@@ -385,10 +397,10 @@
 
   // 등수별 축하 배너. 1등 금 · 2등 은 · 3등 동 · 4~5등 기본 · 낙첨은 담백하게.
   const RANK_STYLE = {1: 'rank-gold', 2: 'rank-silver', 3: 'rank-bronze', 4: 'rank-plain', 5: 'rank-plain'};
-  function celebrateBanner(rank, prize){
+  function celebrateBanner(rank, prize, actual){
     if (!rank) return `<div class="celebrate rank-none"><div class="big">아쉽지만 이번엔 낙첨</div><div class="sub">다음 회차가 남아 있습니다</div></div>`;
     return `<div class="celebrate ${RANK_STYLE[rank]}"><div class="big">축 ${rank}등 당첨</div>
-      <div class="sub">${prize ? '약 ' + fmt(prize) + '원 · 1~3등 금액은 회차별로 달라집니다' : ''}</div></div>`;
+      <div class="sub">${prize ? fmt(prize) + '원' + (actual ? ' · 해당 회차 실제 당첨금' : ' · 평균치 추정') : ''}</div></div>`;
   }
 
   // ---- 탭
@@ -610,7 +622,7 @@
       if (p.results) {
         const best = p.best_rank;
         badge = best ? `<span class="badge win">${best}등${p.total_prize ? ' · 약 ' + fmt(p.total_prize) + '원' : ''}</span>` : '<span class="badge lose">낙첨</span>';
-        detail = (best ? celebrateBanner(best, p.total_prize) : '') + `<div class="kv" style="margin:6px 0">${p.draw.no}회 당첨번호 ${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonus_color, null, true)}</div>` +
+        detail = (best ? celebrateBanner(best, p.total_prize, p.actual_prize) : '') + `<div class="kv" style="margin:6px 0">${p.draw.no}회 당첨번호 ${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonus_color, null, true)}</div>` +
           p.results.map((g, i) => `<div class="kv">${i+1}줄 ${balls(g.numbers, null, null, null, g.hit, true)} <span class="rank-${g.rank}">${g.label}</span>${g.bonus_hit ? ' +보너스' : ''}</div>`).join('');
       } else {
         badge = `<span class="badge wait">추첨 전 · ${p.draw_date} (토)</span>`;
@@ -704,13 +716,13 @@
       const d = r.draw;
       const ranks = r.results.map(g => g.rank).filter(Boolean);
       const best = ranks.length ? Math.min(...ranks) : 0;
-      $('#grade-results').innerHTML = celebrateBanner(best, r.total_prize) +
+      $('#grade-results').innerHTML = celebrateBanner(best, r.total_prize, r.actual_prize) +
         `<div class="card"><div class="title">${d.no}회차 (${d.date}) 당첨번호</div><div class="balls">${balls(d.numbers, d.colors, d.bonus, d.bonus_color)}</div>
-        ${d.first_winners >= 0 ? `<div class="kv">1등 ${d.first_winners}명 · 1게임당 ${fmt(d.first_prize)}원</div>` : ''}</div>` +
-        r.results.map((g, i) => `<div class="card"><div class="head"><div class="title">${i+1}줄</div><div class="rank-${g.rank}">${g.label}${g.prize ? ' · 약 ' + fmt(g.prize) + '원' : ''}</div></div>
+        <div class="kv" style="margin:10px 0 4px"><b>이 회차 등수별 당첨 현황</b></div>${prizeTable(d)}</div>` +
+        r.results.map((g, i) => `<div class="card"><div class="head"><div class="title">${i+1}줄</div><div class="rank-${g.rank}">${g.label}${g.prize ? ' · ' + fmt(g.prize) + '원' : ''}</div></div>
           <div class="balls">${balls(g.numbers, null, null, null, g.hit)}</div>
           <div class="kv">일치 ${g.hit.length}개 ${g.hit.length ? '[' + g.hit.join(', ') + ']' : ''}${g.bonus_hit ? ' + 보너스' : ''}</div></div>`).join('') +
-        `<div class="card"><b>합계 약 ${fmt(r.total_prize)}원</b> <span class="kv">(1~3등 금액은 회차별 변동, 평균치)</span></div>`;
+        `<div class="card"><b>합계 ${fmt(r.total_prize)}원</b> <span class="kv">${r.actual_prize ? '— ' + d.no + '회차 실제 당첨금 기준' : '— 회차별 실제 금액을 받지 못해 평균치로 계산했습니다'}</span></div>`;
       if (best) fireConfetti(best);
     } catch (e) { showErr('#grade-error', e); }
   });
@@ -733,13 +745,28 @@
   });
 
   // ---- 회차
-  let drawsLoaded = false, drawLimit = 20;
+  let drawsLoaded = false, drawLimit = 20, openDraw = null;
   async function loadDraws(){
     try {
       const rows = await api('/api/draws?limit=' + drawLimit); drawsLoaded = true;
-      $('#draws-body').innerHTML = `<table><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th class="num">1등</th><th class="num">1게임당</th></tr>` +
-        rows.map(d => `<tr><td>${d.no}</td><td>${d.date}</td><td>${balls(d.numbers, d.colors, d.bonus, d.bonus_color, null, true)}</td><td class="num">${d.first_winners >= 0 ? d.first_winners + '명' : '-'}</td><td class="num">${d.first_prize >= 0 ? fmt(d.first_prize) + '원' : '-'}</td></tr>`).join('') + '</table>';
+      $('#draws-body').innerHTML = `<p class="kv">회차를 누르면 1~5등 당첨 현황이 펼쳐집니다.</p><table><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th class="num">1등</th><th class="num">1게임당</th></tr>` +
+        rows.map(d => `<tr class="drawrow" data-no="${d.no}" style="cursor:pointer"><td>${d.no}회 ▾</td><td>${d.date}</td><td>${balls(d.numbers, d.colors, d.bonus, d.bonus_color, null, true)}</td><td class="num">${d.first_winners >= 0 ? fmt(d.first_winners) + '명' : '-'}</td><td class="num">${d.first_prize >= 0 ? fmt(d.first_prize) + '원' : '-'}</td></tr>
+          <tr class="drawdetail" data-detail="${d.no}" style="display:none"><td colspan="5"><div id="dd-${d.no}"><span class="spin"></span>불러오는 중…</div></td></tr>`).join('') + '</table>';
+      $('#draws-body').querySelectorAll('.drawrow').forEach(tr => tr.addEventListener('click', () => toggleDraw(+tr.dataset.no)));
     } catch (e) { $('#draws-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  }
+  async function toggleDraw(no){
+    const row = $(`[data-detail="${no}"]`);
+    if (!row) return;
+    if (row.style.display !== 'none') { row.style.display = 'none'; openDraw = null; return; }
+    $('#draws-body').querySelectorAll('.drawdetail').forEach(r => r.style.display = 'none');
+    row.style.display = ''; openDraw = no;
+    const box = $(`#dd-${no}`);
+    box.innerHTML = '<span class="spin"></span>불러오는 중…';
+    try {
+      const r = await api('/api/draw?no=' + no);
+      box.innerHTML = prizeTable(r.draw);
+    } catch (e) { box.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
   }
   $('#draws-more').addEventListener('click', () => { drawLimit += 30; loadDraws(); });
   $('#draws-refresh').addEventListener('click', async () => {
