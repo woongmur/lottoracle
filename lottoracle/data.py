@@ -5,7 +5,10 @@ from __future__ import annotations
 import csv
 import json
 import os
+import re
 import urllib.request
+import xml.etree.ElementTree as ET
+import zipfile
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Iterable, Sequence
@@ -25,6 +28,8 @@ class Draw:
     numbers: tuple[int, ...]  # 당첨번호 6개 (오름차순)
     bonus: int
     draw_date: str = ""
+    first_winners: int = -1     # 1등 당첨 게임 수 (-1: 정보 없음)
+    first_prize: int = -1       # 1게임당 1등 당첨금 (원, -1: 정보 없음)
 
     def __post_init__(self) -> None:
         if len(self.numbers) != 6:
@@ -43,12 +48,17 @@ class Draw:
         return (*self.numbers, self.bonus)
 
     def to_dict(self) -> dict:
-        return {
+        out = {
             "no": self.no,
             "numbers": list(self.numbers),
             "bonus": self.bonus,
             "draw_date": self.draw_date,
         }
+        if self.first_winners >= 0:
+            out["first_winners"] = self.first_winners
+        if self.first_prize >= 0:
+            out["first_prize"] = self.first_prize
+        return out
 
     @classmethod
     def from_dict(cls, raw: dict) -> "Draw":
@@ -57,6 +67,8 @@ class Draw:
             numbers=tuple(sorted(int(n) for n in raw["numbers"])),
             bonus=int(raw["bonus"]),
             draw_date=str(raw.get("draw_date", "")),
+            first_winners=int(raw.get("first_winners", -1)),
+            first_prize=int(raw.get("first_prize", -1)),
         )
 
 
@@ -83,6 +95,8 @@ def fetch_draw(no: int, timeout: float = 10.0) -> Draw | None:
         numbers=tuple(sorted(int(payload[f"drwtNo{i}"]) for i in range(1, 7))),
         bonus=int(payload["bnusNo"]),
         draw_date=str(payload.get("drwNoDate", "")),
+        first_winners=int(payload.get("firstPrzwnerCo", -1)),
+        first_prize=int(payload.get("firstWinamnt", -1)),
     )
 
 
@@ -147,6 +161,104 @@ def load_csv(path: str) -> list[Draw]:
                 )
             )
     return sorted(draws, key=lambda d: d.no)
+
+
+# ---------------------------------------------------------------- 엑셀(xlsx)
+_XLSX_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+
+
+def _digits(text: str) -> int:
+    """'13 명', '2,214,789,375 원' 같은 문자열에서 정수만 뽑는다. 없으면 -1."""
+    found = re.sub(r"[^0-9]", "", text or "")
+    return int(found) if found else -1
+
+
+def _xlsx_rows(path: str) -> list[dict[str, str]]:
+    """첫 시트를 {열문자: 값} 딕셔너리 목록으로 읽는다. 외부 라이브러리 불필요."""
+    with zipfile.ZipFile(path) as z:
+        strings: list[str] = []
+        if "xl/sharedStrings.xml" in z.namelist():
+            root = ET.fromstring(z.read("xl/sharedStrings.xml"))
+            for si in root.iter(f"{_XLSX_NS}si"):
+                strings.append("".join(t.text or "" for t in si.iter(f"{_XLSX_NS}t")))
+        sheet_names = sorted(
+            n for n in z.namelist() if n.startswith("xl/worksheets/sheet") and n.endswith(".xml")
+        )
+        if not sheet_names:
+            raise ValueError("시트를 찾을 수 없습니다.")
+        root = ET.fromstring(z.read(sheet_names[0]))
+
+    rows: list[dict[str, str]] = []
+    for row in root.iter(f"{_XLSX_NS}row"):
+        cells: dict[str, str] = {}
+        for c in row.findall(f"{_XLSX_NS}c"):
+            v = c.find(f"{_XLSX_NS}v")
+            if v is None or v.text is None:
+                continue
+            value = strings[int(v.text)] if c.get("t") == "s" else v.text
+            col = "".join(ch for ch in (c.get("r") or "") if ch.isalpha())
+            cells[col] = value
+        rows.append(cells)
+    return rows
+
+
+def load_xlsx(path: str) -> list[Draw]:
+    """동행복권 '회차별 당첨번호' 엑셀 내보내기를 읽는다.
+
+    기대 열: 회차 | 당첨번호 6칸 | 보너스 | (순위) | 당첨게임수 | 1게임당 당첨금액.
+    헤더 행은 '회차' 글자가 있는 행으로 찾고, 그 아래를 데이터로 본다.
+    """
+    rows = _xlsx_rows(path)
+    header_idx = next(
+        (i for i, r in enumerate(rows) if any("회차" in v for v in r.values())), None
+    )
+    if header_idx is None:
+        raise ValueError("'회차' 헤더를 찾을 수 없습니다. 동행복권 엑셀 형식인지 확인하세요.")
+    header = rows[header_idx]
+    col_no = next(k for k, v in header.items() if "회차" in v)
+    col_first = next(k for k, v in header.items() if "당첨번호" in v)
+    cols = [chr(ord(col_first) + i) for i in range(6)]
+    col_bonus = chr(ord(col_first) + 6)
+    col_winners = next((k for k, v in header.items() if "게임수" in v), None)
+    col_prize = next((k for k, v in header.items() if "금액" in v), None)
+
+    draws: list[Draw] = []
+    for r in rows[header_idx + 1:]:
+        try:
+            no = int(float(r[col_no]))
+            nums = tuple(sorted(int(float(r[c])) for c in cols))
+            bonus = int(float(r[col_bonus]))
+        except (KeyError, ValueError):
+            continue
+        draws.append(
+            Draw(
+                no=no,
+                numbers=nums,
+                bonus=bonus,
+                first_winners=_digits(r.get(col_winners, "")) if col_winners else -1,
+                first_prize=_digits(r.get(col_prize, "")) if col_prize else -1,
+            )
+        )
+    if not draws:
+        raise ValueError("엑셀에서 회차 데이터를 한 줄도 읽지 못했습니다.")
+    return sorted(draws, key=lambda d: d.no)
+
+
+def load_any(path: str) -> list[Draw]:
+    """확장자로 판단해 xlsx / csv / json 을 읽는다."""
+    lower = path.lower()
+    if lower.endswith(".xlsx"):
+        return load_xlsx(path)
+    if lower.endswith(".csv"):
+        return load_csv(path)
+    return load_draws(path)
+
+
+def merge(base: Sequence[Draw], incoming: Sequence[Draw]) -> list[Draw]:
+    """회차 번호 기준으로 합친다. 같은 회차는 incoming 이 이긴다."""
+    by_no = {d.no: d for d in base}
+    by_no.update({d.no: d for d in incoming})
+    return sorted(by_no.values(), key=lambda d: d.no)
 
 
 def latest(draws: Sequence[Draw]) -> Draw | None:

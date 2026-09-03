@@ -14,6 +14,7 @@ from .filters import Ruleset, check
 from .folklore import Folklore, accepts, luck_score, luck_tags
 from .folklore import multipliers as folklore_multipliers
 from .metrics import NUMBER_POOL, PICK, TWIN_NUMBERS, Profile
+from .model import Empirical, ScoreWeights, typicality, typicality_percentile
 from .stats import NumberStats
 from .strategies import DEFAULT_STRATEGIES, Strategy
 
@@ -32,6 +33,9 @@ class Line:
     attempts: int = 0
     luck: int = 50          # 속설 기준 '기분 점수' (확률과 무관)
     omens: list[str] = field(default_factory=list)  # 걸린 속설 태그
+    typicality: float = 0.0     # 전형성 로그가능도 (높을수록 흔한 모양)
+    percentile: float = 50.0    # 과거 당첨조합 대비 전형성 백분위
+    pool_size: int = 1          # 이 줄을 고를 때 비교한 후보 수
 
     def render_numbers(self) -> str:
         body = ", ".join(f"{n:2d}" for n in self.numbers)
@@ -179,17 +183,35 @@ def generate_line(
     banned_sets: Sequence[frozenset[int]] = (),
     max_attempts: int = 4000,
     folklore: Folklore | None = None,
+    emp: Empirical | None = None,
+    reference: Sequence[float] = (),
+    candidates: int = 40,
+    temperature: float = 1.0,
+    max_overlap: int = 3,
+    rules_override: Ruleset | None = None,
+    score_weights: ScoreWeights = ScoreWeights(),
 ) -> Line:
-    """한 줄을 만든다. 규칙을 못 맞추면 단계적으로 완화한다."""
+    """한 줄을 만든다.
+
+    1) 가중 추첨으로 규칙을 통과하는 후보를 `candidates`개 모은다 (못 모으면 규칙 완화).
+    2) 실데이터 경험분포(`emp`)가 있으면 전형성 점수로 소프트맥스 선택한다.
+       temperature 가 낮을수록 가장 흔한 모양을, 높을수록 다양하게 고른다.
+    3) 이미 뽑힌 줄과 `max_overlap`개 넘게 겹치는 후보는 버린다.
+    """
     rng = rng or random.Random()
     weights = base_weights(strategy, stats, folklore, previous)
     prev_numbers = previous.numbers if previous else ()
     excluded = set(exclude) | (folklore.excluded() if folklore else set())
     banned = set(banned_sets)
+    base_rules = rules_override or strategy.rules
+    found: list[tuple[tuple[int, ...], Profile, int, int]] = []  # (조합, 프로필, 완화단계, 시도)
+    seen: set[frozenset[int]] = set()
+    if emp is None:
+        candidates = 1  # 점수화할 근거가 없으면 첫 통과 후보를 그대로 쓴다
 
     for attempt in range(1, max_attempts + 1):
         step = attempt // max(1, max_attempts // 6)  # 실패가 쌓이면 규칙 완화
-        rules: Ruleset = strategy.rules if step == 0 else strategy.rules.relaxed(step)
+        rules: Ruleset = base_rules if step == 0 else base_rules.relaxed(step)
         if previous is None:
             # 직전 회차를 모르면 이월수 조건은 의미가 없다.
             rules = _replace(rules, carryover_range=(0, PICK))
@@ -203,27 +225,54 @@ def generate_line(
             pool, PICK - len(forced), weights, stats, strategy, forced, rng
         )
         nums = tuple(sorted(forced + rest))
-        if len(nums) < PICK or frozenset(nums) in banned:
+        key = frozenset(nums)
+        if len(nums) < PICK or key in banned or key in seen:
             continue
-
+        overlap_limit = max_overlap if step < 3 else PICK
+        if any(len(key & b) > overlap_limit for b in banned):
+            continue
         if not accepts(folklore, nums, lenient=step >= 3):
             continue
 
         verdict = check(nums, rules, prev_numbers)
-        if verdict.ok:
-            return Line(
-                strategy=strategy,
-                numbers=nums,
-                bonus=_pick_bonus(nums, weights, rng),
-                profile=verdict.profile,
-                relaxed_step=step,
-                attempts=attempt,
-                luck=luck_score(folklore, nums, previous),
-                omens=luck_tags(folklore, nums, previous),
-            )
+        if not verdict.ok:
+            continue
+        seen.add(key)
+        found.append((nums, verdict.profile, step, attempt))
+        if len(found) >= candidates:
+            break
 
-    raise RuntimeError(
-        f"[{strategy.name}] 조건을 만족하는 조합을 찾지 못했습니다. 규칙을 완화하세요."
+    if not found:
+        raise RuntimeError(
+            f"[{strategy.name}] 조건을 만족하는 조합을 찾지 못했습니다. 규칙을 완화하세요."
+        )
+
+    # ---- 전형성으로 선택 ----
+    scores = [
+        typicality(nums, emp, prev_numbers, score_weights) if emp else 0.0
+        for nums, _, _, _ in found
+    ]
+    if emp is not None and len(found) > 1:
+        t = max(0.05, temperature)
+        top = max(scores)
+        ws = [math.exp((sc - top) / t) for sc in scores]
+        chosen = rng.choices(range(len(found)), weights=ws, k=1)[0]
+    else:
+        chosen = 0
+    nums, prof, step, attempt = found[chosen]
+    score = scores[chosen]
+    return Line(
+        strategy=strategy,
+        numbers=nums,
+        bonus=_pick_bonus(nums, weights, rng),
+        profile=prof,
+        relaxed_step=step,
+        attempts=attempt,
+        luck=luck_score(folklore, nums, previous),
+        omens=luck_tags(folklore, nums, previous),
+        typicality=score,
+        percentile=typicality_percentile(score, reference) if emp else 50.0,
+        pool_size=len(found),
     )
 
 
@@ -235,13 +284,27 @@ def recommend(
     seed: int | None = None,
     exclude: Sequence[int] = (),
     folklore: Folklore | None = None,
+    emp: Empirical | None = None,
+    reference: Sequence[float] = (),
+    candidates: int = 40,
+    temperature: float = 1.0,
+    max_overlap: int = 3,
+    rules_override: Ruleset | None = None,
+    score_weights: ScoreWeights = ScoreWeights(),
 ) -> list[Line]:
-    """서로 다른 전략으로 `lines`줄을 뽑는다. 줄끼리 조합이 겹치지 않게 한다."""
+    """서로 다른 전략으로 `lines`줄을 뽑는다. 줄끼리 조합이 겹치지 않게 한다.
+
+    rules_override 를 주면(예: model.calibrate 결과) 전략별 규칙 대신 그것을 쓰되,
+    이월수 범위만은 전략이 요구하는 값을 유지한다.
+    """
     rng = random.Random(seed)
     out: list[Line] = []
     used: list[frozenset[int]] = []
     for i in range(lines):
         strategy = strategies[i % len(strategies)]
+        rules = None
+        if rules_override is not None:
+            rules = _replace(rules_override, carryover_range=strategy.rules.carryover_range)
         line = generate_line(
             strategy,
             stats,
@@ -250,6 +313,13 @@ def recommend(
             exclude=exclude,
             banned_sets=used,
             folklore=folklore,
+            emp=emp,
+            reference=reference,
+            candidates=candidates,
+            temperature=temperature,
+            max_overlap=max_overlap,
+            rules_override=rules,
+            score_weights=score_weights,
         )
         used.append(frozenset(line.numbers))
         out.append(line)
