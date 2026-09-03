@@ -43,11 +43,11 @@ jobs:
           cp web/public/* dist/
           cp web/index.html web/manifest.webmanifest web/sw.js web/icon.svg web/icon-192.png web/icon-512.png dist/
           find dist -type f | sort
-      # enablement: Pages 가 꺼져 있으면 켠다 (pages: write 권한으로 가능).
-      # 저장소 Settings 를 손대지 않아도 첫 배포가 그대로 진행된다.
+      # 첫 배포 전에 저장소 Settings → Pages → Source 를 "GitHub Actions" 로
+      # 한 번 켜 둬야 한다. enablement: true 로 워크플로가 대신 켜게 해 봤지만
+      # 사이트 '생성' API 는 admin 권한이 필요해 GITHUB_TOKEN 으로는 막힌다
+      # (Resource not accessible by integration). PAT 를 넣지 않는 한 수동이다.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

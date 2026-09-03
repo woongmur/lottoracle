@@ -70,7 +70,13 @@ python3 -m http.server 8801         # web/ 에서 열고 http://127.0.0.1:8801
 ## 배포
 
 `.github/workflows/deploy.yml` 이 기본 브랜치의 `web/**` 변경을 감지해 GitHub Pages 로 올린다.
-테스트가 통과해야 배포된다. 저장소 설정 → Pages → Source 를 **GitHub Actions** 로 바꿔 두면 된다.
+테스트가 통과해야 배포된다.
+
+**첫 배포 전에 한 번만**: 저장소 Settings → Pages → Source 를 **GitHub Actions** 로 바꿔 둔다.
+켜 두지 않으면 `configure-pages` 단계에서 `Get Pages site failed ... Not Found` 로 실패한다.
+워크플로가 대신 켜게 하는 `enablement: true` 는 사이트 생성 API 가 admin 권한을 요구해
+`GITHUB_TOKEN` 으로는 통하지 않는다 (`Resource not accessible by integration`).
+admin 권한 PAT 를 넣지 않는 한 이 단계는 수동이다.
 
 Cloudflare Pages 를 쓰려면 빌드 명령 없이 출력 디렉터리만 `web` 으로 지정하면 된다.
 빌드 단계가 없어서 어느 정적 호스팅에도 그대로 올라간다.
