@@ -39,6 +39,21 @@ python -m lottoracle           # 터미널에서 추천 5줄
 
 `pip install -e .` 를 하면 `lottoracle` 명령으로도 쓸 수 있다.
 
+### WSL(칼리 등)에서 띄우고 윈도우 브라우저로 접속
+
+GUI 서버는 기본으로 `127.0.0.1` 에만 열려서, WSL 안에서 띄우면 윈도우 쪽에서는
+eth0 IP 로 접근해도 거부된다. 모든 인터페이스에 바인딩해서 실행하면 된다.
+
+```bash
+python -m lottoracle gui --host 0.0.0.0 --port 8765 --no-browser
+```
+
+- 윈도우 브라우저에서 `http://localhost:8765` 로 접속한다 (WSL2 는 localhost 를 자동 포워딩).
+- 안 되면 WSL 에서 `hostname -I` 로 확인한 IP 로 `http://<IP>:8765`. 이 IP 는 WSL 재시작마다 바뀔 수 있다.
+- 여전히 안 되면 WSL 에서 `ss -ltnp | grep 8765` 로 `0.0.0.0:8765` 가 LISTEN 인지 확인한다.
+  `127.0.0.1:8765` 로 보이면 `--host` 옵션이 빠진 것이다.
+- `--no-browser` 는 WSL 안에서 브라우저를 열려다 실패하는 것을 막는다.
+
 ### 데이터 갱신
 
 ```bash
