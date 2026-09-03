@@ -43,7 +43,11 @@ jobs:
           cp web/public/* dist/
           cp web/index.html web/manifest.webmanifest web/sw.js web/icon.svg web/icon-192.png web/icon-512.png dist/
           find dist -type f | sort
+      # enablement: Pages 가 꺼져 있으면 켠다 (pages: write 권한으로 가능).
+      # 저장소 Settings 를 손대지 않아도 첫 배포가 그대로 진행된다.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
