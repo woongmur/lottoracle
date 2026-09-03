@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lottoracle import data, filters, folklore, metrics, model, stats, strategies
+from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, stats, strategies
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "web", "test", "golden")
@@ -217,6 +217,70 @@ def main() -> int:
             }
             for s in strategies.DEFAULT_STRATEGIES
         ],
+    })
+
+    # 7) 운세 — 난수 없는 부분(프로필 파싱·십이지·금칙어)
+    dump("fortune.json", {
+        "tagline": fortune.TAGLINE,
+        "disclaimer": fortune.DISCLAIMER,
+        "forbiddenWords": list(fortune.FORBIDDEN_WORDS),
+        "gradeLabels": {str(k): v for k, v in fortune.GRADE_LABELS.items()},
+        "gradeWeights": {str(k): v for k, v in fortune.GRADE_WEIGHTS.items()},
+        "sentences": {str(k): list(v) for k, v in fortune.SENTENCES.items()},
+        "keywords": list(fortune.KEYWORDS),
+        "tips": list(fortune.TIPS),
+        "branchRange": dict(fortune.BRANCH_RANGE),
+        "branchAnimal": dict(fortune.BRANCH_ANIMAL),
+        "branchChoices": fortune.branch_choices(),
+        "branchOfTime": {
+            f"{h}:{m}": fortune.branch_of_time(h, m)
+            for h, m in [(23,30),(0,0),(1,29),(1,30),(7,30),(9,29),(9,30),(12,0),(23,0),(23,29)]
+        },
+        "normalizeBranch": {k: fortune.normalize_branch(k) for k in ("진", "진시", "용", "", "  자 ")},
+        "profiles": [
+            {
+                "input": inp,
+                "birthDate": pr.birth_date, "birthBranch": pr.birth_branch,
+                "zodiac": pr.zodiac, "hourAnimal": pr.hour_animal, "hourLabel": pr.hour_label,
+                "name": pr.name, "isEmpty": pr.is_empty,
+                "personalNumbers": list(pr.personal_numbers()),
+            }
+            for inp, pr in [
+                ({"name": "홍길동", "birth_date": "1990-05-21", "birth_branch": "진"},
+                 fortune.Profile(name="홍길동", birth_date="1990-05-21", birth_branch="진")),
+                ({"name": "  긴이름을가진사람인데스무자를넘어가면잘린다  ", "birth_date": "2000.11.21"},
+                 fortune.Profile(name="  긴이름을가진사람인데스무자를넘어가면잘린다  ", birth_date="2000.11.21")),
+                ({"birth_date": "19900521"},
+                 fortune.Profile(birth_date="19900521")),
+                ({"birth_date": "1990-05-21", "birth_hour": 4},
+                 fortune.Profile(birth_date="1990-05-21", birth_hour=4)),
+                ({}, fortune.Profile()),
+            ]
+        ],
+        "allSentencesCount": len(fortune.all_sentences()),
+    })
+
+    # 8) 설명 문장 — Line 을 직접 만들어 넣는다 (난수 없이)
+    def note_case(nums, step=0):
+        prof = metrics.profile(nums, PREVIOUS)
+        line = generator.Line(
+            strategy=strategies.DEFAULT_STRATEGIES[0], numbers=tuple(sorted(nums)),
+            bonus=1, profile=prof, relaxed_step=step,
+        )
+        prev_draw = data.Draw(no=1239, numbers=tuple(PREVIOUS), bonus=8)
+        fl = folklore.Folklore(lucky=(7, 13), avoid=(4,), dream="돼지꿈", birthday="1990-05-21", zodiac="말")
+        return {
+            "numbers": sorted(nums),
+            "relaxedStep": step,
+            "zonePhrase": explain.zone_phrase(sorted(nums)),
+            "noteWithPrev": explain.analysis_note(line, prev_draw, fl),
+            "noteNoPrev": explain.analysis_note(line, None, fl),
+            "noteNoFolklore": explain.analysis_note(line, prev_draw, None),
+        }
+
+    dump("explain.json", {
+        "zoneLabels": list(explain.ZONE_LABELS),
+        "cases": [note_case(s) for s in SAMPLES] + [note_case([11, 13, 22, 32, 33, 36], step=2)],
     })
 
     print("완료")

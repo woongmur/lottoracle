@@ -46,8 +46,11 @@ python3 tools/gen_golden.py    # 저장소 루트에서
 | `folklore.js` | 완료 — 골든 대조 |
 | `strategies.js` | 완료 — 골든 대조 |
 | `generator.js` | 완료 — 성질 기반 검사 (난수라 값 대조 불가) |
-| `fortune.js` · `explain.js` | 예정 |
-| `grade.js` · `qr.js` · `engine.js` | 예정 |
+| `fortune.js` | 완료 — 문구·프로필은 골든 대조, 운세 생성은 성질 검사 |
+| `explain.js` | 완료 — 골든 대조 |
+| `grade.js` | 완료 — 실제 당첨금·평균치 양쪽 |
+| `qr.js` | 완료 — 거절 경로까지 |
+| `engine.js` (조합·저장소) | 예정 |
 | UI (`index.html`) · PWA · 배포 | 예정 |
 
 ## public/
