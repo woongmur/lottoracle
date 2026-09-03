@@ -267,11 +267,18 @@ class WebNewApiTest(unittest.TestCase):
         self.assertTrue(r["ok"])
         self.assertEqual(len(r["picks"]), 1)
 
+        status, m = self._req("/api/meta")
+        self.assertEqual(m["kakao_key_source"], "default")
+        self.assertEqual(len(m["kakao_js_key"]), 32)
         status, r = self._req("/api/settings", {"settings": {"kakao_js_key": "k", "auto_refresh": False}})
         self.assertEqual(r["settings"]["kakao_js_key"], "k")
         status, m = self._req("/api/meta")
         self.assertEqual(m["kakao_js_key"], "k")
+        self.assertEqual(m["kakao_key_source"], "settings")
         self.assertFalse(m["auto_refresh"])
+        self._req("/api/settings", {"settings": {"kakao_js_key": ""}})
+        status, m = self._req("/api/meta")
+        self.assertEqual(m["kakao_key_source"], "default")
 
         status, r = self._req("/api/profile/delete", {})
         self.assertTrue(r["ok"])

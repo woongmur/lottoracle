@@ -267,8 +267,9 @@
       <div class="panel">
         <h3>설정</h3>
         <label>카카오맵 JavaScript 키 <small style="color:var(--muted)">(복권방 지도용 · 선택)</small></label>
-        <input type="password" id="set-kakao" placeholder="developers.kakao.com 에서 발급">
-        <p class="kv">카카오 개발자 콘솔 → 앱 → 플랫폼 → Web 에 <code id="set-origin"></code> 을 등록해야 지도가 뜹니다. 키는 이 컴퓨터의 data/settings.json 에만 저장됩니다.</p>
+        <input type="password" id="set-kakao" placeholder="비우면 내장 기본 키 사용">
+        <p class="kv" id="set-kakao-hint"></p>
+        <p class="kv">내장 기본 키는 <code>http://localhost:8765</code> 와 <code>http://127.0.0.1:8765</code> 에서만 동작합니다. 다른 포트나 주소(<code id="set-origin"></code>)로 열었다면 카카오 개발자 콘솔에서 자기 키를 발급받아 그 주소를 등록하고 여기에 넣으세요. 키는 이 컴퓨터의 data/settings.json 에만 저장됩니다.</p>
         <div class="check"><input type="checkbox" id="set-autorefresh" checked><span>시작할 때 새 회차 자동 확인</span></div>
         <button class="primary" id="set-save">설정 저장</button>
         <div id="set-msg"></div>
@@ -666,7 +667,9 @@
     }
     const s = document.createElement('script');
     s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(META.kakao_js_key)}&autoload=false&libraries=services`;
-    s.onerror = () => showErr('#shop-error', '카카오맵 SDK를 불러오지 못했습니다. 키와 등록 도메인(' + location.origin + ')을 확인하세요.');
+    s.onerror = () => showErr('#shop-error', '카카오맵 SDK를 불러오지 못했습니다. ' + ((META.kakao_default_origins || []).includes(location.origin)
+      ? '네트워크를 확인하거나, 카카오 개발자 콘솔에서 카카오맵이 활성화되어 있는지 확인하세요.'
+      : '현재 주소 ' + location.origin + ' 는 내장 키에 등록되어 있지 않습니다. 설정 탭에서 자기 키를 넣으세요.'));
     s.onload = () => kakao.maps.load(() => {
       const center = new kakao.maps.LatLng(37.5665, 126.9780);
       kmap = new kakao.maps.Map($('#map'), {center, level: 5});
@@ -708,7 +711,11 @@
     $('#set-origin').textContent = location.origin;
     $('#info-disclaimer').textContent = META.disclaimer;
     $('#info-version').textContent = `lottoracle v${META.version}`;
-    $('#set-kakao').value = META.kakao_js_key || '';
+    $('#set-kakao').value = META.kakao_key_source === 'settings' ? META.kakao_js_key : '';
+    const okOrigin = (META.kakao_default_origins || []).includes(location.origin);
+    $('#set-kakao-hint').innerHTML = META.kakao_key_source === 'default'
+      ? (okOrigin ? '현재 내장 기본 키를 쓰고 있고, 이 주소는 등록되어 있습니다.' : `<span style="color:var(--warn)">현재 주소 ${esc(location.origin)} 는 내장 키에 등록되어 있지 않아 지도가 뜨지 않을 수 있습니다.</span>`)
+      : (META.kakao_key_source === 'env' ? '환경변수 LOTTORACLE_KAKAO_JS_KEY 의 키를 쓰고 있습니다.' : '설정에 저장된 키를 쓰고 있습니다.');
     $('#set-autorefresh').checked = !!META.auto_refresh;
     try {
       const r = await api('/api/profile'); const p = r.profile;
