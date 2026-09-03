@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 18 * * 6"      # UTC 토 18:00 = KST 일 03:00
   workflow_dispatch:
+    inputs:
+      store_backfill:
+        description: "배출점을 최근 N회차까지 채운다 (0이면 새 회차만)"
+        default: "0"
 
 permissions:
   contents: write
@@ -33,21 +37,30 @@ jobs:
           echo "새 회차: $before → $after"
           if [ "$before" != "$after" ]; then cp data/draws.json web/data/draws.json; fi
 
+      - name: 당첨 배출점 수집 (새 회차 + 요청 시 과거 채우기)
+        run: |
+          if [ "${{ inputs.store_backfill || 0 }}" != "0" ]; then
+            python3 tools/fetch_stores.py --recent "${{ inputs.store_backfill }}"
+          elif [ "${{ steps.fetch.outputs.before }}" != "${{ steps.fetch.outputs.after }}" ]; then
+            python3 tools/fetch_stores.py --since "${{ steps.fetch.outputs.before }}"
+          else
+            echo "새 회차가 없어 배출점도 건너뜁니다."
+          fi
+
       - name: 골든 데이터 재생성 (회차가 늘면 통계도 바뀐다)
         if: steps.fetch.outputs.before != steps.fetch.outputs.after
         run: python3 tools/gen_golden.py
 
       - name: 테스트로 확인
-        if: steps.fetch.outputs.before != steps.fetch.outputs.after
         run: |
           python3 -m unittest discover -s tests
           cd web && npm test
 
       - name: 커밋
-        if: steps.fetch.outputs.before != steps.fetch.outputs.after
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/draws.json web/data/draws.json web/test/golden/
-          git commit -m "data: ${{ steps.fetch.outputs.after }}회차까지 갱신"
+          git add -A data/ web/data/ web/test/golden/
+          git diff --cached --quiet && { echo "바뀐 것이 없습니다."; exit 0; }
+          git commit -m "data: ${{ steps.fetch.outputs.after }}회차까지 갱신 (회차·배출점)"
           git push

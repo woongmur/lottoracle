@@ -137,7 +137,8 @@
     header .meta{order:3;width:100%;flex:none;font-size:12px;white-space:nowrap;
       overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     header .meta::-webkit-scrollbar{display:none}
-    header .meta .ball.sm{width:22px;height:22px;font-size:10.5px;margin-right:3px}
+    header .meta .ball.sm{width:21px;height:21px;font-size:10px;margin-right:2px}
+    header .meta .plus{margin:0 2px}
     header .status{font-size:11.5px}
     /* 탭: 한 줄 가로 스크롤 + 스크롤해도 따라오게 */
     nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
@@ -325,9 +326,12 @@
           <button class="ghost" id="shop-search">찾기</button>
           <button class="ghost" id="shop-locate">내 위치로</button>
         </div>
+        <div class="check" style="margin-top:10px"><input type="checkbox" id="shop-fame" checked><span>1등·2등 배출점 함께 표시</span></div>
+        <div id="fame-note" class="kv"></div>
         <p class="kv" style="margin-top:12px">위치 권한은 선택입니다. 동네 이름으로 검색해도 됩니다. 검색은 카카오맵을 통해 이루어지고, 이 앱은 위치를 저장하지 않습니다.</p>
         <div id="shop-status" class="kv"></div>
         <div id="shop-error"></div>
+        <div id="fame-list"></div>
         <div id="shop-list"></div>
       </div>
       <div>
@@ -378,6 +382,7 @@ import { build as buildStats } from './src/stats.js';
 import { fit, calibrate } from './src/model.js';
 import { recommend as generate } from './src/generator.js';
 import { createFolklore } from './src/folklore.js';
+import { createStoreIndex, summarize, recentDraws } from './src/stores.js';
 
 const VERSION = '0.4.0';
 // 카카오맵 JavaScript 키. 페이지 소스에 드러나는 것이 정상인 키이며, 등록된 도메인에서만 동작한다.
@@ -422,8 +427,12 @@ async function boot() {
 
 function renderMeta() {
   const p = ENGINE.previous ? ENGINE.drawPayload(ENGINE.previous) : null;
+  // 좁은 화면에서는 앞 문구를 줄여 당첨번호가 잘리지 않게 한다
+  const narrow = window.matchMedia('(max-width:640px)').matches;
   $('#meta').innerHTML = p
-    ? `분석 ${fmt(ENGINE.draws.length)}회차 · 최신 <b>${p.no}회</b> (${p.date}) ${balls(p.numbers, p.colors, p.bonus, p.bonusColor, null, true)}`
+    ? (narrow
+      ? `<b>${p.no}회</b> <span class="kv" style="font-size:11.5px">${p.date.slice(5)}</span> ${balls(p.numbers, p.colors, p.bonus, p.bonusColor, null, true)}`
+      : `분석 ${fmt(ENGINE.draws.length)}회차 · 최신 <b>${p.no}회</b> (${p.date}) ${balls(p.numbers, p.colors, p.bonus, p.bonusColor, null, true)}`)
     : '데이터 없음 — 규칙 필터만 적용됩니다';
   if (p) $('#grade-draw').placeholder = '예: ' + p.no;
   $('#foot-tagline').textContent = TAGLINE;
@@ -886,6 +895,71 @@ $('#draws-refresh').addEventListener('click', async () => {
 
 // ---- 복권방 (카카오맵)
 let shopsInit = false, kmap = null, markers = [], places = null;
+let STORES = null, fameMarkers = [], fameWindow = null;
+
+/** 배출점 데이터를 한 번만 읽는다. 없으면 조용히 넘어간다(기능 축소). */
+async function loadStores() {
+  if (STORES) return STORES;
+  try {
+    STORES = createStoreIndex(await (await fetch('./data/stores.json')).json());
+    const n = STORES.hallOfFame(2).length;
+    $('#fame-note').innerHTML = STORES.coveredFrom
+      ? `${STORES.coveredFrom}~${STORES.coveredTo}회 기준 · 배출점 ${fmt(STORES.stores.length)}곳 (1등 2회 이상 ${n}곳). 동행복권 당첨판매점 자료입니다.`
+      : '';
+  } catch {
+    STORES = createStoreIndex(null);
+    $('#fame-note').textContent = '배출점 자료를 불러오지 못했습니다.';
+  }
+  return STORES;
+}
+
+/** 배출점을 지도에 금색 원으로 표시한다. 1등 횟수가 많을수록 크게. */
+function showFameMarkers(list) {
+  fameMarkers.forEach(m => m.setMap(null));
+  fameMarkers = [];
+  if (!$('#shop-fame').checked) return;
+  for (const st of list) {
+    const size = st.firstCount ? Math.min(34, 20 + st.firstCount * 4) : 16;
+    const color = st.firstCount ? '#f5d76e' : '#aaaaaa';
+    const marker = new kakao.maps.Marker({
+      map: kmap, position: new kakao.maps.LatLng(st.lat, st.lot), title: st.name, zIndex: 5,
+      image: new kakao.maps.MarkerImage(
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+             <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="${color}" fill-opacity="0.85"
+                     stroke="#0f1115" stroke-width="2"/>
+             ${st.firstCount ? `<text x="${size/2}" y="${size/2 + 4}" font-size="${Math.max(9, size/2.6)}"
+                     font-weight="700" fill="#0b0e14" text-anchor="middle">${st.firstCount}</text>` : ''}
+           </svg>`),
+        new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(size / 2, size / 2) }),
+    });
+    kakao.maps.event.addListener(marker, 'click', () => openFame(st, marker));
+    fameMarkers.push(marker);
+  }
+}
+
+/** 배출점 상세: 1등·2등 몇 번, 어느 회차였는지. */
+function openFame(st, marker) {
+  fameWindow?.close();
+  const rows = [];
+  if (st.firstCount) rows.push(`<b style="color:#b8860b">1등 ${st.firstCount}회</b> ${recentDraws(st.first).join(', ')}회`);
+  if (st.secondCount) rows.push(`2등 ${st.secondCount}회 ${recentDraws(st.second, 8).join(', ')}회`);
+  fameWindow = new kakao.maps.InfoWindow({
+    content: `<div style="padding:8px 11px;font-size:12px;color:#111;max-width:230px;line-height:1.5">
+        <b>${esc(st.name)}</b>${st.kind ? ` <span style="color:#666">${esc(st.kind)}</span>` : ''}<br>
+        <span style="color:#555">${esc(st.addr)}</span><br>${rows.join('<br>')}</div>`,
+  });
+  fameWindow.open(kmap, marker);
+}
+
+/** 목록 한 줄. 배출 실적이 있으면 금색 배지를 단다. */
+function storeRow(st, i, kind) {
+  const badge = st.firstCount
+    ? `<span class="badge" style="background:#4a3a10;color:#f5d76e">1등 ${st.firstCount}회</span>`
+    : st.secondCount ? `<span class="badge" style="background:#2a2f3a;color:var(--muted)">2등 ${st.secondCount}회</span>` : '';
+  const dist = st.distance != null ? ` · ${fmt(st.distance)}m` : '';
+  return `<div class="shop" data-${kind}="${i}"><b>${esc(st.name)} ${badge}</b><span class="kv">${esc(st.addr)}${dist}</span></div>`;
+}
 const KAKAO_ORIGINS = ['http://localhost:8765', 'http://127.0.0.1:8765'];
 function initShops() {
   if (shopsInit) return; shopsInit = true;
@@ -900,6 +974,17 @@ function initShops() {
     upd(); $('#shop-query').addEventListener('input', upd);
     $('#shop-search').addEventListener('click', () => { upd(); window.open($('#fb-kakao').href, '_blank', 'noopener'); });
     $('#shop-locate').addEventListener('click', () => window.open('https://map.kakao.com/?q=' + encodeURIComponent('복권판매점'), '_blank', 'noopener'));
+    // 지도가 없어도 배출점 목록은 검색할 수 있다
+    loadStores().then(idx => {
+      const render = () => {
+        const hits = idx.search($('#shop-query').value.trim(), 30);
+        $('#fame-list').innerHTML = hits.length
+          ? `<div class="kv" style="margin:10px 0 4px"><b>배출점 ${hits.length}곳</b></div>`
+            + hits.map(st => `<div class="shop"><b>${esc(st.name)} <span class="badge" style="background:#4a3a10;color:#f5d76e">${esc(summarize(st))}</span></b><span class="kv">${esc(st.addr)}</span></div>`).join('')
+          : '';
+      };
+      $('#shop-query').addEventListener('input', render);
+    });
     return;
   }
   const s = document.createElement('script');
@@ -908,11 +993,49 @@ function initShops() {
   s.onload = () => kakao.maps.load(() => {
     kmap = new kakao.maps.Map($('#map'), { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5 });
     places = new kakao.maps.services.Places();
-    $('#shop-search').addEventListener('click', () => searchShops($('#shop-query').value.trim(), null));
+    $('#shop-search').addEventListener('click', async () => {
+      const q = $('#shop-query').value.trim();
+      searchShops(q, null);
+      // 검색어로 배출점도 같이 찾아 준다
+      const idx = await loadStores();
+      renderFame(idx.search(q, 40), `"${q}" 배출점`);
+    });
+    $('#shop-fame').addEventListener('change', () => renderFame(lastFame.list, lastFame.title));
+    loadStores();
     $('#shop-query').addEventListener('keydown', e => { if (e.key === 'Enter') $('#shop-search').click(); });
     $('#shop-locate').addEventListener('click', locateMe);
   });
   document.head.appendChild(s);
+}
+
+let lastFame = { list: [], title: '' };
+
+/** 배출점 목록과 마커를 함께 그린다. 토글이 꺼져 있으면 둘 다 감춘다. */
+function renderFame(list, title) {
+  lastFame = { list, title };
+  const on = $('#shop-fame').checked;
+  showFameMarkers(on ? list : []);
+  if (!on || !list.length) {
+    $('#fame-list').innerHTML = on && title ? `<p class="kv">${esc(title)} 기록된 배출점이 없습니다.</p>` : '';
+    return;
+  }
+  const withFirst = list.filter(s => s.firstCount).length;
+  $('#fame-list').innerHTML =
+    `<div class="kv" style="margin:10px 0 4px"><b>${esc(title)} ${list.length}곳</b>${withFirst ? ` (1등 배출 ${withFirst}곳)` : ''}</div>`
+    + list.map((st, i) => storeRow(st, i, 'fame')).join('');
+  $('#fame-list').querySelectorAll('[data-fame]').forEach(row => row.addEventListener('click', () => {
+    const st = list[+row.dataset.fame];
+    kmap.panTo(new kakao.maps.LatLng(st.lat, st.lot));
+    const marker = fameMarkers.find(m => m.getTitle() === st.name);
+    if (marker) openFame(st, marker);
+  }));
+}
+
+/** 내 주변 배출점. */
+async function showNearbyFame(lat, lot, radius = 5000) {
+  const idx = await loadStores();
+  if (!idx.stores.length) return;
+  renderFame(idx.near(lat, lot, radius, 60), `반경 ${radius / 1000}km 안 배출점`);
 }
 
 /** 현재 위치를 잡아 지도에 표시하고 주변을 검색한다. */
@@ -939,6 +1062,7 @@ function locateMe() {
       status.innerHTML = accuracy > 3000
         ? `현재 위치를 대략 ${fmt(Math.round(accuracy))}m 오차로 잡았습니다. PC 는 인터넷 주소로 추정해 부정확할 수 있으니, 빗나가면 동네 이름으로 검색해 주세요.`
         : `현재 위치 기준 (오차 약 ${fmt(Math.round(accuracy))}m)`;
+      showNearbyFame(latitude, longitude);
       searchShops('', here);
     },
     err => {
@@ -1036,6 +1160,7 @@ $('#clear-all').addEventListener('click', () => {
 
 // ---- 오프라인 표시
 const updateOnline = () => { $('#offline-badge').style.display = navigator.onLine ? 'none' : ''; };
+window.matchMedia('(max-width:640px)').addEventListener('change', () => { if (ENGINE) renderMeta(); });
 window.addEventListener('online', updateOnline);
 window.addEventListener('offline', updateOnline);
 updateOnline();
