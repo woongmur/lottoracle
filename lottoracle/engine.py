@@ -195,6 +195,9 @@ class Engine:
             "bonus_color": ball_color(d.bonus),
             "first_winners": d.first_winners,
             "first_prize": d.first_prize,
+            "prizes": [p.to_dict() for p in d.prizes],
+            "has_prizes": d.has_prizes,
+            "total_sales": d.total_sales,
         }
 
     def stats_payload(self, recent_window: int = 30, coverage: float = 0.8) -> dict[str, Any]:
@@ -240,19 +243,66 @@ class Engine:
             return self.previous
         return next((d for d in self.draws if d.no == no), None)
 
+    def ensure_prizes(self, no: int, timeout: float = 10.0) -> Draw | None:
+        """1~5등 당첨 현황이 없는 회차면 그 회차만 동행복권에서 받아 캐시에 채운다.
+
+        옛 캐시는 1등 정보만 갖고 있어서, 상세를 볼 때 한 회차씩 메꾼다.
+        네트워크가 막혀 있으면 있는 데이터 그대로 돌려준다.
+        """
+        draw = self.find_draw(no)
+        if draw is not None and draw.has_prizes:
+            return draw
+        try:
+            fetched = data.fetch_draw(no, timeout=timeout)
+        except Exception:
+            return draw
+        if fetched is None or not fetched.has_prizes:
+            return draw
+        self.draws = data.merge(self.draws, [fetched])
+        try:
+            data.save_draws(self.draws, self.path)
+        except OSError:
+            pass    # 캐시에 못 써도 이번 응답은 살린다
+        return fetched
+
+    def _graded_rows(self, lines: Sequence[Sequence[int]], draw: Draw) -> tuple[list[dict[str, Any]], bool]:
+        """채점 결과와 '금액이 실제값인지' 여부. 회차 데이터가 있으면 그 회차 실제 당첨금을 쓴다."""
+        rows: list[dict[str, Any]] = []
+        actual = draw.has_prizes
+        for g in bt.grade(lines, draw):
+            prize = g.prize
+            if g.rank and actual:
+                p = draw.prize_of(g.rank)
+                if p is not None:
+                    prize = p.amount
+            rows.append({
+                "numbers": list(g.numbers), "hit": list(g.hit), "bonus_hit": g.bonus_hit,
+                "rank": g.rank, "label": g.label, "prize": prize,
+            })
+        return rows, actual
+
     def grade_payload(self, lines: Sequence[Sequence[int]], draw_no: int | None = None) -> dict[str, Any]:
         draw = self.find_draw(draw_no)
         if draw is None:
             raise ValueError(f"{draw_no}회차 데이터가 없습니다.")
-        graded = bt.grade(lines, draw)
+        if not draw.has_prizes:
+            draw = self.ensure_prizes(draw.no) or draw
+        rows, actual = self._graded_rows(lines, draw)
         return {
             "draw": self.draw_payload(draw),
-            "results": [
-                {"numbers": list(g.numbers), "hit": list(g.hit), "bonus_hit": g.bonus_hit,
-                 "rank": g.rank, "label": g.label, "prize": g.prize}
-                for g in graded
-            ],
-            "total_prize": sum(g.prize for g in graded),
+            "results": rows,
+            "total_prize": sum(r["prize"] for r in rows),
+            "actual_prize": actual,
+        }
+
+    def draw_detail_payload(self, no: int) -> dict[str, Any]:
+        """회차 하나의 1~5등 당첨 현황. 캐시에 없으면 그 회차만 받아 온다."""
+        draw = self.ensure_prizes(no)
+        if draw is None:
+            raise ValueError(f"{no}회차 데이터가 없습니다.")
+        return {
+            "draw": self.draw_payload(draw),
+            "has_prizes": draw.has_prizes,
         }
 
     # ---------------------------------------------------------- 운세 · 프로필
@@ -289,18 +339,17 @@ class Engine:
             out["latest_draw"] = newest.no if newest else None
             return out
 
-        graded = bt.grade(ticket.lines, draw)
-        ranks = [g.rank for g in graded if g.rank]
+        if not draw.has_prizes:
+            draw = self.ensure_prizes(draw.no) or draw
+        rows, actual = self._graded_rows(ticket.lines, draw)
+        ranks = [r["rank"] for r in rows if r["rank"]]
         out.update({
             "status": "graded",
             "draw": self.draw_payload(draw),
-            "results": [
-                {"numbers": list(g.numbers), "hit": list(g.hit), "bonus_hit": g.bonus_hit,
-                 "rank": g.rank, "label": g.label, "prize": g.prize}
-                for g in graded
-            ],
+            "results": rows,
             "best_rank": min(ranks) if ranks else 0,
-            "total_prize": sum(g.prize for g in graded),
+            "total_prize": sum(r["prize"] for r in rows),
+            "actual_prize": actual,
         })
         return out
 
@@ -313,16 +362,13 @@ class Engine:
             draw = self.find_draw(int(p.get("target_draw", 0)))
             item["draw_date"] = draw_date_of(int(p.get("target_draw", 0)))
             if draw is not None:
-                graded = bt.grade(p["lines"], draw)
+                rows, actual = self._graded_rows(p["lines"], draw)
                 item["draw"] = self.draw_payload(draw)
-                item["results"] = [
-                    {"numbers": list(g.numbers), "hit": list(g.hit), "bonus_hit": g.bonus_hit,
-                     "rank": g.rank, "label": g.label, "prize": g.prize}
-                    for g in graded
-                ]
-                ranks = [g.rank for g in graded if g.rank]
+                item["results"] = rows
+                ranks = [r["rank"] for r in rows if r["rank"]]
                 item["best_rank"] = min(ranks) if ranks else 0
-                item["total_prize"] = sum(g.prize for g in graded)
+                item["total_prize"] = sum(r["prize"] for r in rows)
+                item["actual_prize"] = actual
             else:
                 item["draw"] = None
                 item["results"] = None

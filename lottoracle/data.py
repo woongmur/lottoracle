@@ -24,6 +24,28 @@ DEFAULT_CACHE = os.path.join(
 
 
 @dataclass(frozen=True)
+class Prize:
+    """한 등수의 당첨 현황."""
+
+    rank: int
+    winners: int    # 당첨 게임 수
+    amount: int     # 1게임당 당첨금 (원)
+    total: int = 0  # 그 등수 총 당첨금 (원)
+
+    def to_dict(self) -> dict:
+        return {"rank": self.rank, "winners": self.winners, "amount": self.amount, "total": self.total}
+
+    @classmethod
+    def from_dict(cls, raw: dict) -> "Prize":
+        return cls(
+            rank=int(raw["rank"]),
+            winners=int(raw.get("winners", 0)),
+            amount=int(raw.get("amount", 0)),
+            total=int(raw.get("total", 0)),
+        )
+
+
+@dataclass(frozen=True)
 class Draw:
     """한 회차의 당첨 결과."""
 
@@ -33,6 +55,8 @@ class Draw:
     draw_date: str = ""
     first_winners: int = -1     # 1등 당첨 게임 수 (-1: 정보 없음)
     first_prize: int = -1       # 1게임당 1등 당첨금 (원, -1: 정보 없음)
+    prizes: tuple[Prize, ...] = ()   # 1~5등 전체. 빈 튜플이면 아직 안 받아온 회차
+    total_sales: int = -1       # 해당 회차 총 판매금액 (-1: 정보 없음)
 
     def __post_init__(self) -> None:
         if len(self.numbers) != 6:
@@ -44,11 +68,24 @@ class Draw:
                 raise ValueError(f"{self.no}회차: 번호는 1~45 범위여야 합니다 ({n})")
         if self.bonus in self.numbers:
             raise ValueError(f"{self.no}회차: 보너스번호가 당첨번호와 겹칩니다")
+        # 1~5등을 받아온 회차면 1등 요약 필드를 거기에 맞춘다 (옛 캐시와 호환).
+        first = next((p for p in self.prizes if p.rank == 1), None)
+        if first is not None:
+            object.__setattr__(self, "first_winners", first.winners)
+            object.__setattr__(self, "first_prize", first.amount)
 
     @property
     def all_numbers(self) -> tuple[int, ...]:
         """당첨번호 6개 + 보너스."""
         return (*self.numbers, self.bonus)
+
+    @property
+    def has_prizes(self) -> bool:
+        """1~5등 당첨 현황을 갖고 있는 회차인지."""
+        return len(self.prizes) == 5
+
+    def prize_of(self, rank: int) -> Prize | None:
+        return next((p for p in self.prizes if p.rank == rank), None)
 
     def to_dict(self) -> dict:
         out = {
@@ -61,6 +98,10 @@ class Draw:
             out["first_winners"] = self.first_winners
         if self.first_prize >= 0:
             out["first_prize"] = self.first_prize
+        if self.prizes:
+            out["prizes"] = [p.to_dict() for p in self.prizes]
+        if self.total_sales >= 0:
+            out["total_sales"] = self.total_sales
         return out
 
     @classmethod
@@ -72,6 +113,8 @@ class Draw:
             draw_date=str(raw.get("draw_date", "")),
             first_winners=int(raw.get("first_winners", -1)),
             first_prize=int(raw.get("first_prize", -1)),
+            prizes=tuple(Prize.from_dict(p) for p in raw.get("prizes", ())),
+            total_sales=int(raw.get("total_sales", -1)),
         )
 
 
@@ -92,7 +135,9 @@ def _parse_payload(payload: dict) -> Draw | None:
         {"resultCode": null, "resultMessage": null,
          "data": {"list": [{"ltEpsd": 1239, "tm1WnNo": 11, ..., "tm6WnNo": 36,
                             "bnsWnNo": 8, "ltRflYmd": "20260829",
-                            "rnk1WnNope": 13, "rnk1WnAmt": 2214789375, ...}]}}
+                            "rnk1WnNope": 13, "rnk1WnAmt": 2214789375,
+                            "rnk1SumWnAmt": 28792261875, ... "rnk5WnAmt": 5000,
+                            "rlvtEpsdSumNtslAmt": 58883645203}]}}
     """
     items = ((payload or {}).get("data") or {}).get("list") or []
     if not items:
@@ -100,6 +145,16 @@ def _parse_payload(payload: dict) -> Draw | None:
     row = items[0]
     ymd = str(row.get("ltRflYmd") or "")
     draw_date = f"{ymd[:4]}-{ymd[4:6]}-{ymd[6:8]}" if len(ymd) == 8 else ymd
+    prizes = []
+    for rank in range(1, 6):
+        if f"rnk{rank}WnNope" not in row:
+            continue
+        prizes.append(Prize(
+            rank=rank,
+            winners=int(row.get(f"rnk{rank}WnNope", 0) or 0),
+            amount=int(row.get(f"rnk{rank}WnAmt", 0) or 0),
+            total=int(row.get(f"rnk{rank}SumWnAmt", 0) or 0),
+        ))
     return Draw(
         no=int(row["ltEpsd"]),
         numbers=tuple(sorted(int(row[f"tm{i}WnNo"]) for i in range(1, 7))),
@@ -107,6 +162,8 @@ def _parse_payload(payload: dict) -> Draw | None:
         draw_date=draw_date,
         first_winners=int(row.get("rnk1WnNope", -1)),
         first_prize=int(row.get("rnk1WnAmt", -1)),
+        prizes=tuple(prizes),
+        total_sales=int(row.get("rlvtEpsdSumNtslAmt", -1) or -1),
     )
 
 
