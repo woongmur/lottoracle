@@ -12,7 +12,9 @@ from .data import Draw
 from .explain import render_line
 from .filters import Ruleset, check as check_combo
 from .folklore import Folklore
-from .fortune import DISCLAIMER as FORTUNE_DISCLAIMER, TAGLINE, Profile, daily_fortune, zodiac_table
+from .fortune import (
+    DISCLAIMER as FORTUNE_DISCLAIMER, TAGLINE, Profile, branch_of_time, daily_fortune, zodiac_table,
+)
 from .generator import recommend
 from .store import UserStore
 from .metrics import NUMBER_POOL
@@ -230,10 +232,20 @@ def _print_fortune(profile: Profile) -> None:
     print(f"  — {TAGLINE}")
 
 
+def _profile_from_args(args: argparse.Namespace) -> Profile:
+    """--birth/--name/--branch/--hour 로 프로필을 만든다. --hour 는 'HH' 또는 'HH:MM'."""
+    hour = minute = None
+    if args.hour:
+        parts = str(args.hour).split(":")
+        hour, minute = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+    branch = args.branch or (branch_of_time(hour, minute) if hour is not None else "")
+    return Profile(name=args.name, birth_date=args.birth, birth_branch=branch)
+
+
 def cmd_fortune(args: argparse.Namespace) -> int:
     store = UserStore()
     if args.birth:
-        profile = Profile(name=args.name, birth_date=args.birth, birth_hour=args.hour)
+        profile = _profile_from_args(args)
     else:
         profile = store.load_profile()
     if profile.is_empty:
@@ -254,7 +266,7 @@ def cmd_profile(args: argparse.Namespace) -> int:
         if not args.birth:
             print("--birth YYYY-MM-DD 가 필요합니다.")
             return 2
-        prof = store.save_profile(Profile(name=args.name, birth_date=args.birth, birth_hour=args.hour))
+        prof = store.save_profile(_profile_from_args(args))
         print(f"저장했습니다 → {store.dir}/profile.json")
         _print_fortune(prof)
         return 0
@@ -266,7 +278,7 @@ def cmd_profile(args: argparse.Namespace) -> int:
     if prof.is_empty:
         print("저장된 프로필이 없습니다.")
     else:
-        hour = f" · {prof.birth_hour}시생" if prof.birth_hour is not None else ""
+        hour = f" · {prof.hour_label}생" if prof.birth_branch else ""
         print(f"{prof.name or '(이름 없음)'} · {prof.birth_date} · {prof.zodiac}띠{hour}")
         print(f"내 편 번호: {list(prof.personal_numbers())}")
     return 0
@@ -348,14 +360,16 @@ def build_parser() -> argparse.ArgumentParser:
     fortune = sub.add_parser("fortune", help="오늘의 운세 (프로필 또는 --birth)")
     fortune.add_argument("--birth", default="", help="생년월일 YYYY-MM-DD (없으면 저장된 프로필)")
     fortune.add_argument("--name", default="", help="이름 (선택)")
-    fortune.add_argument("--hour", type=int, default=None, help="태어난 시 0~23 (선택)")
+    fortune.add_argument("--hour", default="", help="태어난 시각 HH 또는 HH:MM (선택, 30분 보정으로 12지지 계산)")
+    fortune.add_argument("--branch", default="", help="태어난 시의 12지지 직접 지정 (예: 진 / 진시 / 용)")
     fortune.set_defaults(func=cmd_fortune)
 
     prof = sub.add_parser("profile", help="프로필 보기/저장/삭제 (이 컴퓨터에만 저장)")
     prof.add_argument("action", nargs="?", choices=["show", "set", "clear"], default="show")
     prof.add_argument("--birth", default="", help="생년월일 YYYY-MM-DD")
     prof.add_argument("--name", default="", help="이름 (선택)")
-    prof.add_argument("--hour", type=int, default=None, help="태어난 시 0~23 (선택)")
+    prof.add_argument("--hour", default="", help="태어난 시각 HH 또는 HH:MM (선택, 30분 보정으로 12지지 계산)")
+    prof.add_argument("--branch", default="", help="태어난 시의 12지지 직접 지정 (예: 진 / 진시 / 용)")
     prof.set_defaults(func=cmd_profile)
 
     fetch = sub.add_parser("fetch", parents=[common], help="동행복권에서 회차 데이터 수집")
