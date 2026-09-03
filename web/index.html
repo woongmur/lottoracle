@@ -277,6 +277,7 @@
           <button class="ghost" id="shop-locate">내 위치로</button>
         </div>
         <p class="kv" style="margin-top:12px">위치 권한은 선택입니다. 동네 이름으로 검색해도 됩니다. 검색은 카카오맵을 통해 이루어지고, 이 앱은 위치를 저장하지 않습니다.</p>
+        <div id="shop-status" class="kv"></div>
         <div id="shop-error"></div>
         <div id="shop-list"></div>
       </div>
@@ -860,27 +861,91 @@ function initShops() {
     places = new kakao.maps.services.Places();
     $('#shop-search').addEventListener('click', () => searchShops($('#shop-query').value.trim(), null));
     $('#shop-query').addEventListener('keydown', e => { if (e.key === 'Enter') $('#shop-search').click(); });
-    $('#shop-locate').addEventListener('click', () => {
-      if (!navigator.geolocation) return showErr('#shop-error', '이 브라우저는 위치를 지원하지 않습니다.');
-      navigator.geolocation.getCurrentPosition(
-        pos => searchShops('', new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude)),
-        () => showErr('#shop-error', '위치를 가져오지 못했습니다. 동네 이름으로 검색해 보세요.'));
-    });
+    $('#shop-locate').addEventListener('click', locateMe);
   });
   document.head.appendChild(s);
 }
-function searchShops(query, loc) {
+
+/** 현재 위치를 잡아 지도에 표시하고 주변을 검색한다. */
+function locateMe() {
+  const status = $('#shop-status');
   showErr('#shop-error', null);
-  const opts = loc ? { location: loc, radius: 3000, sort: kakao.maps.services.SortBy.DISTANCE } : {};
+  // 위치는 HTTPS(또는 localhost)에서만 허용된다.
+  if (!window.isSecureContext) {
+    status.innerHTML = '<span style="color:var(--warn)">이 주소에서는 위치를 쓸 수 없습니다 (HTTPS 필요). 동네 이름으로 검색해 주세요.</span>';
+    return;
+  }
+  if (!navigator.geolocation) {
+    status.textContent = '이 브라우저는 위치를 지원하지 않습니다. 동네 이름으로 검색해 주세요.';
+    return;
+  }
+  status.innerHTML = '<span class="spin"></span>현재 위치를 찾는 중…';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      const here = new kakao.maps.LatLng(latitude, longitude);
+      showHereMarker(here, accuracy);
+      kmap.setCenter(here);
+      kmap.setLevel(5);
+      status.innerHTML = accuracy > 3000
+        ? `현재 위치를 대략 ${fmt(Math.round(accuracy))}m 오차로 잡았습니다. PC 는 인터넷 주소로 추정해 부정확할 수 있으니, 빗나가면 동네 이름으로 검색해 주세요.`
+        : `현재 위치 기준 (오차 약 ${fmt(Math.round(accuracy))}m)`;
+      searchShops('', here);
+    },
+    err => {
+      const guide = {
+        1: '위치 권한이 거부되어 있습니다. 브라우저 주소창의 자물쇠 아이콘에서 위치를 허용으로 바꾼 뒤 다시 눌러 주세요.',
+        2: '현재 위치를 확인할 수 없습니다. 실내이거나 신호가 약할 수 있습니다.',
+        3: '위치 확인이 오래 걸립니다. 잠시 후 다시 시도해 주세요.',
+      }[err.code] || '위치를 가져오지 못했습니다.';
+      status.innerHTML = `<span style="color:var(--warn)">${esc(guide)}</span> 동네 이름으로 검색해도 됩니다.`;
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+  );
+}
+
+let hereMarker = null, hereCircle = null;
+/** 내 위치를 파란 점과 오차 반경으로 표시한다. */
+function showHereMarker(pos, accuracy) {
+  hereMarker?.setMap(null);
+  hereCircle?.setMap(null);
+  hereMarker = new kakao.maps.Marker({
+    map: kmap, position: pos, zIndex: 10, title: '현재 위치',
+    image: new kakao.maps.MarkerImage(
+      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+           <circle cx="12" cy="12" r="7" fill="#7aa2ff" stroke="#fff" stroke-width="3"/></svg>`),
+      new kakao.maps.Size(24, 24), { offset: new kakao.maps.Point(12, 12) }),
+  });
+  if (accuracy && accuracy > 50) {
+    hereCircle = new kakao.maps.Circle({
+      map: kmap, center: pos, radius: Math.min(accuracy, 5000),
+      strokeWeight: 1, strokeColor: '#7aa2ff', strokeOpacity: 0.6,
+      fillColor: '#7aa2ff', fillOpacity: 0.12,
+    });
+  }
+}
+
+function searchShops(query, loc, radius = 2000) {
+  showErr('#shop-error', null);
+  const opts = loc ? { location: loc, radius, sort: kakao.maps.services.SortBy.DISTANCE } : {};
   places.keywordSearch((query ? query + ' ' : '') + '복권판매점', (data, status) => {
-    if (status !== kakao.maps.services.Status.OK) { $('#shop-list').innerHTML = '<p class="kv">검색 결과가 없습니다.</p>'; return; }
+    if (status !== kakao.maps.services.Status.OK) {
+      // 내 위치 검색인데 결과가 없으면 반경을 넓혀 한 번 더 (최대 20km)
+      if (loc && radius < 20000) return searchShops(query, loc, radius * 2.5);
+      $('#shop-list').innerHTML = '<p class="kv">검색 결과가 없습니다. 동네 이름이나 역 이름으로 찾아보세요.</p>';
+      return;
+    }
+    if (loc) {
+      $('#shop-status').innerHTML += ` · 반경 ${radius >= 1000 ? (radius / 1000) + 'km' : radius + 'm'} 안 ${data.length}곳`;
+    }
     markers.forEach(m => m.setMap(null)); markers = [];
     const bounds = new kakao.maps.LatLngBounds();
     $('#shop-list').innerHTML = data.map((d, i) => `<div class="shop" data-i="${i}"><b>${esc(d.place_name)}</b><span class="kv">${esc(d.road_address_name || d.address_name)}${d.phone ? ' · ' + esc(d.phone) : ''}${d.distance ? ' · ' + fmt(d.distance) + 'm' : ''}</span></div>`).join('');
     data.forEach((d, i) => {
       const pos = new kakao.maps.LatLng(d.y, d.x);
       const m = new kakao.maps.Marker({ map: kmap, position: pos, title: d.place_name }); markers.push(m); bounds.extend(pos);
-      const iw = new kakao.maps.InfoWindow({ content: `<div style="padding:6px 10px;font-size:12px;color:#111">${esc(d.place_name)}<br><a href="${d.place_url}" target="_blank" rel="noopener">상세</a></div>` });
+      const iw = new kakao.maps.InfoWindow({ content: `<div style="padding:6px 10px;font-size:12px;color:#111">${esc(d.place_name)}<br><a href="${d.place_url}" target="_blank" rel="noopener">상세 보기</a></div>` });
       kakao.maps.event.addListener(m, 'click', () => iw.open(kmap, m));
       $('#shop-list').querySelector(`[data-i="${i}"]`).addEventListener('click', () => { kmap.panTo(pos); iw.open(kmap, m); });
     });
