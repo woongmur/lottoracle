@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lottoracle import data, filters, metrics, model, stats
+from lottoracle import data, filters, folklore, metrics, model, stats, strategies
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "web", "test", "golden")
@@ -163,6 +163,62 @@ def main() -> int:
             "median": ref[len(ref) // 2],
         },
     })
+    # 5) 민간속설 — 난수가 없는 부분 전부
+    fl = folklore.Folklore(
+        lucky=(7, 13), avoid=(4,), dream="돼지꿈", birthday="1990-05-21", zodiac="말",
+    )
+    fl_off = folklore.Folklore(enabled=False)
+    prev_draw = data.Draw(no=1239, numbers=(11, 13, 22, 32, 33, 36), bonus=8)
+    dump("folklore.json", {
+        "ballColor": {str(n): folklore.ball_color(n) for n in (1, 10, 11, 20, 21, 30, 31, 40, 41, 45)},
+        "primes": list(folklore.PRIME_NUMBERS),
+        "fibonacci": list(folklore.FIBONACCI_NUMBERS),
+        "twins": list(metrics.TWIN_NUMBERS),
+        "slipPositions": {str(n): list(folklore.slip_position(n)) for n in (1, 7, 8, 22, 45)},
+        "neighborsOfPrev": sorted(folklore.neighbor_numbers(prev_draw)),
+        "dream": {k: list(folklore.dream_numbers(k)) for k in ("돼지", "돼지꿈", "용", "없는키워드", "")},
+        "zodiac": {k: list(folklore.zodiac_numbers(k)) for k in ("말", "말띠", "1990", "쥐", "")},
+        "birthday": {k: list(folklore.birthday_numbers(k)) for k in ("1990-05-21", "2000-11-21", "")},
+        "zodiacOfYear": {str(y): folklore.zodiac_of_year(y) for y in (1990, 2000, 2026, 1988)},
+        "cases": [
+            {
+                "numbers": s,
+                "colorCounts": folklore.color_counts(s),
+                "colorSignature": folklore.color_signature(s),
+                "isSlipLine": folklore.is_slip_line(s),
+                "slipCluster": folklore.slip_cluster_penalty(s),
+                "sameEndingGroups": {str(k): v for k, v in folklore.same_ending_groups(s).items()},
+                "acceptsOn": folklore.accepts(fl, s),
+                "acceptsLenient": folklore.accepts(fl, s, lenient=True),
+                "luckScoreOn": folklore.luck_score(fl, s, prev_draw),
+                "luckScoreOff": folklore.luck_score(fl_off, s, prev_draw),
+                "luckTags": folklore.luck_tags(fl, s, prev_draw),
+            }
+            for s in SAMPLES
+        ],
+        "wishNumbers": list(fl.wish_numbers()),
+        "excluded": sorted(fl.excluded()),
+        "describe": fl.describe(),
+        "multipliersOn": {str(n): v for n, v in folklore.multipliers(fl, prev_draw).items()},
+        "multipliersOff": {str(n): v for n, v in folklore.multipliers(fl_off, prev_draw).items()},
+        "multipliersNoPrev": {str(n): v for n, v in folklore.multipliers(fl, None).items()},
+    })
+
+    # 6) 전략 정의값
+    dump("strategies.json", {
+        "keys": [s.key for s in strategies.DEFAULT_STRATEGIES],
+        "items": [
+            {
+                "key": s.key, "name": s.name, "concept": s.concept,
+                "wFrequency": s.w_frequency, "wRecent": s.w_recent, "wGap": s.w_gap,
+                "wCompanion": s.w_companion, "wTwin": s.w_twin,
+                "carryoverTarget": s.carryover_target, "usePrevBonus": s.use_prev_bonus,
+                "rules": rules_dict(s.rules),
+            }
+            for s in strategies.DEFAULT_STRATEGIES
+        ],
+    })
+
     print("완료")
     return 0
 

@@ -42,7 +42,16 @@ python3 tools/gen_golden.py    # 저장소 루트에서
 | `filters.js` | 완료 — 골든 대조 |
 | `stats.js` | 완료 — 골든 대조 |
 | `model.js` | 완료 — 골든 대조 |
-| `rng.js` · `strategies.js` · `generator.js` | 예정 |
-| `folklore.js` · `fortune.js` · `explain.js` | 예정 |
+| `rng.js` | 완료 — 시드 결정론·분포 검사 |
+| `folklore.js` | 완료 — 골든 대조 |
+| `strategies.js` | 완료 — 골든 대조 |
+| `generator.js` | 완료 — 성질 기반 검사 (난수라 값 대조 불가) |
+| `fortune.js` · `explain.js` | 예정 |
 | `grade.js` · `qr.js` · `engine.js` | 예정 |
 | UI (`index.html`) · PWA · 배포 | 예정 |
+
+## public/
+
+| 파일 | 내용 |
+|---|---|
+| `privacy.html` | 개인정보처리방침. 앱 스토어 등록에 URL 이 필요하고, 광고를 붙이면 더 중요해진다 |

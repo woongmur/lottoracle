@@ -1,0 +1,241 @@
+{
+ "items": [
+  {
+   "carryoverTarget": 0,
+   "concept": "평균치 정중앙 조준 — 합계·홀짝·고저·구간을 모두 최빈값에 맞춘 기본형",
+   "key": "balance",
+   "name": "안정형 밸런스",
+   "rules": {
+    "acMin": 7,
+    "carryoverRange": [
+     0,
+     2
+    ],
+    "endSumRange": [
+     15,
+     35
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     2,
+     4
+    ],
+    "maxConsecutivePairs": 1,
+    "maxPerZone": 3,
+    "maxRun": 2,
+    "maxSameEnding": 2,
+    "minZones": 3,
+    "mult3Range": [
+     0,
+     4
+    ],
+    "oddRange": [
+     2,
+     4
+    ],
+    "spreadMin": 20,
+    "sumRange": [
+     100,
+     175
+    ]
+   },
+   "usePrevBonus": false,
+   "wCompanion": 0.5,
+   "wFrequency": 0.5,
+   "wGap": 0.0,
+   "wRecent": 0.2,
+   "wTwin": 0.0
+  },
+  {
+   "carryoverTarget": 2,
+   "concept": "직전 회차 당첨수 2개를 이월수로 채포하고 중심 구간으로 묶는 조합",
+   "key": "carryover",
+   "name": "이월수 채포형",
+   "rules": {
+    "acMin": 7,
+    "carryoverRange": [
+     1,
+     3
+    ],
+    "endSumRange": [
+     15,
+     35
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     2,
+     4
+    ],
+    "maxConsecutivePairs": 1,
+    "maxPerZone": 3,
+    "maxRun": 2,
+    "maxSameEnding": 2,
+    "minZones": 3,
+    "mult3Range": [
+     0,
+     4
+    ],
+    "oddRange": [
+     2,
+     4
+    ],
+    "spreadMin": 20,
+    "sumRange": [
+     100,
+     175
+    ]
+   },
+   "usePrevBonus": false,
+   "wCompanion": 0.7,
+   "wFrequency": 0.4,
+   "wGap": 0.0,
+   "wRecent": 0.4,
+   "wTwin": 0.0
+  },
+  {
+   "carryoverTarget": 1,
+   "concept": "직전 보너스볼을 징검다리로 끌어오고 쌍둥이수(11·22·33·44)를 얹은 그물망",
+   "key": "bridge",
+   "name": "징검다리 저격형",
+   "rules": {
+    "acMin": 7,
+    "carryoverRange": [
+     1,
+     3
+    ],
+    "endSumRange": [
+     15,
+     35
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     2,
+     4
+    ],
+    "maxConsecutivePairs": 1,
+    "maxPerZone": 3,
+    "maxRun": 2,
+    "maxSameEnding": 2,
+    "minZones": 3,
+    "mult3Range": [
+     0,
+     4
+    ],
+    "oddRange": [
+     2,
+     4
+    ],
+    "spreadMin": 20,
+    "sumRange": [
+     100,
+     175
+    ]
+   },
+   "usePrevBonus": true,
+   "wCompanion": 0.6,
+   "wFrequency": 0.3,
+   "wGap": 0.0,
+   "wRecent": 0.3,
+   "wTwin": 1.2
+  },
+  {
+   "carryoverTarget": 1,
+   "concept": "이월 파동 1개를 고정하고 장기 미출현수로 허리를 채운 변칙 조합",
+   "key": "variant",
+   "name": "변칙 조준형",
+   "rules": {
+    "acMin": 7,
+    "carryoverRange": [
+     1,
+     3
+    ],
+    "endSumRange": [
+     15,
+     35
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     2,
+     4
+    ],
+    "maxConsecutivePairs": 1,
+    "maxPerZone": 3,
+    "maxRun": 2,
+    "maxSameEnding": 2,
+    "minZones": 3,
+    "mult3Range": [
+     0,
+     4
+    ],
+    "oddRange": [
+     2,
+     4
+    ],
+    "spreadMin": 20,
+    "sumRange": [
+     100,
+     175
+    ]
+   },
+   "usePrevBonus": false,
+   "wCompanion": 0.3,
+   "wFrequency": -0.2,
+   "wGap": 0.9,
+   "wRecent": -0.3,
+   "wTwin": 0.0
+  },
+  {
+   "carryoverTarget": 0,
+   "concept": "이월수를 완전히 끊고 장기 미출현·저빈도 번호로 구성한 롱샷",
+   "key": "aggressive",
+   "name": "공격형 라인업",
+   "rules": {
+    "acMin": 8,
+    "carryoverRange": [
+     0,
+     0
+    ],
+    "endSumRange": [
+     12,
+     40
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     2,
+     4
+    ],
+    "maxConsecutivePairs": 1,
+    "maxPerZone": 3,
+    "maxRun": 2,
+    "maxSameEnding": 2,
+    "minZones": 3,
+    "mult3Range": [
+     0,
+     4
+    ],
+    "oddRange": [
+     2,
+     4
+    ],
+    "spreadMin": 20,
+    "sumRange": [
+     90,
+     190
+    ]
+   },
+   "usePrevBonus": false,
+   "wCompanion": 0.2,
+   "wFrequency": -0.5,
+   "wGap": 1.2,
+   "wRecent": -0.6,
+   "wTwin": 0.0
+  }
+ ],
+ "keys": [
+  "balance",
+  "carryover",
+  "bridge",
+  "variant",
+  "aggressive"
+ ]
+}
