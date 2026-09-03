@@ -3,3 +3,9 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+
+# 사용자 데이터 (이 기기에만 저장)
+data/profile.json
+data/picks.json
+data/settings.json
+data/*.tmp

@@ -209,3 +209,44 @@ class CliTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FetchParseTest(unittest.TestCase):
+    """동행복권 selectPstLt645Info.do 응답 파싱 (네트워크 없이)."""
+
+    SAMPLE = {
+        "resultCode": None,
+        "resultMessage": None,
+        "data": {
+            "list": [
+                {
+                    "ltEpsd": 1239,
+                    "tm1WnNo": 11, "tm2WnNo": 13, "tm3WnNo": 22,
+                    "tm4WnNo": 32, "tm5WnNo": 33, "tm6WnNo": 36,
+                    "bnsWnNo": 8,
+                    "ltRflYmd": "20260829",
+                    "rnk1WnNope": 13,
+                    "rnk1WnAmt": 2214789375,
+                }
+            ]
+        },
+    }
+
+    def test_parse_draw(self):
+        from lottoracle.data import _parse_payload
+
+        d = _parse_payload(self.SAMPLE)
+        self.assertIsNotNone(d)
+        self.assertEqual(d.no, 1239)
+        self.assertEqual(d.numbers, (11, 13, 22, 32, 33, 36))
+        self.assertEqual(d.bonus, 8)
+        self.assertEqual(d.draw_date, "2026-08-29")
+        self.assertEqual(d.first_winners, 13)
+        self.assertEqual(d.first_prize, 2214789375)
+
+    def test_parse_missing_draw(self):
+        from lottoracle.data import _parse_payload
+
+        self.assertIsNone(_parse_payload({"data": {"list": []}}))
+        self.assertIsNone(_parse_payload({"data": None}))
+        self.assertIsNone(_parse_payload({}))

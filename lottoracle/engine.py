@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any, Sequence
 
 from . import __version__, backtest as bt, data, model, stats as stats_mod
 from .data import Draw
 from .explain import analysis_note, zone_phrase
 from .folklore import Folklore, color_signature, ball_color
+from .fortune import Profile, daily_fortune, zodiac_table
+from .store import UserStore
 from .generator import Line, recommend
 from .metrics import NUMBER_POOL
 from .strategies import DEFAULT_STRATEGIES, by_key
@@ -87,6 +89,8 @@ class Options:
 @dataclass
 class Engine:
     draws: list[Draw] = field(default_factory=list)
+    path: str = data.DEFAULT_CACHE            # 회차 캐시 파일 (refresh 가 여기에 이어 쓴다)
+    store: UserStore = field(default_factory=UserStore)  # 프로필·내 번호·설정
 
     # ---------------------------------------------------------- 준비
     @classmethod
@@ -95,11 +99,25 @@ class Engine:
         draws = data.load_any(path) if path != data.DEFAULT_CACHE else data.load_draws(path, required=False)
         if not draws and not offline:
             draws = data.update_cache(path)
-        return cls(draws=draws)
+        return cls(draws=draws, path=path)
 
     @property
     def previous(self) -> Draw | None:
         return data.latest(self.draws)
+
+    def refresh(self, timeout: float = 10.0) -> dict[str, Any]:
+        """동행복권에서 새 회차만 이어받아 캐시와 메모리를 갱신한다."""
+        if not self.path.lower().endswith(".json"):
+            raise ValueError("xlsx/csv 입력으로 실행 중에는 온라인 갱신을 할 수 없습니다.")
+        before = self.previous.no if self.previous else 0
+        self.draws = data.update_cache(self.path, timeout=timeout)
+        after = self.previous.no if self.previous else 0
+        return {
+            "before": before,
+            "after": after,
+            "added": max(0, after - before),
+            "previous": self.draw_payload(self.previous) if self.previous else None,
+        }
 
     def prepare(self, opts: Options):
         st = stats_mod.build(self.draws, recent_window=opts.recent_window)
@@ -236,6 +254,47 @@ class Engine:
             ],
             "total_prize": sum(g.prize for g in graded),
         }
+
+    # ---------------------------------------------------------- 운세 · 프로필
+    def fortune_payload(self, profile: Profile | None = None, today: date | None = None) -> dict[str, Any]:
+        profile = self.store.load_profile() if profile is None else profile
+        f = daily_fortune(profile, today)
+        prev = self.previous
+        return {
+            "profile": profile.to_dict(),
+            "has_profile": not profile.is_empty,
+            "fortune": f.to_dict(),
+            "recommend_inputs": profile.recommend_inputs(today) if not profile.is_empty else None,
+            "zodiac_table": zodiac_table(today),
+            "next_draw_no": (prev.no + 1) if prev else None,
+            "next_draw_date": draw_date_of(prev.no + 1) if prev else None,
+        }
+
+    # ---------------------------------------------------------- 내 번호
+    def picks_payload(self) -> list[dict[str, Any]]:
+        """저장한 조합 목록. 목표 회차가 추첨됐으면 자동으로 채점해 붙인다."""
+        out = []
+        for p in sorted(self.store.list_picks(), key=lambda r: (r.get("target_draw", 0), r.get("saved_at", "")), reverse=True):
+            item = dict(p)
+            draw = self.find_draw(int(p.get("target_draw", 0)))
+            item["draw_date"] = draw_date_of(int(p.get("target_draw", 0)))
+            if draw is not None:
+                graded = bt.grade(p["lines"], draw)
+                item["draw"] = self.draw_payload(draw)
+                item["results"] = [
+                    {"numbers": list(g.numbers), "hit": list(g.hit), "bonus_hit": g.bonus_hit,
+                     "rank": g.rank, "label": g.label, "prize": g.prize}
+                    for g in graded
+                ]
+                ranks = [g.rank for g in graded if g.rank]
+                item["best_rank"] = min(ranks) if ranks else 0
+                item["total_prize"] = sum(g.prize for g in graded)
+            else:
+                item["draw"] = None
+                item["results"] = None
+            item["colors"] = [[ball_color(n) for n in row] for row in p["lines"]]
+            out.append(item)
+        return out
 
     # ---------------------------------------------------------- 백테스트
     def backtest(self, opts: Options, rounds: int = 52, seed: int | None = None) -> bt.BacktestResult:
