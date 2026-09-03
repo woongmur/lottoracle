@@ -12,7 +12,9 @@ from .data import Draw
 from .explain import render_line
 from .filters import Ruleset, check as check_combo
 from .folklore import Folklore
+from .fortune import DISCLAIMER as FORTUNE_DISCLAIMER, TAGLINE, Profile, daily_fortune, zodiac_table
 from .generator import recommend
+from .store import UserStore
 from .metrics import NUMBER_POOL
 from .strategies import DEFAULT_STRATEGIES, by_key
 
@@ -110,15 +112,24 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def _options(args: argparse.Namespace) -> Options:
+    lucky, birthday, zodiac = args.lucky, args.birthday, args.zodiac
+    if getattr(args, "profile", False):
+        prof = UserStore().load_profile()
+        if prof.is_empty:
+            raise ValueError("저장된 프로필이 없습니다. `python -m lottoracle profile set --birth 1990-05-21` 로 만드세요.")
+        inputs = prof.recommend_inputs()
+        birthday = birthday or inputs["birthday"]
+        zodiac = zodiac or inputs["zodiac"]
+        lucky = tuple(sorted(set(lucky) | set(inputs["lucky"])))
     return Options(
         lines=args.lines,
         seed=args.seed,
         strategies=tuple(args.strategy or ()),
-        lucky=args.lucky,
+        lucky=lucky,
         avoid=args.avoid,
         dream=args.dream,
-        birthday=args.birthday,
-        zodiac=args.zodiac,
+        birthday=birthday,
+        zodiac=zodiac,
         folklore=not args.no_folklore,
         coverage=args.coverage,
         calibrate=not args.manual_rules,
@@ -207,6 +218,60 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_fortune(profile: Profile) -> None:
+    f = daily_fortune(profile)
+    who = f"{profile.name}님의 오늘" if profile.name else "오늘의 기운"
+    tags = f"  ({' · '.join(f.tags)})" if f.tags else ""
+    print(f"{f.date}  {who}{tags}")
+    print(f"{'●' * f.grade}{'○' * (5 - f.grade)}  {f.label}")
+    print(f"  {f.sentence}")
+    print(f"  오늘의 숫자 {list(f.numbers)} · 오늘의 색 {f.color} · 한 단어 '{f.keyword}'")
+    print(f"  {f.tip}")
+    print(f"  — {TAGLINE}")
+
+
+def cmd_fortune(args: argparse.Namespace) -> int:
+    store = UserStore()
+    if args.birth:
+        profile = Profile(name=args.name, birth_date=args.birth, birth_hour=args.hour)
+    else:
+        profile = store.load_profile()
+    if profile.is_empty:
+        print("프로필이 없습니다. --birth 1990-05-21 [--name 이름 --hour 4] 를 붙이거나 `profile set` 으로 저장하세요.")
+        print()
+    else:
+        _print_fortune(profile)
+        print()
+    print("열두 띠의 오늘")
+    for z in zodiac_table():
+        print(f"  {z['zodiac']:>3}띠 {'●' * z['grade']}{'○' * (5 - z['grade'])}  {z['label']} · {z['short']}  {z['numbers']}")
+    return 0
+
+
+def cmd_profile(args: argparse.Namespace) -> int:
+    store = UserStore()
+    if args.action == "set":
+        if not args.birth:
+            print("--birth YYYY-MM-DD 가 필요합니다.")
+            return 2
+        prof = store.save_profile(Profile(name=args.name, birth_date=args.birth, birth_hour=args.hour))
+        print(f"저장했습니다 → {store.dir}/profile.json")
+        _print_fortune(prof)
+        return 0
+    if args.action == "clear":
+        store.clear_profile()
+        print("프로필을 삭제했습니다.")
+        return 0
+    prof = store.load_profile()
+    if prof.is_empty:
+        print("저장된 프로필이 없습니다.")
+    else:
+        hour = f" · {prof.birth_hour}시생" if prof.birth_hour is not None else ""
+        print(f"{prof.name or '(이름 없음)'} · {prof.birth_date} · {prof.zodiac}띠{hour}")
+        print(f"내 편 번호: {list(prof.personal_numbers())}")
+    return 0
+
+
 def cmd_gui(args: argparse.Namespace) -> int:
     from .web import serve
 
@@ -254,6 +319,7 @@ def build_parser() -> argparse.ArgumentParser:
     tuning.add_argument("--temperature", type=float, default=1.0,
                         help="선택 온도 — 낮을수록 가장 흔한 모양만 (기본 1.0)")
     tuning.add_argument("--max-overlap", type=int, default=3, help="줄 간 최대 중복 번호 수 (기본 3)")
+    tuning.add_argument("--profile", action="store_true", help="저장된 프로필로 생일·띠·오늘의 숫자를 채움")
 
     sub = parser.add_subparsers(dest="command")
 
@@ -279,6 +345,19 @@ def build_parser() -> argparse.ArgumentParser:
     gui.add_argument("--no-browser", action="store_true", help="브라우저 자동 열기 안 함")
     gui.set_defaults(func=cmd_gui)
 
+    fortune = sub.add_parser("fortune", help="오늘의 운세 (프로필 또는 --birth)")
+    fortune.add_argument("--birth", default="", help="생년월일 YYYY-MM-DD (없으면 저장된 프로필)")
+    fortune.add_argument("--name", default="", help="이름 (선택)")
+    fortune.add_argument("--hour", type=int, default=None, help="태어난 시 0~23 (선택)")
+    fortune.set_defaults(func=cmd_fortune)
+
+    prof = sub.add_parser("profile", help="프로필 보기/저장/삭제 (이 컴퓨터에만 저장)")
+    prof.add_argument("action", nargs="?", choices=["show", "set", "clear"], default="show")
+    prof.add_argument("--birth", default="", help="생년월일 YYYY-MM-DD")
+    prof.add_argument("--name", default="", help="이름 (선택)")
+    prof.add_argument("--hour", type=int, default=None, help="태어난 시 0~23 (선택)")
+    prof.set_defaults(func=cmd_profile)
+
     fetch = sub.add_parser("fetch", parents=[common], help="동행복권에서 회차 데이터 수집")
     fetch.set_defaults(func=cmd_fetch)
 
@@ -296,7 +375,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
     known = {"recommend", "fetch", "stats", "check", "import", "grade", "backtest", "gui",
-             "-h", "--help", "--version"}
+             "fortune", "profile", "-h", "--help", "--version"}
     if not argv or argv[0] not in known:
         argv.insert(0, "recommend")  # 서브명령 생략 시 recommend
     args = parser.parse_args(argv)

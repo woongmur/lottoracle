@@ -3,30 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lottoracle · 로또 6/45 추천기</title>
+<title>lottoracle · 오늘의 운세와 로또 6/45 조합</title>
 <style>
   :root{
     --bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2a2f3a;--text:#e8eaf0;--muted:#9aa3b2;
-    --accent:#7aa2ff;--ok:#6fd39a;--warn:#ffb86b;--bad:#ff7b7b;
+    --accent:#7aa2ff;--ok:#6fd39a;--warn:#ffb86b;--bad:#ff7b7b;--gold:#f5d76e;
     --yellow:#fbc400;--blue:#69c8f2;--red:#ff7272;--gray:#aaaaaa;--green:#b0d840;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
-  header{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
   header h1{margin:0;font-size:20px;letter-spacing:.3px}
   header h1 span{color:var(--accent)}
-  header .meta{color:var(--muted);font-size:13px}
-  nav{display:flex;gap:4px;padding:10px 24px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  nav button{background:none;border:0;color:var(--muted);padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:2px solid transparent}
+  header .meta{color:var(--muted);font-size:13px;flex:1}
+  header .status{color:var(--muted);font-size:12px}
+  nav{display:flex;gap:2px;padding:8px 24px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;overflow-x:auto}
+  nav button{background:none;border:0;color:var(--muted);padding:10px 12px;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
   nav button.active{color:var(--text);border-bottom-color:var(--accent)}
   main{padding:20px 24px;max-width:1180px;margin:0 auto}
   section{display:none}section.active{display:block}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
-  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}main{padding:14px}header,nav{padding-left:14px;padding-right:14px}}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
   .panel h3{margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
   label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
-  input[type=text],input[type=number],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:8px;font-size:14px}
+  input[type=text],input[type=number],input[type=date],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:8px;font-size:14px}
   input[type=range]{width:100%}
   .row{display:flex;gap:10px}.row>*{flex:1}
   .check{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13.5px;color:var(--text)}
@@ -34,6 +35,8 @@
   button.primary{width:100%;margin-top:14px;background:var(--accent);color:#0b0e14;border:0;padding:11px;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer}
   button.primary:disabled{opacity:.5;cursor:wait}
   button.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  button.ghost:disabled{opacity:.5}
+  a.ghost{display:inline-block;background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:8px;font-size:13px;text-decoration:none}
   .ball{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-weight:800;font-size:15px;color:#111;margin-right:6px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
   .ball.sm{width:28px;height:28px;font-size:12px;margin-right:4px}
   .c-노랑{background:var(--yellow)}.c-파랑{background:var(--blue)}.c-빨강{background:var(--red)}.c-회색{background:var(--gray)}.c-초록{background:var(--green)}
@@ -53,10 +56,12 @@
   .bar.luck>i{background:var(--warn)}
   .mini{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
   .mini .kv b{color:var(--text)}
+  .softbox{background:#1a1d26;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:10px 14px;font-size:12.5px;margin:12px 0}
   .warnbox{background:#2a1f12;border:1px solid #5a3f1a;color:#ffd9a8;border-radius:10px;padding:12px 14px;font-size:13px;margin:0 0 16px}
   .err{background:#2a1515;border:1px solid #6a2525;color:#ffb4b4;border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0}
+  .okbox{background:#12261b;border:1px solid #1f5a36;color:#b8f0cf;border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
   th{color:var(--muted);font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums}
   .freq{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
@@ -72,37 +77,77 @@
   .rank-1,.rank-2,.rank-3{color:var(--ok);font-weight:700}.rank-4,.rank-5{color:var(--warn);font-weight:700}.rank-0{color:var(--muted)}
   .hit{outline:3px solid var(--ok);outline-offset:1px}
   footer{color:var(--muted);font-size:12px;padding:20px 24px;border-top:1px solid var(--line);text-align:center}
+  footer a{color:var(--muted)}
   .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--muted);border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
+  /* 운세 */
+  .fortune{background:linear-gradient(160deg,#1b1f2c,#141720);border:1px solid var(--line);border-radius:16px;padding:26px 28px;margin-bottom:16px}
+  .fortune .date{color:var(--muted);font-size:13px}
+  .fortune .greet{font-size:22px;font-weight:800;margin:4px 0 14px}
+  .fortune .dots{letter-spacing:4px;color:var(--gold);font-size:18px;margin-right:10px}
+  .fortune .label{font-size:17px;font-weight:700;display:inline-block}
+  .fortune .sentence{font-size:16px;line-height:1.7;margin:12px 0 18px;color:#e2e6f0}
+  .fortune .items{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:10px 0 18px}
+  .fortune .item{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .fortune .item .k{color:var(--muted);font-size:12px;margin-bottom:6px}
+  .fortune .swatch{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:-4px;margin-right:6px}
+  .fortune .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .fortune .actions .primary{width:auto;margin:0;padding:11px 18px}
+  .fortune .tagline{color:var(--muted);font-size:12px;margin-top:16px;text-align:right;font-style:italic}
+  .ztable{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .ztable .z{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .ztable .z.me{border-color:var(--gold)}
+  .ztable .z b{font-size:14px}
+  .ztable .z .dots{color:var(--gold);letter-spacing:2px;font-size:13px;margin-left:6px}
+  .ztable .z .kv{margin-top:4px}
+  .badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+  .badge.wait{background:#2a2f3a;color:var(--muted)}
+  .badge.win{background:#1f5a36;color:#b8f0cf}
+  .badge.lose{background:#3a2a2a;color:#e8b4b4}
+  #map{width:100%;height:440px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+  .shop{padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .shop:hover{background:rgba(255,255,255,.03)}
+  .shop b{display:block}
 </style>
 </head>
 <body>
 <header>
   <h1>lotto<span>racle</span></h1>
   <div class="meta" id="meta">불러오는 중…</div>
+  <div class="status" id="refresh-status"></div>
 </header>
 <nav>
-  <button data-tab="recommend" class="active">추천</button>
+  <button data-tab="fortune" class="active">오늘의 운세</button>
+  <button data-tab="recommend">번호 추천</button>
+  <button data-tab="picks">내 번호</button>
   <button data-tab="stats">통계</button>
   <button data-tab="grade">채점</button>
   <button data-tab="backtest">백테스트</button>
   <button data-tab="draws">회차</button>
+  <button data-tab="shops">복권방</button>
+  <button data-tab="info">설정 · 정보</button>
 </nav>
 <main>
-  <div class="warnbox">로또는 매 회차 독립적인 무작위 추첨입니다. 1등 확률은 조합과 무관하게 <b>1/8,145,060</b>으로 고정이며, 이 화면의 통계·속설 로직은 그 확률을 바꾸지 못합니다. 잃어도 괜찮은 금액까지만 · 도박문제 상담 1336</div>
+
+  <!-- ============ 운세 ============ -->
+  <section id="tab-fortune" class="active">
+    <div id="fortune-body"><span class="spin"></span>오늘의 기운을 읽는 중…</div>
+    <div class="panel" style="margin-top:6px"><h3>열두 띠의 오늘</h3><div id="zodiac-table" class="ztable"></div></div>
+  </section>
 
   <!-- ============ 추천 ============ -->
-  <section id="tab-recommend" class="active">
+  <section id="tab-recommend">
     <div class="grid">
       <div class="panel">
         <h3>추천 설정</h3>
+        <div id="profile-hint" class="softbox" style="display:none;margin:0 0 6px"></div>
         <div class="row">
           <div><label>줄 수</label><input type="number" id="lines" value="5" min="1" max="20"></div>
           <div><label>시드 (비우면 매번 다름)</label><input type="number" id="seed" placeholder="예: 20260905"></div>
         </div>
         <label>전략 (비우면 5종 순환)</label>
         <div id="strategies"></div>
-        <label>행운수</label><input type="text" id="lucky" placeholder="예: 7 13">
+        <label>행운수 <small style="color:var(--muted)">— 뽑힐 확률만 올라갑니다</small></label><input type="text" id="lucky" placeholder="예: 7 13">
         <label>기피수 (완전 제외)</label><input type="text" id="avoid" placeholder="예: 4">
         <div class="row">
           <div><label>꿈 키워드</label><input type="text" id="dream" placeholder="돼지, 용, 조상…"></div>
@@ -123,9 +168,21 @@
       </div>
       <div>
         <div id="rec-info" class="kv" style="margin-bottom:10px"></div>
+        <div id="rec-actions" style="display:none;margin:0 0 12px"><button class="ghost" id="save-picks">이 조합을 내 번호로 저장</button> <span class="kv" id="save-picks-msg" style="display:inline"></span></div>
         <div id="rec-error"></div>
         <div id="rec-results"></div>
+        <div id="rec-foot" class="kv" style="display:none;margin-top:6px">1등 확률은 어떤 조합이든 1/8,145,060 · 잃어도 괜찮은 만큼만 · 상담 1336</div>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ 내 번호 ============ -->
+  <section id="tab-picks">
+    <div class="panel">
+      <h3>내 번호 <button class="ghost" id="picks-reload" style="float:right">새로고침</button></h3>
+      <p class="kv">추천 탭에서 저장한 조합입니다. 목표 회차가 추첨되면 자동으로 채점됩니다. 이 컴퓨터의 data 폴더에만 저장됩니다.</p>
+      <div id="picks-error"></div>
+      <div id="picks-body"></div>
     </div>
   </section>
 
@@ -176,20 +233,74 @@
   <!-- ============ 회차 ============ -->
   <section id="tab-draws">
     <div class="panel">
-      <h3>최근 회차 <button class="ghost" id="draws-more" style="float:right">더 보기</button></h3>
+      <h3>최근 회차 <span style="float:right"><button class="ghost" id="draws-refresh">최신 회차 받기</button> <button class="ghost" id="draws-more">더 보기</button></span></h3>
+      <div id="draws-msg"></div>
       <div id="draws-body"></div>
     </div>
   </section>
+
+  <!-- ============ 복권방 ============ -->
+  <section id="tab-shops">
+    <div class="grid">
+      <div class="panel">
+        <h3>내 주변 복권방</h3>
+        <label>동네 · 역 · 건물 이름</label>
+        <input type="text" id="shop-query" placeholder="예: 강남역, 상암동">
+        <div class="row" style="margin-top:8px">
+          <button class="ghost" id="shop-search">찾기</button>
+          <button class="ghost" id="shop-locate">내 위치로</button>
+        </div>
+        <p class="kv" style="margin-top:12px">위치 권한은 선택입니다. 동네 이름으로 검색해도 됩니다. 검색은 카카오맵을 통해 이루어지고, 이 앱은 위치를 저장하지 않습니다.</p>
+        <div id="shop-error"></div>
+        <div id="shop-list"></div>
+      </div>
+      <div>
+        <div id="map"></div>
+        <div id="shop-fallback" class="softbox" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 설정 · 정보 ============ -->
+  <section id="tab-info">
+    <div class="grid">
+      <div class="panel">
+        <h3>설정</h3>
+        <label>카카오맵 JavaScript 키 <small style="color:var(--muted)">(복권방 지도용 · 선택)</small></label>
+        <input type="password" id="set-kakao" placeholder="developers.kakao.com 에서 발급">
+        <p class="kv">카카오 개발자 콘솔 → 앱 → 플랫폼 → Web 에 <code id="set-origin"></code> 을 등록해야 지도가 뜹니다. 키는 이 컴퓨터의 data/settings.json 에만 저장됩니다.</p>
+        <div class="check"><input type="checkbox" id="set-autorefresh" checked><span>시작할 때 새 회차 자동 확인</span></div>
+        <button class="primary" id="set-save">설정 저장</button>
+        <div id="set-msg"></div>
+        <h3 style="margin-top:22px">프로필</h3>
+        <p class="kv" id="info-profile"></p>
+        <div class="row"><button class="ghost" id="profile-edit">수정</button><button class="ghost" id="profile-clear">삭제</button></div>
+      </div>
+      <div>
+        <div class="panel">
+          <h3>안내</h3>
+          <div class="warnbox" id="info-disclaimer"></div>
+          <p class="kv">이 프로그램이 실제로 하는 일은 두 가지입니다. 과거 당첨조합에서 흔했던 모양(합계·홀짝·AC값·구간 분포)에 맞는 조합만 남기는 것, 그리고 이월수·쌍둥이수·꿈수·행운수 같은 속설을 가중치로 얹는 것. 앞의 것은 확률을 바꾸지 못하고, 뒤의 것은 근거가 없습니다. 운세는 그중에서도 가장 재미 쪽에 있는 부분입니다.</p>
+          <p class="kv"><b>개인정보</b> — 이름·생년월일·태어난 시·저장한 번호·설정은 전부 이 컴퓨터의 <code>data/</code> 폴더 안 JSON 파일에만 저장됩니다. 외부 서버로 보내지 않습니다. 삭제하려면 위의 '프로필 삭제'를 누르거나 파일을 지우면 됩니다.</p>
+          <p class="kv"><b>데이터 출처</b> — 동행복권 회차별 당첨번호. 시작할 때 새 회차만 이어받습니다.</p>
+          <p class="kv" id="info-version"></p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
-<footer>lottoracle · 표준 라이브러리만으로 동작 · 데이터: 동행복권 회차별 당첨번호</footer>
+<footer><span id="foot-tagline"></span> · lottoracle · <a href="#" data-goto="info">설정 · 정보</a></footer>
 
 <script>
 (function(){
   const $ = s => document.querySelector(s);
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const fmt = n => Number(n).toLocaleString('ko-KR');
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const colorOf = n => n <= 10 ? '노랑' : n <= 20 ? '파랑' : n <= 30 ? '빨강' : n <= 40 ? '회색' : '초록';
   const balls = (nums, colors, bonus, bonusColor, hits, small) => {
     const H = new Set(hits || []);
+    colors = colors || nums.map(colorOf);
     let s = nums.map((n,i) => `<span class="ball ${small?'sm':''} c-${colors[i]} ${H.has(n)?'hit':''}">${n}</span>`).join('');
     if (bonus != null) s += `<span class="plus">+</span><span class="ball ${small?'sm':''} bonus c-${bonusColor}">${bonus}</span>`;
     return s;
@@ -200,32 +311,126 @@
     if (!r.ok || j.error) throw new Error(j.error || r.statusText);
     return j;
   };
-  const showErr = (id, e) => { $(id).innerHTML = e ? `<div class="err">${e.message || e}</div>` : ''; };
+  const showErr = (id, e) => { $(id).innerHTML = e ? `<div class="err">${esc(e.message || e)}</div>` : ''; };
+  const dots = g => '●'.repeat(g) + '○'.repeat(5 - g);
+  const SWATCH = {'노랑':'var(--yellow)','파랑':'var(--blue)','빨강':'var(--red)','회색':'var(--gray)','초록':'var(--green)'};
 
   // ---- 탭
-  document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x === b));
-    document.querySelectorAll('main section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + b.dataset.tab));
-    if (b.dataset.tab === 'stats' && !statsLoaded) loadStats();
-    if (b.dataset.tab === 'draws' && !drawsLoaded) loadDraws();
-  }));
+  const goto = name => {
+    document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+    document.querySelectorAll('main section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+    if (name === 'stats' && !statsLoaded) loadStats();
+    if (name === 'draws' && !drawsLoaded) loadDraws();
+    if (name === 'picks') loadPicks();
+    if (name === 'shops') initShops();
+    if (name === 'info') loadInfo();
+    window.scrollTo({top:0});
+  };
+  document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => goto(b.dataset.tab)));
+  document.querySelectorAll('[data-goto]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); goto(a.dataset.goto); }));
 
   // ---- 메타
   let META = null;
-  api('/api/meta').then(m => {
-    META = m;
+  const renderMeta = m => {
     const p = m.previous;
     $('#meta').innerHTML = p
       ? `분석 ${fmt(m.draws_used)}회차 · 최신 <b>${p.no}회</b> (${p.date}) ${balls(p.numbers, p.colors, p.bonus, p.bonus_color, null, true)}`
       : '데이터 없음 — 규칙 필터만 적용됩니다';
+    if (p) $('#grade-draw').placeholder = '예: ' + p.no;
+    $('#foot-tagline').textContent = m.tagline;
+  };
+  async function loadMeta(){
+    const m = await api('/api/meta'); META = m; renderMeta(m);
     const box = $('#strategies');
-    m.strategies.forEach(s => {
+    if (!box.children.length) m.strategies.forEach(s => {
       const d = el('div', 'check');
-      d.innerHTML = `<input type="checkbox" value="${s.key}" title="${s.concept}"><span>${s.name} <small style="color:var(--muted)">${s.key}</small></span>`;
+      d.innerHTML = `<input type="checkbox" value="${s.key}" title="${esc(s.concept)}"><span>${esc(s.name)} <small style="color:var(--muted)">${s.key}</small></span>`;
       box.appendChild(d);
     });
-    if (p) $('#grade-draw').placeholder = '예: ' + p.no;
-  }).catch(e => $('#meta').textContent = '메타 로드 실패: ' + e.message);
+    return m;
+  }
+  async function autoRefresh(){
+    if (!META.auto_refresh || !META.online_refresh) return;
+    const st = $('#refresh-status'); st.innerHTML = '<span class="spin"></span>새 회차 확인 중';
+    try {
+      const r = await api('/api/refresh', {timeout: 8});
+      if (r.added > 0) { st.textContent = `새 회차 ${r.added}개 추가 (${r.after}회)`; await loadMeta(); drawsLoaded = false; if ($('#tab-picks').classList.contains('active')) loadPicks(); }
+      else st.textContent = '최신 상태';
+    } catch (e) { st.textContent = '오프라인 (기존 데이터 사용)'; st.title = e.message; }
+    setTimeout(() => { st.textContent = ''; }, 6000);
+  }
+  loadMeta().then(() => { loadFortune(); autoRefresh(); }).catch(e => $('#meta').textContent = '메타 로드 실패: ' + e.message);
+
+  // ---- 운세
+  let FORTUNE = null;
+  function onboardingForm(profile){
+    const hours = ['<option value="">모름</option>'].concat(Array.from({length:24}, (_, h) => `<option value="${h}" ${profile && profile.birth_hour === h ? 'selected' : ''}>${h}시</option>`)).join('');
+    return `<div class="fortune">
+      <div class="greet">${profile && profile.birth_date ? '프로필 수정' : '처음 오셨네요'}</div>
+      <p class="kv" style="font-size:13.5px">생년월일을 적으면 오늘의 운세와 번호 추천 입력이 한 번에 채워집니다. 입력한 정보는 이 컴퓨터에만 저장됩니다.</p>
+      <div class="row">
+        <div><label>이름 (선택)</label><input type="text" id="ob-name" maxlength="20" value="${esc(profile ? profile.name : '')}" placeholder="홍길동"></div>
+        <div><label>생년월일</label><input type="date" id="ob-birth" value="${esc(profile ? profile.birth_date : '')}" min="1900-01-01"></div>
+        <div><label>태어난 시 (선택)</label><select id="ob-hour">${hours}</select></div>
+      </div>
+      <div id="ob-error"></div>
+      <div class="actions"><button class="primary" id="ob-save">오늘의 운세 보기</button><button class="ghost" id="ob-skip">건너뛰고 번호만 뽑기</button></div>
+      <div class="tagline">${esc(META ? META.tagline : '')}</div>
+    </div>`;
+  }
+  function renderZodiac(list, mine){
+    $('#zodiac-table').innerHTML = list.map(z => `<div class="z ${z.zodiac === mine ? 'me' : ''}"><b>${z.zodiac}띠</b><span class="dots">${dots(z.grade)}</span><div class="kv">${esc(z.label)} · ${esc(z.short)}</div><div style="margin-top:6px">${balls(z.numbers, z.colors, null, null, null, true)}</div></div>`).join('');
+  }
+  function renderFortune(r){
+    FORTUNE = r;
+    const f = r.fortune;
+    const who = f.name ? `${esc(f.name)}님의 오늘` : '오늘의 기운';
+    $('#fortune-body').innerHTML = `<div class="fortune">
+      <div class="date">${f.date} ${f.tags.length ? '· ' + f.tags.map(esc).join(' · ') : ''}</div>
+      <div class="greet">${who}</div>
+      <div><span class="dots">${dots(f.grade)}</span><span class="label">${esc(f.label)}</span></div>
+      <div class="sentence">${esc(f.sentence)}</div>
+      <div class="items">
+        <div class="item"><div class="k">오늘의 숫자</div>${balls(f.numbers, f.colors)}</div>
+        <div class="item"><div class="k">오늘의 색</div><span class="swatch" style="background:${SWATCH[f.color]}"></span>${f.color}</div>
+        <div class="item"><div class="k">오늘의 한 단어</div><b style="font-size:16px">${esc(f.keyword)}</b></div>
+        <div class="item"><div class="k">하루 한 줄</div>${esc(f.tip)}</div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="f-recommend">이 기운으로 번호 뽑기</button>
+        <button class="ghost" id="f-edit">프로필 수정</button>
+        ${r.next_draw_no ? `<span class="kv" style="align-self:center">다음 추첨 ${r.next_draw_no}회 · ${r.next_draw_date} (토)</span>` : ''}
+      </div>
+      <div class="tagline">${esc(f.tagline)}</div>
+    </div>`;
+    $('#f-recommend').addEventListener('click', () => {
+      const i = r.recommend_inputs;
+      $('#birthday').value = i.birthday; $('#zodiac').value = i.zodiac; $('#lucky').value = i.lucky.join(' ');
+      $('#profile-hint').style.display = ''; $('#profile-hint').textContent = `프로필에서 생일·띠를, 오늘의 숫자 ${i.lucky.join('·')}을 행운수로 채웠습니다. 바꿔도 됩니다.`;
+      goto('recommend'); $('#run-recommend').click();
+    });
+    $('#f-edit').addEventListener('click', () => showOnboarding(r.profile));
+    renderZodiac(r.zodiac_table, f.zodiac);
+  }
+  function showOnboarding(profile){
+    $('#fortune-body').innerHTML = onboardingForm(profile);
+    goto('fortune');
+    $('#ob-save').addEventListener('click', async () => {
+      showErr('#ob-error', null);
+      try {
+        const r = await api('/api/profile', {name: $('#ob-name').value, birth_date: $('#ob-birth').value, birth_hour: $('#ob-hour').value});
+        META.has_profile = true; renderFortune(r);
+      } catch (e) { showErr('#ob-error', e); }
+    });
+    $('#ob-skip').addEventListener('click', () => goto('recommend'));
+  }
+  async function loadFortune(){
+    try {
+      const r = await api('/api/fortune');
+      if (r.has_profile) renderFortune(r);
+      else { $('#fortune-body').innerHTML = onboardingForm(null); showOnboarding(null); renderZodiac(r.zodiac_table, ''); }
+    } catch (e) { $('#fortune-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  }
 
   // ---- 옵션 수집
   $('#coverage').addEventListener('input', e => $('#coverage-v').textContent = e.target.value + '%');
@@ -244,36 +449,78 @@
   let LAST = null;
   $('#run-recommend').addEventListener('click', async () => {
     const btn = $('#run-recommend'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>뽑는 중…';
-    showErr('#rec-error', null);
+    showErr('#rec-error', null); $('#rec-actions').style.display = 'none'; $('#save-picks-msg').textContent = '';
     try {
       const r = await api('/api/recommend', options()); LAST = r;
       const info = [];
       if (r.previous) info.push(`기준 ${r.previous.no}회 → 목표 <b>${r.next_draw_no}회</b> (${r.next_draw_date} 토)`);
       info.push(`분석 ${fmt(r.draws_used)}회차`);
       if (r.seed != null) info.push(`시드 ${r.seed}`);
-      info.push('속설: ' + r.folklore.join(' · '));
+      info.push('속설: ' + r.folklore.map(esc).join(' · '));
       if (r.rules) info.push(`보정 규칙: 합계 ${r.rules.sum_range.join('~')} · 홀수 ${r.rules.odd_range.join('~')} · 저구간 ${r.rules.low_range.join('~')} · AC≥${r.rules.ac_min} · 끝수합 ${r.rules.end_sum_range.join('~')}`);
       $('#rec-info').innerHTML = info.join('<br>');
       const out = $('#rec-results'); out.innerHTML = '';
       r.lines.forEach(L => {
         const c = el('div', 'card');
         c.innerHTML = `
-          <div class="head"><div class="title">${L.index}조합 <small>${L.strategy_name}</small></div>
+          <div class="head"><div class="title">${L.index}조합 <small>${esc(L.strategy_name)}</small></div>
             <div class="kv">전형성 상위 <b>${(100 - L.percentile).toFixed(0)}%</b> · 기분점수 <b>${L.luck}</b>/100 ${L.relaxed ? `· <span style="color:var(--warn)">규칙 ${L.relaxed}단계 완화</span>` : ''}</div></div>
           <div class="balls">${balls(L.numbers, L.colors, L.bonus, L.bonus_color)}</div>
-          <div class="note"><b>[분석 핵심]</b> ${L.note}</div>
+          <div class="note"><b>[분석 핵심]</b> ${esc(L.note)}</div>
           <div class="mini">
             <div><div class="kv">전형성 백분위 ${L.percentile}% (후보 ${L.pool_size}개 중 선택)</div><div class="bar"><i style="width:${L.percentile}%"></i></div></div>
             <div><div class="kv">기분점수 ${L.luck}/100 — 확률과 무관</div><div class="bar luck"><i style="width:${L.luck}%"></i></div></div>
           </div>
-          <div class="kv">${L.metrics}</div>
-          <div class="kv">${L.zones}</div>
-          <div class="tags">${L.omens.map(t => `<span class="tag">${t}</span>`).join('')}</div>`;
+          <div class="kv">${esc(L.metrics)}</div>
+          <div class="kv">${esc(L.zones)}</div>
+          <div class="tags">${L.omens.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>`;
         out.appendChild(c);
       });
+      $('#rec-actions').style.display = ''; $('#save-picks').textContent = `이 ${r.lines.length}줄을 내 번호로 저장 (목표 ${r.next_draw_no}회)`;
+      $('#rec-foot').style.display = '';
     } catch (e) { showErr('#rec-error', e); }
     btn.disabled = false; btn.textContent = '추천 ' + $('#lines').value + '줄 뽑기';
   });
+  $('#save-picks').addEventListener('click', async () => {
+    if (!LAST) return;
+    const btn = $('#save-picks'); btn.disabled = true;
+    try {
+      await api('/api/picks', {lines: LAST.lines.map(L => L.numbers), target_draw: LAST.next_draw_no, note: '추천'});
+      $('#save-picks-msg').innerHTML = `저장했습니다 → <a href="#" data-goto="picks" style="color:var(--accent)">내 번호</a>`;
+      $('#save-picks-msg a').addEventListener('click', e => { e.preventDefault(); goto('picks'); });
+    } catch (e) { $('#save-picks-msg').textContent = '저장 실패: ' + e.message; btn.disabled = false; }
+  });
+
+  // ---- 내 번호
+  async function loadPicks(){
+    showErr('#picks-error', null);
+    try {
+      const r = await api('/api/picks');
+      renderPicks(r.picks);
+    } catch (e) { showErr('#picks-error', e); }
+  }
+  function renderPicks(picks){
+    const body = $('#picks-body');
+    if (!picks.length) { body.innerHTML = '<p class="kv">아직 저장한 번호가 없습니다. 추천 탭에서 뽑은 뒤 "내 번호로 저장"을 누르세요.</p>'; return; }
+    body.innerHTML = picks.map(p => {
+      let badge, detail = '';
+      if (p.results) {
+        const best = p.best_rank;
+        badge = best ? `<span class="badge win">${best}등${p.total_prize ? ' · 약 ' + fmt(p.total_prize) + '원' : ''}</span>` : '<span class="badge lose">낙첨</span>';
+        detail = `<div class="kv" style="margin:6px 0">${p.draw.no}회 당첨번호 ${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonus_color, null, true)}</div>` +
+          p.results.map((g, i) => `<div class="kv">${i+1}줄 ${balls(g.numbers, null, null, null, g.hit, true)} <span class="rank-${g.rank}">${g.label}</span>${g.bonus_hit ? ' +보너스' : ''}</div>`).join('');
+      } else {
+        badge = `<span class="badge wait">추첨 전 · ${p.draw_date} (토)</span>`;
+        detail = p.lines.map((row, i) => `<div class="kv">${i+1}줄 ${balls(row, p.colors[i], null, null, null, true)}</div>`).join('');
+      }
+      return `<div class="card"><div class="head"><div class="title">${p.target_draw}회 목표 <small>${esc(p.saved_at.replace('T',' '))} 저장${p.note ? ' · ' + esc(p.note) : ''}</small></div><div>${badge} <button class="ghost" data-del="${p.id}" title="삭제">✕</button></div></div>${detail}</div>`;
+    }).join('');
+    body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('이 기록을 삭제할까요?')) return;
+      try { const r = await api('/api/picks/delete', {id: b.dataset.del}); renderPicks(r.picks); } catch (e) { showErr('#picks-error', e); }
+    }));
+  }
+  $('#picks-reload').addEventListener('click', loadPicks);
 
   // ---- 통계
   let statsLoaded = false;
@@ -282,8 +529,7 @@
       const s = await api('/api/stats?recent_window=30&coverage=0.8'); statsLoaded = true;
       const dist = (arr, label) => { const top = Math.max(...arr.map(x => x.ratio)) || 1; return `<div class="kv" style="margin-top:14px"><b>${label}</b></div><div class="dist">${arr.map(d => `<div style="height:${Math.max(2, d.ratio / top * 70)}px"><em>${(d.ratio*100).toFixed(0)}%</em><span>${d.key}</span></div>`).join('')}</div>`; };
       const maxF = Math.max(...s.frequency.map(f => f.count));
-      const body = $('#stats-body');
-      body.innerHTML = `
+      $('#stats-body').innerHTML = `
         <div class="grid" style="grid-template-columns:1fr 1fr">
           <div class="panel"><h3>대한민국 로또 평균치 (${s.first_no}~${s.last_no}회, ${fmt(s.draws_used)}회차)</h3>
             <table>
@@ -310,7 +556,7 @@
         <div class="panel" style="margin-top:20px"><h3>번호별 출현 횟수 (당첨번호 기준 · 툴팁에 보너스/최근/미출현)</h3>
           <div class="freq">${s.frequency.map(f => `<div class="f" title="보너스 ${f.bonus}회 · 최근 ${s.recent_window}회 중 ${f.recent}회 · ${f.gap}회차째 미출현"><span class="ball sm c-${f.color}">${f.n}</span><div class="bar"><i style="width:${f.count/maxF*100}%"></i></div><span>${f.count}</span></div>`).join('')}</div>
         </div>`;
-    } catch (e) { $('#stats-body').innerHTML = `<div class="err">${e.message}</div>`; }
+    } catch (e) { $('#stats-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
   }
 
   // ---- 채점
@@ -335,12 +581,11 @@
       $('#grade-results').innerHTML = `<div class="card"><div class="title">${d.no}회차 (${d.date}) 당첨번호</div><div class="balls">${balls(d.numbers, d.colors, d.bonus, d.bonus_color)}</div>
         ${d.first_winners >= 0 ? `<div class="kv">1등 ${d.first_winners}명 · 1게임당 ${fmt(d.first_prize)}원</div>` : ''}</div>` +
         r.results.map((g, i) => `<div class="card"><div class="head"><div class="title">${i+1}줄</div><div class="rank-${g.rank}">${g.label}${g.prize ? ' · 약 ' + fmt(g.prize) + '원' : ''}</div></div>
-          <div class="balls">${balls(g.numbers, g.numbers.map(colorOf), null, null, g.hit)}</div>
+          <div class="balls">${balls(g.numbers, null, null, null, g.hit)}</div>
           <div class="kv">일치 ${g.hit.length}개 ${g.hit.length ? '[' + g.hit.join(', ') + ']' : ''}${g.bonus_hit ? ' + 보너스' : ''}</div></div>`).join('') +
         `<div class="card"><b>합계 약 ${fmt(r.total_prize)}원</b> <span class="kv">(1~3등 금액은 회차별 변동, 평균치)</span></div>`;
     } catch (e) { showErr('#grade-error', e); }
   });
-  const colorOf = n => n <= 10 ? '노랑' : n <= 20 ? '파랑' : n <= 30 ? '빨강' : n <= 40 ? '회색' : '초록';
 
   // ---- 백테스트
   $('#run-backtest').addEventListener('click', async () => {
@@ -353,7 +598,7 @@
         ${r.rows.map(x => `<tr><td>${x.rank}</td><td class="num">${x.model}</td><td class="num">${x.random}</td><td class="num">${x.expected}</td></tr>`).join('')}
         <tr><th>당첨금 합계</th><td class="num">${fmt(r.model_prize)}원<br><span class="kv">회수율 ${(r.model_roi*100).toFixed(1)}%</span></td><td class="num">${fmt(r.random_prize)}원<br><span class="kv">회수율 ${(r.random_roi*100).toFixed(1)}%</span></td><td class="num kv">장기 평균 약 50%</td></tr></table>
         <p class="kv" style="margin-top:12px">모델과 무작위의 차이가 표본 오차 안에 있으면 정상입니다. 반복해서 돌려 보세요 — 시드를 바꿀 때마다 앞서거니 뒤서거니 합니다. 그게 이 도구가 확률을 바꾸지 못한다는 뜻입니다.</p>
-        ${r.best.length ? `<div class="kv" style="margin-top:8px"><b>모델 최고 성적</b></div>` + r.best.map(b => `<div class="kv">${b.no}회 <span class="rank-${{'1등':1,'2등':2,'3등':3,'4등':4,'5등':5}[b.rank]}">${b.rank}</span> ${balls(b.numbers, b.numbers.map(colorOf), null, null, null, true)}</div>`).join('') : ''}
+        ${r.best.length ? `<div class="kv" style="margin-top:8px"><b>모델 최고 성적</b></div>` + r.best.map(b => `<div class="kv">${b.no}회 <span class="rank-${{'1등':1,'2등':2,'3등':3,'4등':4,'5등':5}[b.rank]}">${b.rank}</span> ${balls(b.numbers, null, null, null, null, true)}</div>`).join('') : ''}
       </div>`;
     } catch (e) { showErr('#bt-error', e); }
     btn.disabled = false; btn.textContent = '실행 (수 초~수십 초)';
@@ -366,9 +611,98 @@
       const rows = await api('/api/draws?limit=' + drawLimit); drawsLoaded = true;
       $('#draws-body').innerHTML = `<table><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th class="num">1등</th><th class="num">1게임당</th></tr>` +
         rows.map(d => `<tr><td>${d.no}</td><td>${d.date}</td><td>${balls(d.numbers, d.colors, d.bonus, d.bonus_color, null, true)}</td><td class="num">${d.first_winners >= 0 ? d.first_winners + '명' : '-'}</td><td class="num">${d.first_prize >= 0 ? fmt(d.first_prize) + '원' : '-'}</td></tr>`).join('') + '</table>';
-    } catch (e) { $('#draws-body').innerHTML = `<div class="err">${e.message}</div>`; }
+    } catch (e) { $('#draws-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
   }
   $('#draws-more').addEventListener('click', () => { drawLimit += 30; loadDraws(); });
+  $('#draws-refresh').addEventListener('click', async () => {
+    const btn = $('#draws-refresh'); btn.disabled = true; $('#draws-msg').innerHTML = '<span class="spin"></span>동행복권에 확인 중…';
+    try {
+      const r = await api('/api/refresh', {timeout: 15});
+      $('#draws-msg').innerHTML = r.added > 0 ? `<div class="okbox">새 회차 ${r.added}개를 받았습니다. 최신 ${r.after}회.</div>` : `<div class="okbox">이미 최신 상태입니다 (${r.after}회).</div>`;
+      await loadMeta(); loadDraws();
+    } catch (e) { $('#draws-msg').innerHTML = `<div class="err">${esc(e.message)}<br><span class="kv">동행복권 사이트가 바뀌었거나 네트워크가 막혀 있을 수 있습니다. 동행복권에서 내려받은 엑셀을 <code>python -m lottoracle import 파일.xlsx</code> 로 넣어도 됩니다.</span></div>`; }
+    btn.disabled = false;
+  });
+
+  // ---- 복권방 (카카오맵)
+  let shopsInit = false, kmap = null, markers = [], places = null;
+  function initShops(){
+    if (shopsInit) return; shopsInit = true;
+    $('#set-origin').textContent = location.origin;
+    if (!META.kakao_js_key) {
+      $('#map').style.display = 'none';
+      $('#shop-fallback').style.display = '';
+      $('#shop-fallback').innerHTML = `<b style="color:var(--text)">지도 없이 바로 찾기</b><p>카카오맵 키를 넣지 않아도 아래 링크로 검색할 수 있습니다. 키를 넣으면 이 자리에 지도가 뜹니다 (설정 · 정보 탭).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ghost" id="fb-kakao" target="_blank" rel="noopener">카카오맵에서 복권판매점 찾기</a><a class="ghost" id="fb-naver" target="_blank" rel="noopener">네이버 지도에서 찾기</a></div>`;
+      const upd = () => { const q = ($('#shop-query').value.trim() + ' 복권판매점').trim(); $('#fb-kakao').href = 'https://map.kakao.com/?q=' + encodeURIComponent(q); $('#fb-naver').href = 'https://map.naver.com/p/search/' + encodeURIComponent(q); };
+      upd(); $('#shop-query').addEventListener('input', upd);
+      $('#shop-search').addEventListener('click', () => { upd(); window.open($('#fb-kakao').href, '_blank', 'noopener'); });
+      $('#shop-locate').addEventListener('click', () => { window.open('https://map.kakao.com/?q=' + encodeURIComponent('복권판매점'), '_blank', 'noopener'); });
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(META.kakao_js_key)}&autoload=false&libraries=services`;
+    s.onerror = () => showErr('#shop-error', '카카오맵 SDK를 불러오지 못했습니다. 키와 등록 도메인(' + location.origin + ')을 확인하세요.');
+    s.onload = () => kakao.maps.load(() => {
+      const center = new kakao.maps.LatLng(37.5665, 126.9780);
+      kmap = new kakao.maps.Map($('#map'), {center, level: 5});
+      places = new kakao.maps.services.Places();
+      $('#shop-search').addEventListener('click', () => searchShops($('#shop-query').value.trim(), null));
+      $('#shop-query').addEventListener('keydown', e => { if (e.key === 'Enter') $('#shop-search').click(); });
+      $('#shop-locate').addEventListener('click', () => {
+        if (!navigator.geolocation) return showErr('#shop-error', '이 브라우저는 위치를 지원하지 않습니다.');
+        navigator.geolocation.getCurrentPosition(
+          pos => searchShops('', new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude)),
+          () => showErr('#shop-error', '위치를 가져오지 못했습니다. 동네 이름으로 검색해 보세요.'));
+      });
+    });
+    document.head.appendChild(s);
+  }
+  function searchShops(query, loc){
+    showErr('#shop-error', null);
+    const opts = loc ? {location: loc, radius: 3000, sort: kakao.maps.services.SortBy.DISTANCE} : {};
+    const q = (query ? query + ' ' : '') + '복권판매점';
+    places.keywordSearch(q, (data, status) => {
+      if (status !== kakao.maps.services.Status.OK) { $('#shop-list').innerHTML = '<p class="kv">검색 결과가 없습니다.</p>'; return; }
+      markers.forEach(m => m.setMap(null)); markers = [];
+      const bounds = new kakao.maps.LatLngBounds();
+      $('#shop-list').innerHTML = data.map((d, i) => `<div class="shop" data-i="${i}"><b>${esc(d.place_name)}</b><span class="kv">${esc(d.road_address_name || d.address_name)}${d.phone ? ' · ' + esc(d.phone) : ''}${d.distance ? ' · ' + fmt(d.distance) + 'm' : ''}</span></div>`).join('');
+      data.forEach((d, i) => {
+        const pos = new kakao.maps.LatLng(d.y, d.x);
+        const m = new kakao.maps.Marker({map: kmap, position: pos, title: d.place_name}); markers.push(m); bounds.extend(pos);
+        const iw = new kakao.maps.InfoWindow({content: `<div style="padding:6px 10px;font-size:12px;color:#111">${esc(d.place_name)}<br><a href="${d.place_url}" target="_blank" rel="noopener">상세</a></div>`});
+        kakao.maps.event.addListener(m, 'click', () => iw.open(kmap, m));
+        $('#shop-list').querySelector(`[data-i="${i}"]`).addEventListener('click', () => { kmap.panTo(pos); iw.open(kmap, m); });
+      });
+      if (loc) bounds.extend(loc);
+      kmap.setBounds(bounds);
+    }, opts);
+  }
+
+  // ---- 설정 · 정보
+  async function loadInfo(){
+    $('#set-origin').textContent = location.origin;
+    $('#info-disclaimer').textContent = META.disclaimer;
+    $('#info-version').textContent = `lottoracle v${META.version}`;
+    $('#set-kakao').value = META.kakao_js_key || '';
+    $('#set-autorefresh').checked = !!META.auto_refresh;
+    try {
+      const r = await api('/api/profile'); const p = r.profile;
+      $('#info-profile').textContent = p.birth_date ? `${p.name || '(이름 없음)'} · ${p.birth_date}${p.birth_hour != null ? ' · ' + p.birth_hour + '시생' : ''}` : '프로필이 없습니다.';
+    } catch (e) { $('#info-profile').textContent = e.message; }
+  }
+  $('#set-save').addEventListener('click', async () => {
+    try {
+      await api('/api/settings', {settings: {kakao_js_key: $('#set-kakao').value.trim(), auto_refresh: $('#set-autorefresh').checked}});
+      $('#set-msg').innerHTML = '<div class="okbox">저장했습니다. 지도 설정은 새로고침 후 적용됩니다.</div>';
+      await loadMeta();
+    } catch (e) { $('#set-msg').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  });
+  $('#profile-edit').addEventListener('click', async () => { const r = await api('/api/profile'); showOnboarding(r.profile.birth_date ? r.profile : null); });
+  $('#profile-clear').addEventListener('click', async () => {
+    if (!confirm('프로필을 삭제할까요? 저장한 번호는 남습니다.')) return;
+    await api('/api/profile/delete', {}); META.has_profile = false; loadInfo(); loadFortune();
+  });
 })();
 </script>
 </body>
