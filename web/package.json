@@ -1,0 +1,11 @@
+{
+  "name": "lottoracle-web",
+  "version": "0.4.0",
+  "private": true,
+  "description": "lottoracle 웹 — 서버 없이 브라우저에서 도는 로또 6/45 조합 생성기와 오늘의 운세",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}
