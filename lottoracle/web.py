@@ -24,7 +24,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import __version__
 from .engine import Engine, Options
-from .fortune import DISCLAIMER, TAGLINE, Profile
+from .fortune import DISCLAIMER, TAGLINE, Profile, branch_choices
 from .strategies import DEFAULT_STRATEGIES
 
 GUI_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gui.html")
@@ -102,6 +102,7 @@ class Handler(BaseHTTPRequestHandler):
             "auto_refresh": bool(settings.get("auto_refresh", True)),
             "online_refresh": eng.path.lower().endswith(".json"),
             "today": date.today().isoformat(),
+            "branch_choices": branch_choices(),
         }
 
     def do_GET(self) -> None:

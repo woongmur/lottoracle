@@ -364,20 +364,42 @@
   // ---- 운세
   let FORTUNE = null;
   function onboardingForm(profile){
-    const hours = ['<option value="">모름</option>'].concat(Array.from({length:24}, (_, h) => `<option value="${h}" ${profile && profile.birth_hour === h ? 'selected' : ''}>${h}시</option>`)).join('');
+    const [y, m, d] = (profile && profile.birth_date ? profile.birth_date : '--').split('-');
+    const cur = profile ? profile.birth_branch : '';
+    const branches = ['<option value="">모름</option>'].concat((META.branch_choices || []).map(b => `<option value="${b.value}" ${b.value === cur ? 'selected' : ''}>${esc(b.label)}</option>`)).join('');
     return `<div class="fortune">
       <div class="greet">${profile && profile.birth_date ? '프로필 수정' : '처음 오셨네요'}</div>
       <p class="kv" style="font-size:13.5px">생년월일을 적으면 오늘의 운세와 번호 추천 입력이 한 번에 채워집니다. 입력한 정보는 이 컴퓨터에만 저장됩니다.</p>
       <div class="row">
         <div><label>이름 (선택)</label><input type="text" id="ob-name" maxlength="20" value="${esc(profile ? profile.name : '')}" placeholder="홍길동"></div>
-        <div><label>생년월일</label><input type="date" id="ob-birth" value="${esc(profile ? profile.birth_date : '')}" min="1900-01-01"></div>
-        <div><label>태어난 시 (선택)</label><select id="ob-hour">${hours}</select></div>
+        <div><label>생년월일</label>
+          <div class="row" style="gap:6px">
+            <input type="text" inputmode="numeric" id="ob-y" maxlength="4" placeholder="1990" value="${esc(y || '')}" style="flex:1.4">
+            <input type="text" inputmode="numeric" id="ob-m" maxlength="2" placeholder="05" value="${esc(m || '')}">
+            <input type="text" inputmode="numeric" id="ob-d" maxlength="2" placeholder="21" value="${esc(d || '')}">
+          </div></div>
+        <div><label>태어난 시 (선택)</label><select id="ob-branch">${branches}</select></div>
       </div>
+      <p class="kv">태어난 시는 요즘 사주에서 통용되는 30분 보정 기준입니다 (예: 진시 07:30~09:30). 모르면 비워 두세요.</p>
       <div id="ob-error"></div>
       <div class="actions"><button class="primary" id="ob-save">오늘의 운세 보기</button><button class="ghost" id="ob-skip">건너뛰고 번호만 뽑기</button></div>
       <div class="tagline">${esc(META ? META.tagline : '')}</div>
     </div>`;
   }
+  // 년(4자리) → 월(2자리) → 일 자동 이동, 빈 칸에서 백스페이스면 앞 칸으로
+  function wireDateInputs(){
+    const seq = ['#ob-y', '#ob-m', '#ob-d'];
+    seq.forEach((sel, i) => {
+      const inp = $(sel), next = seq[i + 1] ? $(seq[i + 1]) : null, prev = i ? $(seq[i - 1]) : null;
+      inp.addEventListener('input', () => {
+        inp.value = inp.value.replace(/\D/g, '').slice(0, inp.maxLength);
+        if (inp.value.length === inp.maxLength && next) { next.focus(); next.select(); }
+      });
+      inp.addEventListener('keydown', e => { if (e.key === 'Backspace' && !inp.value && prev) { e.preventDefault(); prev.focus(); } });
+      inp.addEventListener('blur', () => { if (i > 0 && inp.value.length === 1) inp.value = '0' + inp.value; });
+    });
+  }
+  const obBirth = () => { const y = $('#ob-y').value, m = $('#ob-m').value, d = $('#ob-d').value; return (y || m || d) ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}` : ''; };
   function renderZodiac(list, mine){
     $('#zodiac-table').innerHTML = list.map(z => `<div class="z ${z.zodiac === mine ? 'me' : ''}"><b>${z.zodiac}띠</b><span class="dots">${dots(z.grade)}</span><div class="kv">${esc(z.label)} · ${esc(z.short)}</div><div style="margin-top:6px">${balls(z.numbers, z.colors, null, null, null, true)}</div></div>`).join('');
   }
@@ -415,10 +437,12 @@
   function showOnboarding(profile){
     $('#fortune-body').innerHTML = onboardingForm(profile);
     goto('fortune');
+    wireDateInputs();
     $('#ob-save').addEventListener('click', async () => {
       showErr('#ob-error', null);
+      if (!obBirth()) return showErr('#ob-error', '생년월일을 입력하세요.');
       try {
-        const r = await api('/api/profile', {name: $('#ob-name').value, birth_date: $('#ob-birth').value, birth_hour: $('#ob-hour').value});
+        const r = await api('/api/profile', {name: $('#ob-name').value, birth_date: obBirth(), birth_branch: $('#ob-branch').value});
         META.has_profile = true; renderFortune(r);
       } catch (e) { showErr('#ob-error', e); }
     });
@@ -688,7 +712,7 @@
     $('#set-autorefresh').checked = !!META.auto_refresh;
     try {
       const r = await api('/api/profile'); const p = r.profile;
-      $('#info-profile').textContent = p.birth_date ? `${p.name || '(이름 없음)'} · ${p.birth_date}${p.birth_hour != null ? ' · ' + p.birth_hour + '시생' : ''}` : '프로필이 없습니다.';
+      $('#info-profile').textContent = p.birth_date ? `${p.name || '(이름 없음)'} · ${p.birth_date} · ${p.zodiac}띠${p.hour_label ? ' · ' + p.hour_label + '생' : ''}` : '프로필이 없습니다.';
     } catch (e) { $('#info-profile').textContent = e.message; }
   }
   $('#set-save').addEventListener('click', async () => {

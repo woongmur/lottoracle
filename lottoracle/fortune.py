@@ -92,16 +92,46 @@ TIPS = (
     "점심은 평소보다 천천히 드셔 보세요.",
 )
 
-# 태어난 시(時) → 12지지. 자시는 23~1시.
+# 태어난 시(時) → 12지지. 요즘 한국 사주에서 통용되는 30분 보정 기준
+# (한국 표준시가 동경 135도 기준이라 실제 태양시보다 약 30분 빠른 것을 반영).
 HOUR_BRANCHES = ("자", "축", "인", "묘", "진", "사", "오", "미", "신", "유", "술", "해")
 BRANCH_ANIMAL = dict(zip(HOUR_BRANCHES, ("쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양", "원숭이", "닭", "개", "돼지")))
+BRANCH_RANGE = {
+    "자": "23:30~01:30", "축": "01:30~03:30", "인": "03:30~05:30", "묘": "05:30~07:30",
+    "진": "07:30~09:30", "사": "09:30~11:30", "오": "11:30~13:30", "미": "13:30~15:30",
+    "신": "15:30~17:30", "유": "17:30~19:30", "술": "19:30~21:30", "해": "21:30~23:30",
+}
+
+
+def branch_of_time(hour: int | None, minute: int = 0) -> str:
+    """시:분 → 12지지 한 글자 (30분 보정). None 이면 빈 문자열."""
+    if hour is None:
+        return ""
+    total = (int(hour) * 60 + int(minute) + 30) % 1440
+    return HOUR_BRANCHES[total // 120]
 
 
 def hour_branch(hour: int | None) -> str:
-    """0~23시를 12지지 한 글자로. None 이면 빈 문자열."""
-    if hour is None:
+    """정시 기준 12지지. branch_of_time(hour, 0) 과 같다 (하위 호환)."""
+    return branch_of_time(hour, 0)
+
+
+def normalize_branch(text: str | None) -> str:
+    """'진', '진시', '용' 같은 입력을 지지 한 글자로. 모르면 빈 문자열, 틀리면 ValueError."""
+    token = str(text or "").strip().replace("시", "")
+    if not token:
         return ""
-    return HOUR_BRANCHES[((int(hour) + 1) // 2) % 12]
+    if token in HOUR_BRANCHES:
+        return token
+    for b, animal in BRANCH_ANIMAL.items():
+        if token == animal:
+            return b
+    raise ValueError(f"태어난 시는 자·축·인·묘·진·사·오·미·신·유·술·해 중 하나여야 합니다: {text}")
+
+
+def branch_choices() -> list[dict[str, str]]:
+    """GUI 선택지: [{value:'자', label:'자시 (23:30~01:30) · 쥐'}, ...]"""
+    return [{"value": b, "label": f"{b}시 ({BRANCH_RANGE[b]}) · {BRANCH_ANIMAL[b]}"} for b in HOUR_BRANCHES]
 
 
 # ------------------------------------------------------------------ 프로필
@@ -111,7 +141,8 @@ class Profile:
 
     name: str = ""
     birth_date: str = ""          # YYYY-MM-DD
-    birth_hour: int | None = None  # 0~23, 모르면 None
+    birth_branch: str = ""        # 태어난 시의 12지지 한 글자 ('진'), 모르면 빈 문자열
+    birth_hour: int | None = None  # (하위 호환) 0~23. birth_branch 가 비어 있으면 여기서 유도
 
     def __post_init__(self) -> None:
         self.name = str(self.name or "").strip()[:20]
@@ -134,6 +165,9 @@ class Profile:
             if not 0 <= h <= 23:
                 raise ValueError("태어난 시는 0~23 사이여야 합니다.")
             self.birth_hour = h
+        self.birth_branch = normalize_branch(self.birth_branch)
+        if not self.birth_branch and self.birth_hour is not None:
+            self.birth_branch = branch_of_time(self.birth_hour)
 
     @property
     def is_empty(self) -> bool:
@@ -149,8 +183,12 @@ class Profile:
 
     @property
     def hour_animal(self) -> str:
-        b = hour_branch(self.birth_hour)
-        return BRANCH_ANIMAL[b] if b else ""
+        return BRANCH_ANIMAL[self.birth_branch] if self.birth_branch else ""
+
+    @property
+    def hour_label(self) -> str:
+        """'진시(용)' 같은 표시용 문자열. 모르면 빈 문자열."""
+        return f"{self.birth_branch}시({self.hour_animal})" if self.birth_branch else ""
 
     def personal_numbers(self) -> tuple[int, ...]:
         """띠수 + 생일수 + 태어난 시의 띠수. 추천 입력의 '내 편' 번호."""
@@ -161,7 +199,14 @@ class Profile:
         return tuple(sorted(n for n in pool if n in NUMBER_POOL))
 
     def to_dict(self) -> dict[str, Any]:
-        return {"name": self.name, "birth_date": self.birth_date, "birth_hour": self.birth_hour}
+        return {
+            "name": self.name,
+            "birth_date": self.birth_date,
+            "birth_branch": self.birth_branch,
+            "birth_hour": self.birth_hour,
+            "hour_label": self.hour_label,
+            "zodiac": self.zodiac,
+        }
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any] | None) -> "Profile":
@@ -169,6 +214,7 @@ class Profile:
         return cls(
             name=raw.get("name", ""),
             birth_date=raw.get("birth_date", ""),
+            birth_branch=raw.get("birth_branch", ""),
             birth_hour=raw.get("birth_hour", None),
         )
 
@@ -240,7 +286,7 @@ def daily_fortune(profile: Profile | None, today: date | None = None) -> Fortune
     """프로필과 날짜로 결정되는 오늘의 운세. 프로필이 비어 있으면 날짜만으로 만든다."""
     today = today or date.today()
     profile = profile or Profile()
-    branch = hour_branch(profile.birth_hour)
+    branch = profile.birth_branch
     rng = random.Random(_seed("fortune", today.isoformat(), profile.birth_date, branch, profile.name))
     grade = _pick_grade(rng)
     sentence = rng.choice(SENTENCES[grade])
@@ -307,6 +353,7 @@ def forbidden_hits(text: str) -> list[str]:
 
 __all__ = [
     "TAGLINE", "DISCLAIMER", "FORBIDDEN_WORDS", "GRADE_LABELS", "ZODIAC_ORDER",
-    "Profile", "Fortune", "daily_fortune", "zodiac_table", "hour_branch",
+    "Profile", "Fortune", "daily_fortune", "zodiac_table", "hour_branch", "branch_of_time",
+    "normalize_branch", "branch_choices", "BRANCH_RANGE", "BRANCH_ANIMAL",
     "all_sentences", "forbidden_hits",
 ]

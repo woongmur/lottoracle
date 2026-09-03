@@ -45,12 +45,31 @@ class ProfileTest(unittest.TestCase):
         self.assertEqual(Profile.from_dict(p.to_dict()), p)
         self.assertTrue(Profile().is_empty)
 
-    def test_hour_branch(self):
-        self.assertEqual(fortune.hour_branch(23), "자")
-        self.assertEqual(fortune.hour_branch(0), "자")
-        self.assertEqual(fortune.hour_branch(1), "축")
+    def test_branch_of_time_uses_30min_correction(self):
+        b = fortune.branch_of_time
+        self.assertEqual(b(23, 30), "자")
+        self.assertEqual(b(0, 0), "자")
+        self.assertEqual(b(1, 29), "자")
+        self.assertEqual(b(1, 30), "축")
+        self.assertEqual(b(7, 30), "진")
+        self.assertEqual(b(9, 29), "진")
+        self.assertEqual(b(9, 30), "사")
+        self.assertEqual(b(23, 0), "해")
+        self.assertEqual(b(None), "")
         self.assertEqual(fortune.hour_branch(12), "오")
-        self.assertEqual(fortune.hour_branch(None), "")
+        # 표시 범위와 계산이 일치하는지: 각 구간 시작 시각이 그 지지로 떨어져야 한다
+        for br, rng in fortune.BRANCH_RANGE.items():
+            h, m = (int(x) for x in rng.split("~")[0].split(":"))
+            self.assertEqual(b(h, m), br, rng)
+
+    def test_branch_input_forms(self):
+        self.assertEqual(Profile(birth_date="1990-05-21", birth_branch="진시").birth_branch, "진")
+        self.assertEqual(Profile(birth_date="1990-05-21", birth_branch="용").hour_label, "진시(용)")
+        self.assertEqual(Profile(birth_date="1990-05-21", birth_hour=4).birth_branch, "인")   # 구버전 profile.json 호환
+        with self.assertRaises(ValueError):
+            Profile(birth_date="1990-05-21", birth_branch="갑")
+        self.assertEqual(len(fortune.branch_choices()), 12)
+        self.assertIn("07:30~09:30", fortune.branch_choices()[4]["label"])
 
 
 class FortuneTest(unittest.TestCase):
@@ -208,7 +227,7 @@ class WebNewApiTest(unittest.TestCase):
     def test_meta_has_new_fields(self):
         status, m = self._req("/api/meta")
         self.assertEqual(status, 200)
-        for key in ("version", "has_profile", "tagline", "disclaimer", "kakao_js_key", "online_refresh"):
+        for key in ("version", "has_profile", "tagline", "disclaimer", "kakao_js_key", "online_refresh", "branch_choices"):
             self.assertIn(key, m)
         self.assertFalse(m["has_profile"])
 
@@ -227,10 +246,11 @@ class WebNewApiTest(unittest.TestCase):
         self.assertFalse(r["has_profile"])
         self.assertEqual(len(r["zodiac_table"]), 12)
 
-        status, r = self._req("/api/profile", {"name": "홍길동", "birth_date": "1990-05-21", "birth_hour": "4"})
+        status, r = self._req("/api/profile", {"name": "홍길동", "birth_date": "1990-05-21", "birth_branch": "인"})
         self.assertEqual(status, 200)
         self.assertTrue(r["has_profile"])
         self.assertEqual(r["fortune"]["zodiac"], "말")
+        self.assertEqual(r["profile"]["hour_label"], "인시(호랑이)")
         self.assertEqual(r["recommend_inputs"]["birthday"], "1990-05-21")
         self.assertEqual(len(r["recommend_inputs"]["lucky"]), 3)
 
