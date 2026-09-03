@@ -29,7 +29,16 @@
   section{display:none}section.active{display:block}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
   .grid.two{grid-template-columns:1fr 1fr}
-  @media(max-width:900px){.grid,.grid.two{grid-template-columns:1fr}main{padding:14px}header,nav{padding-left:14px;padding-right:14px}}
+  /* 복권방: 데스크톱은 왼쪽에 검색+목록, 오른쪽에 지도 */
+  .grid.shops{grid-template-areas:"ctl map" "lists map";align-items:start}
+  #shop-controls{grid-area:ctl}
+  #shop-mapwrap{grid-area:map}
+  #shop-lists{grid-area:lists}
+  #fame-list:not(:empty),#shop-list:not(:empty){background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:4px 16px 12px;margin-top:12px}
+  @media(max-width:900px){.grid,.grid.two,.grid.shops{grid-template-columns:1fr}main{padding:14px}header,nav{padding-left:14px;padding-right:14px}
+    /* 한 줄로 접히면 지도가 목록 뒤로 밀린다 — 검색 → 지도 → 목록 순으로 고정 */
+    .grid.shops{grid-template-areas:"ctl" "map" "lists"}}
   #map{width:100%;height:440px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
   .shop{padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
   .shop:hover{background:rgba(255,255,255,.03)}
@@ -50,7 +59,8 @@
   .ball{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-weight:800;font-size:15px;color:#111;margin-right:6px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
   .ball.sm{width:28px;height:28px;font-size:12px;margin-right:4px}
   .c-노랑{background:var(--yellow)}.c-파랑{background:var(--blue)}.c-빨강{background:var(--red)}.c-회색{background:var(--gray)}.c-초록{background:var(--green)}
-  .ball.bonus{outline:2px dashed var(--muted);outline-offset:2px}
+  /* outline 은 레이아웃 폭을 차지하지 않으므로(2px+오프셋 2px) 그만큼 여백을 따로 준다 */
+  .ball.bonus{outline:2px dashed var(--muted);outline-offset:2px;margin-left:4px}
   .plus{color:var(--muted);margin:0 6px;font-weight:700}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
   .card .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
@@ -138,7 +148,8 @@
       overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     header .meta::-webkit-scrollbar{display:none}
     header .meta .ball.sm{width:21px;height:21px;font-size:10px;margin-right:2px}
-    header .meta .plus{margin:0 2px}
+    header .meta .plus{margin:0 4px}
+    header .meta .ball.bonus{margin-left:4px;margin-right:6px}
     header .status{font-size:11.5px}
     /* 탭: 한 줄 가로 스크롤 + 스크롤해도 따라오게 */
     nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
@@ -317,8 +328,8 @@
 
   <!-- ============ 복권방 ============ -->
   <section id="tab-shops">
-    <div class="grid">
-      <div class="panel">
+    <div class="grid shops">
+      <div class="panel" id="shop-controls">
         <h3>내 주변 복권방</h3>
         <label>동네 · 역 · 건물 이름</label>
         <input type="text" id="shop-query" placeholder="예: 강남역, 상암동">
@@ -331,12 +342,14 @@
         <p class="kv" style="margin-top:12px">위치 권한은 선택입니다. 동네 이름으로 검색해도 됩니다. 검색은 카카오맵을 통해 이루어지고, 이 앱은 위치를 저장하지 않습니다.</p>
         <div id="shop-status" class="kv"></div>
         <div id="shop-error"></div>
-        <div id="fame-list"></div>
-        <div id="shop-list"></div>
       </div>
-      <div>
+      <div id="shop-mapwrap">
         <div id="map"></div>
         <div id="shop-fallback" class="softbox" style="display:none"></div>
+      </div>
+      <div id="shop-lists">
+        <div id="fame-list"></div>
+        <div id="shop-list"></div>
       </div>
     </div>
   </section>
@@ -961,35 +974,41 @@ function storeRow(st, i, kind) {
   return `<div class="shop" data-${kind}="${i}"><b>${esc(st.name)} ${badge}</b><span class="kv">${esc(st.addr)}${dist}</span></div>`;
 }
 const KAKAO_ORIGINS = ['http://localhost:8765', 'http://127.0.0.1:8765'];
+/** 지도를 못 쓸 때(미등록 주소·로드 실패) 링크 검색과 배출점 목록으로 대체한다. */
+function useShopFallback(reason) {
+  $('#map').style.display = 'none';
+  $('#shop-fallback').style.display = '';
+  $('#shop-fallback').innerHTML = `<b style="color:var(--text)">지도 없이 바로 찾기</b><p>${esc(reason)}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ghost" id="fb-kakao" target="_blank" rel="noopener">카카오맵에서 복권판매점 찾기</a><a class="ghost" id="fb-naver" target="_blank" rel="noopener">네이버 지도에서 찾기</a></div>`;
+  const upd = () => { const q = ($('#shop-query').value.trim() + ' 복권판매점').trim(); $('#fb-kakao').href = 'https://map.kakao.com/?q=' + encodeURIComponent(q); $('#fb-naver').href = 'https://map.naver.com/p/search/' + encodeURIComponent(q); };
+  upd(); $('#shop-query').addEventListener('input', upd);
+  $('#shop-search').addEventListener('click', () => { upd(); window.open($('#fb-kakao').href, '_blank', 'noopener'); });
+  $('#shop-locate').addEventListener('click', () => window.open('https://map.kakao.com/?q=' + encodeURIComponent('복권판매점'), '_blank', 'noopener'));
+  // 지도가 없어도 배출점 목록은 검색할 수 있다
+  loadStores().then(idx => {
+    const render = () => {
+      const hits = idx.search($('#shop-query').value.trim(), 30);
+      $('#fame-list').innerHTML = hits.length
+        ? `<div class="kv" style="margin:10px 0 4px"><b>배출점 ${hits.length}곳</b></div>`
+          + hits.map(st => `<div class="shop"><b>${esc(st.name)} <span class="badge" style="background:#4a3a10;color:#f5d76e">${esc(summarize(st))}</span></b><span class="kv">${esc(st.addr)}</span></div>`).join('')
+        : '';
+    };
+    $('#shop-query').addEventListener('input', render);
+  });
+}
+
 function initShops() {
   if (shopsInit) return; shopsInit = true;
   // 등록된 도메인이 아니면 지도 대신 링크로 대체한다.
   const registered = KAKAO_ORIGINS.includes(location.origin) || location.protocol === 'https:';
-  if (!registered) {
-    $('#map').style.display = 'none';
-    $('#shop-fallback').style.display = '';
-    $('#shop-fallback').innerHTML = `<b style="color:var(--text)">지도 없이 바로 찾기</b><p>지금 주소에서는 아래 링크로 검색하세요.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ghost" id="fb-kakao" target="_blank" rel="noopener">카카오맵에서 복권판매점 찾기</a><a class="ghost" id="fb-naver" target="_blank" rel="noopener">네이버 지도에서 찾기</a></div>`;
-    const upd = () => { const q = ($('#shop-query').value.trim() + ' 복권판매점').trim(); $('#fb-kakao').href = 'https://map.kakao.com/?q=' + encodeURIComponent(q); $('#fb-naver').href = 'https://map.naver.com/p/search/' + encodeURIComponent(q); };
-    upd(); $('#shop-query').addEventListener('input', upd);
-    $('#shop-search').addEventListener('click', () => { upd(); window.open($('#fb-kakao').href, '_blank', 'noopener'); });
-    $('#shop-locate').addEventListener('click', () => window.open('https://map.kakao.com/?q=' + encodeURIComponent('복권판매점'), '_blank', 'noopener'));
-    // 지도가 없어도 배출점 목록은 검색할 수 있다
-    loadStores().then(idx => {
-      const render = () => {
-        const hits = idx.search($('#shop-query').value.trim(), 30);
-        $('#fame-list').innerHTML = hits.length
-          ? `<div class="kv" style="margin:10px 0 4px"><b>배출점 ${hits.length}곳</b></div>`
-            + hits.map(st => `<div class="shop"><b>${esc(st.name)} <span class="badge" style="background:#4a3a10;color:#f5d76e">${esc(summarize(st))}</span></b><span class="kv">${esc(st.addr)}</span></div>`).join('')
-          : '';
-      };
-      $('#shop-query').addEventListener('input', render);
-    });
-    return;
-  }
+  if (!registered) { useShopFallback('지금 주소에서는 아래 링크로 검색하세요.'); return; }
   const s = document.createElement('script');
   s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_JS_KEY)}&autoload=false&libraries=services`;
-  s.onerror = () => showErr('#shop-error', '카카오맵을 불러오지 못했습니다. 네트워크 연결을 확인하세요.');
+  // 실패하면 빈 지도 자리를 남기지 말고 링크 검색으로 대체한다.
+  s.onerror = () => {
+    showErr('#shop-error', '카카오맵을 불러오지 못했습니다. 네트워크 연결을 확인하세요.');
+    useShopFallback('지도를 불러오지 못했습니다. 아래 링크로 검색하세요.');
+  };
   s.onload = () => kakao.maps.load(() => {
     kmap = new kakao.maps.Map($('#map'), { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5 });
     places = new kakao.maps.services.Places();
