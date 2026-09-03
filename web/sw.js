@@ -13,6 +13,7 @@ const SHELL_FILES = [
   './src/model.js', './src/stats.js', './src/metrics.js', './src/filters.js',
   './src/folklore.js', './src/fortune.js', './src/explain.js', './src/grade.js',
   './src/qr.js', './src/rng.js', './src/strategies.js', './src/backtest.js',
+  './src/stores.js',
 ];
 
 self.addEventListener('install', event => {
@@ -38,8 +39,8 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;    // 동행복권·카카오는 그대로 통과
 
-  // 회차 데이터: 네트워크 우선
-  if (url.pathname.endsWith('/data/draws.json')) {
+  // 회차·배출점 데이터: 네트워크 우선 (주간 갱신이 재방문자에게 바로 닿아야 한다)
+  if (url.pathname.endsWith('/data/draws.json') || url.pathname.endsWith('/data/stores.json')) {
     event.respondWith(
       fetch(request)
         .then(res => {
