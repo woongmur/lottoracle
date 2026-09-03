@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lottoracle · 오늘의 운세와 로또 6/45 조합</title>
+<meta name="description" content="오늘의 운세와 로또 6/45 조합 생성기. 통계 필터와 민간속설을 코드로 옮긴 도구이며, 당첨 확률을 바꾸지 않습니다.">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+  :root{
+    --bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2a2f3a;--text:#e8eaf0;--muted:#9aa3b2;
+    --accent:#7aa2ff;--ok:#6fd39a;--warn:#ffb86b;--bad:#ff7b7b;--gold:#f5d76e;
+    --yellow:#fbc400;--blue:#69c8f2;--red:#ff7272;--gray:#aaaaaa;--green:#b0d840;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+  header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;letter-spacing:.3px}
+  header h1 span{color:var(--accent)}
+  header .meta{color:var(--muted);font-size:13px;flex:1}
+  header .status{color:var(--muted);font-size:12px}
+  nav{display:flex;gap:2px;padding:8px 24px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;overflow-x:auto}
+  nav button{background:none;border:0;color:var(--muted);padding:10px 12px;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  nav button.active{color:var(--text);border-bottom-color:var(--accent)}
+  main{padding:20px 24px;max-width:1180px;margin:0 auto}
+  section{display:none}section.active{display:block}
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+  .grid.two{grid-template-columns:1fr 1fr}
+  /* 복권방: 데스크톱은 왼쪽에 검색+목록, 오른쪽에 지도 */
+  .grid.shops{grid-template-areas:"ctl map" "lists map";align-items:start}
+  #shop-controls{grid-area:ctl}
+  #shop-mapwrap{grid-area:map}
+  #shop-lists{grid-area:lists}
+  #fame-list:not(:empty),#shop-list:not(:empty){background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:4px 16px 12px;margin-top:12px}
+  @media(max-width:900px){.grid,.grid.two,.grid.shops{grid-template-columns:1fr}main{padding:14px}header,nav{padding-left:14px;padding-right:14px}
+    /* 한 줄로 접히면 지도가 목록 뒤로 밀린다 — 검색 → 지도 → 목록 순으로 고정 */
+    .grid.shops{grid-template-areas:"ctl" "map" "lists"}}
+  #map{width:100%;height:440px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+  .shop{padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .shop:hover{background:rgba(255,255,255,.03)}
+  .shop b{display:block}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .panel h3{margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+  input[type=text],input[type=number],input[type=date],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:8px;font-size:14px}
+  input[type=range]{width:100%}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  .check{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13.5px;color:var(--text)}
+  .check input{width:auto}
+  button.primary{width:100%;margin-top:14px;background:var(--accent);color:#0b0e14;border:0;padding:11px;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer}
+  button.primary:disabled{opacity:.5;cursor:wait}
+  button.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  button.ghost:disabled{opacity:.5}
+  a.ghost{display:inline-block;background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:8px;font-size:13px;text-decoration:none}
+  .ball{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-weight:800;font-size:15px;color:#111;margin-right:6px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+  .ball.sm{width:28px;height:28px;font-size:12px;margin-right:4px}
+  .c-노랑{background:var(--yellow)}.c-파랑{background:var(--blue)}.c-빨강{background:var(--red)}.c-회색{background:var(--gray)}.c-초록{background:var(--green)}
+  /* outline 은 레이아웃 폭을 차지하지 않으므로(2px+오프셋 2px) 그만큼 여백을 따로 준다 */
+  .ball.bonus{outline:2px dashed var(--muted);outline-offset:2px;margin-left:4px}
+  .plus{color:var(--muted);margin:0 6px;font-weight:700}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+  .card .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .card .title{font-weight:700;font-size:15px}
+  .card .title small{color:var(--muted);font-weight:400;margin-left:8px}
+  .card .balls{margin:6px 0 10px}
+  .note{color:#c9cfdb;font-size:13.5px;margin:6px 0}
+  .kv{color:var(--muted);font-size:12.5px;margin:3px 0}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .tag{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:2px 9px;font-size:12px}
+  .bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-top:4px}
+  .bar>i{display:block;height:100%;background:var(--accent)}
+  .bar.luck>i{background:var(--warn)}
+  .mini{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .mini .kv b{color:var(--text)}
+  .softbox{background:#1a1d26;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:10px 14px;font-size:12.5px;margin:12px 0}
+  .warnbox{background:#2a1f12;border:1px solid #5a3f1a;color:#ffd9a8;border-radius:10px;padding:12px 14px;font-size:13px;margin:0 0 16px}
+  .err{background:#2a1515;border:1px solid #6a2525;color:#ffb4b4;border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0}
+  .okbox{background:#12261b;border:1px solid #1f5a36;color:#b8f0cf;border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{color:var(--muted);font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .freq{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
+  .freq .f{display:flex;align-items:center;gap:6px;font-size:12px}
+  .freq .f .bar{flex:1;margin:0}
+  .freq .f .bar>i{background:var(--ok)}
+  .dist{display:flex;gap:4px;align-items:flex-end;height:90px;margin:22px 0 22px}
+  .dist>div{flex:1;background:var(--accent);border-radius:4px 4px 0 0;position:relative;min-height:2px}
+  .dist>div span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
+  .dist>div em{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--muted);font-style:normal}
+  .gradeline{display:flex;gap:6px;margin:6px 0;align-items:center;flex-wrap:wrap}
+  .gradeline input{width:52px;text-align:center}
+  .rank-1,.rank-2,.rank-3{color:var(--ok);font-weight:700}.rank-4,.rank-5{color:var(--warn);font-weight:700}.rank-0{color:var(--muted)}
+  .hit{outline:3px solid var(--ok);outline-offset:1px}
+  footer{color:var(--muted);font-size:12px;padding:20px 24px;border-top:1px solid var(--line);text-align:center}
+  footer a{color:var(--muted)}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--muted);border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  /* 운세 */
+  .fortune{background:linear-gradient(160deg,#1b1f2c,#141720);border:1px solid var(--line);border-radius:16px;padding:26px 28px;margin-bottom:16px}
+  .fortune .date{color:var(--muted);font-size:13px}
+  .fortune .greet{font-size:22px;font-weight:800;margin:4px 0 14px}
+  .fortune .dots{letter-spacing:4px;color:var(--gold);font-size:18px;margin-right:10px}
+  .fortune .label{font-size:17px;font-weight:700;display:inline-block}
+  .fortune .sentence{font-size:16px;line-height:1.7;margin:12px 0 18px;color:#e2e6f0}
+  .fortune .items{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:10px 0 18px}
+  .fortune .item{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .fortune .item .k{color:var(--muted);font-size:12px;margin-bottom:6px}
+  .fortune .swatch{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:-4px;margin-right:6px}
+  .fortune .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .fortune .actions .primary{width:auto;margin:0;padding:11px 18px}
+  .fortune .tagline{color:var(--muted);font-size:12px;margin-top:16px;text-align:right;font-style:italic}
+  .ztable{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .ztable .z{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .ztable .z.me{border-color:var(--gold)}
+  .ztable .z b{font-size:14px}
+  .ztable .z .dots{color:var(--gold);letter-spacing:2px;font-size:13px;margin-left:6px}
+  .ztable .z .kv{margin-top:4px}
+  .badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+  .badge.wait{background:#2a2f3a;color:var(--muted)}
+  .badge.win{background:#1f5a36;color:#b8f0cf}
+  .badge.lose{background:#3a2a2a;color:#e8b4b4}
+  /* 당첨 축하 */
+  #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:none}
+  .celebrate{border-radius:16px;padding:22px 24px;margin-bottom:14px;text-align:center;border:2px solid transparent}
+  .celebrate .big{font-size:30px;font-weight:900;letter-spacing:2px;margin-bottom:6px}
+  .celebrate .sub{font-size:14px;opacity:.85}
+  .celebrate.rank-gold{background:linear-gradient(160deg,#4a3a10,#2a2008);border-color:#f5d76e}
+  .celebrate.rank-gold .big{color:#f7d774;text-shadow:0 0 18px rgba(245,215,110,.55)}
+  .celebrate.rank-silver{background:linear-gradient(160deg,#3a3f47,#23272d);border-color:#d8dde3}
+  .celebrate.rank-silver .big{color:#e6ebf1;text-shadow:0 0 16px rgba(216,221,227,.45)}
+  .celebrate.rank-bronze{background:linear-gradient(160deg,#4a3222,#2b1d14);border-color:#cd7f32}
+  .celebrate.rank-bronze .big{color:#e2a06a;text-shadow:0 0 14px rgba(205,127,50,.45)}
+  .celebrate.rank-plain{background:var(--panel);border-color:var(--line)}
+  .celebrate.rank-plain .big{color:var(--text);font-size:24px;letter-spacing:1px}
+  .celebrate.rank-none{background:var(--panel);border-color:var(--line)}
+  .celebrate.rank-none .big{color:var(--muted);font-size:20px;font-weight:700;letter-spacing:0}
+  /* ---- 모바일 (세로 폭 640px 이하) ---- */
+  @media(max-width:640px){
+    /* 헤더: 로고 한 줄, 최신 회차는 그 아래 한 줄로 가로 스크롤 */
+    header{padding:10px 14px 8px;gap:8px;row-gap:6px;align-items:center}
+    header h1{font-size:17px}
+    header .meta{order:3;width:100%;flex:none;font-size:12px;white-space:nowrap;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    header .meta::-webkit-scrollbar{display:none}
+    header .meta .ball.sm{width:21px;height:21px;font-size:10px;margin-right:2px}
+    header .meta .plus{margin:0 4px}
+    header .meta .ball.bonus{margin-left:4px;margin-right:6px}
+    header .status{font-size:11.5px}
+    /* 탭: 한 줄 가로 스크롤 + 스크롤해도 따라오게 */
+    nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+      position:sticky;top:0;z-index:20;background:var(--bg);padding:0 10px}
+    nav::-webkit-scrollbar{display:none}
+    nav button{padding:12px 11px;font-size:14px;flex:0 0 auto}
+    /* 터치 목표 확보 + iOS 자동 확대 방지(16px 미만이면 확대된다) */
+    input[type=text],input[type=number],input[type=date],input[type=password],select{font-size:16px;padding:10px}
+    button.ghost{padding:10px 12px;font-size:13.5px}
+    button.primary{padding:13px}
+    /* 공: 6개 + 보너스가 한 줄에 들어가게 */
+    .ball{width:34px;height:34px;font-size:14px;margin-right:3px}
+    .ball.sm{width:26px;height:26px;font-size:11.5px;margin-right:3px}
+    .plus{margin:0 3px}
+    /* 채점 입력: 6칸 + 삭제 버튼을 한 줄에 */
+    .gradeline{display:grid;grid-template-columns:repeat(6,1fr) auto;gap:4px}
+    .gradeline input{width:100%;padding:10px 2px;text-align:center}
+    .gradeline button{padding:8px 10px}
+    /* 넓은 표는 가로로 스크롤 */
+    .panel table,#stats-body table,#draws-body table{display:block;overflow-x:auto;white-space:nowrap}
+    /* 카드·패널 여백 축소 */
+    .panel,.card{padding:14px}
+    .fortune{padding:18px 16px}
+    .fortune .greet{font-size:20px}
+    .fortune .sentence{font-size:15px}
+    .fortune .items{grid-template-columns:1fr 1fr;gap:8px}
+    .fortune .actions .primary{width:100%}
+    .mini{grid-template-columns:1fr}
+    .ztable{grid-template-columns:1fr 1fr;gap:8px}
+    .celebrate .big{font-size:24px}
+    #map{height:320px}
+  }
+  /* 아주 좁은 화면 (360px 이하) */
+  @media(max-width:360px){
+    .ball{width:30px;height:30px;font-size:13px}
+    .fortune .items{grid-template-columns:1fr}
+    .ztable{grid-template-columns:1fr}
+    nav button{padding:12px 9px;font-size:13.5px}
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<header>
+  <h1>lotto<span>racle</span></h1>
+  <div class="meta" id="meta">불러오는 중…</div>
+  <div class="status" id="refresh-status"></div>
+  <div class="status" id="offline-badge" style="display:none;color:var(--warn)">오프라인</div>
+</header>
+<nav>
+  <button data-tab="fortune" class="active">오늘의 운세</button>
+  <button data-tab="recommend">번호 추천</button>
+  <button data-tab="picks">내 번호</button>
+  <button data-tab="stats">통계</button>
+  <button data-tab="grade">당첨 확인</button>
+  <button data-tab="backtest">백테스트</button>
+  <button data-tab="draws">회차</button>
+  <button data-tab="shops">복권방</button>
+  <button data-tab="info">설정 · 정보</button>
+</nav>
+<main>
+
+  <!-- ============ 운세 ============ -->
+  <section id="tab-fortune" class="active">
+    <div id="fortune-body"><span class="spin"></span>오늘의 기운을 읽는 중…</div>
+    <div class="panel" style="margin-top:6px"><h3>띠로만 보는 오늘</h3>
+      <p class="kv" style="margin:-4px 0 12px">생년월일·태어난 시를 뺀 <b>띠 하나만</b>으로 본 오늘입니다. 위의 내 운세와는 보는 방식이 달라 결과도 따로 나옵니다. 가족·친구 띠를 찾아보세요.</p>
+      <div id="zodiac-table" class="ztable"></div></div>
+  </section>
+
+  <!-- ============ 추천 ============ -->
+  <section id="tab-recommend">
+    <div class="grid">
+      <div class="panel">
+        <h3>추천 설정</h3>
+        <div id="profile-hint" class="softbox" style="display:none;margin:0 0 6px"></div>
+        <div class="row">
+          <div><label>줄 수</label><input type="number" id="lines" value="5" min="1" max="20"></div>
+          <div><label>시드 (비우면 매번 다름)</label><input type="number" id="seed" placeholder="예: 20260905"></div>
+        </div>
+        <label>전략 (비우면 5종 순환)</label>
+        <div id="strategies"></div>
+        <label>행운수 <small style="color:var(--muted)">— 뽑힐 확률만 올라갑니다</small></label><input type="text" id="lucky" placeholder="예: 7 13">
+        <label>기피수 (완전 제외)</label><input type="text" id="avoid" placeholder="예: 4">
+        <div class="row">
+          <div><label>꿈 키워드</label><input type="text" id="dream" placeholder="돼지, 용, 조상…"></div>
+          <div><label>띠 / 태어난 해</label><input type="text" id="zodiac" placeholder="말 또는 1990"></div>
+        </div>
+        <label>생일</label><input type="text" id="birthday" placeholder="1990-05-21">
+        <div class="check"><input type="checkbox" id="folklore" checked><span>민간속설 가중치 사용 (이월수·쌍둥이수·이웃수·색상·용지…)</span></div>
+        <div class="check"><input type="checkbox" id="calibrate" checked><span>실데이터로 필터 자동 보정</span></div>
+        <label>보정 범위 <b id="coverage-v">80%</b> — 낮을수록 빡빡하게</label>
+        <input type="range" id="coverage" min="50" max="99" value="80">
+        <label>선택 온도 <b id="temperature-v">1.0</b> — 낮을수록 가장 흔한 모양만</label>
+        <input type="range" id="temperature" min="5" max="300" value="100">
+        <div class="row">
+          <div><label>줄당 후보 수</label><input type="number" id="candidates" value="40" min="1" max="400"></div>
+          <div><label>줄 간 최대 중복</label><input type="number" id="max_overlap" value="3" min="0" max="6"></div>
+        </div>
+        <button class="primary" id="run-recommend">추천 5줄 뽑기</button>
+      </div>
+      <div>
+        <div id="rec-info" class="kv" style="margin-bottom:10px"></div>
+        <div id="rec-actions" style="display:none;margin:0 0 12px"><button class="ghost" id="save-picks">이 조합을 내 번호로 저장</button> <span class="kv" id="save-picks-msg" style="display:inline"></span></div>
+        <div id="rec-error"></div>
+        <div id="rec-results"></div>
+        <div id="rec-foot" class="kv" style="display:none;margin-top:6px">1등 확률은 어떤 조합이든 1/8,145,060 · 잃어도 괜찮은 만큼만 · 상담 1336</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 내 번호 ============ -->
+  <section id="tab-picks">
+    <div class="panel">
+      <h3>내 번호 <button class="ghost" id="picks-reload" style="float:right">새로고침</button></h3>
+      <p class="kv">추천 탭에서 저장한 조합입니다. 목표 회차가 추첨되면 자동으로 채점됩니다. 이 컴퓨터의 data 폴더에만 저장됩니다.</p>
+      <div id="buy-msg"></div>
+      <div id="picks-error"></div>
+      <div id="picks-body"></div>
+    </div>
+  </section>
+
+  <!-- ============ 통계 ============ -->
+  <section id="tab-stats">
+    <div id="stats-body"><span class="spin"></span>통계 계산 중…</div>
+  </section>
+
+  <!-- ============ 당첨 확인 ============ -->
+  <section id="tab-grade">
+    <div class="grid">
+      <div class="panel">
+        <h3>당첨 확인</h3>
+        <p class="kv">번호를 넣고 채점하면 등수를 판정합니다. 당첨이면 축하 연출이 나옵니다.</p>
+        <label>기준 회차 (비우면 최신)</label><input type="number" id="grade-draw" placeholder="예: 1239">
+        <label>조합 (한 줄에 6개, 최대 10줄)</label>
+        <div id="grade-lines"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="ghost" id="grade-add">줄 추가</button>
+          <button class="ghost" id="grade-from-rec">추천 결과 가져오기</button>
+          <button class="ghost" id="grade-from-picks">내 번호 가져오기</button>
+        </div>
+        <button class="primary" id="run-grade">채점하기</button>
+      </div>
+      <div>
+        <div id="grade-error"></div>
+        <div id="grade-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 백테스트 ============ -->
+  <section id="tab-backtest">
+    <div class="grid">
+      <div class="panel">
+        <h3>백테스트</h3>
+        <p class="kv">최근 N회차마다 <b>그 직전까지의 데이터만</b>으로 추천을 만들고 실제 당첨번호와 채점합니다. 무작위 추첨과 나란히 비교합니다. 추천 탭의 설정(전략·속설·보정)이 그대로 적용됩니다.</p>
+        <label>검증 회차 수</label><input type="number" id="bt-rounds" value="52" min="5" max="300">
+        <label>시드</label><input type="number" id="bt-seed" value="1">
+        <button class="primary" id="run-backtest">실행 (수 초~수십 초)</button>
+      </div>
+      <div>
+        <div id="bt-error"></div>
+        <div id="bt-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 회차 ============ -->
+  <section id="tab-draws">
+    <div class="panel">
+      <h3>최근 회차 <span style="float:right"><button class="ghost" id="draws-refresh">최신 회차 받기</button> <button class="ghost" id="draws-more">더 보기</button></span></h3>
+      <div id="draws-msg"></div>
+      <div id="draws-body"></div>
+    </div>
+  </section>
+
+  <!-- ============ 복권방 ============ -->
+  <section id="tab-shops">
+    <div class="grid shops">
+      <div class="panel" id="shop-controls">
+        <h3>내 주변 복권방</h3>
+        <label>동네 · 역 · 건물 이름</label>
+        <input type="text" id="shop-query" placeholder="예: 강남역, 상암동">
+        <div class="row" style="margin-top:8px">
+          <button class="ghost" id="shop-search">찾기</button>
+          <button class="ghost" id="shop-locate">내 위치로</button>
+        </div>
+        <div class="check" style="margin-top:10px"><input type="checkbox" id="shop-fame" checked><span>1등·2등 배출점 함께 표시</span></div>
+        <div id="fame-note" class="kv"></div>
+        <p class="kv" style="margin-top:12px">위치 권한은 선택입니다. 동네 이름으로 검색해도 됩니다. 검색은 카카오맵을 통해 이루어지고, 이 앱은 위치를 저장하지 않습니다.</p>
+        <div id="shop-status" class="kv"></div>
+        <div id="shop-error"></div>
+      </div>
+      <div id="shop-mapwrap">
+        <div id="map"></div>
+        <div id="shop-fallback" class="softbox" style="display:none"></div>
+      </div>
+      <div id="shop-lists">
+        <div id="fame-list"></div>
+        <div id="shop-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 설정 · 정보 ============ -->
+  <section id="tab-info">
+    <div class="grid">
+      <div class="panel">
+        <h3>설정</h3>
+        <div class="check"><input type="checkbox" id="set-autorefresh" checked><span>시작할 때 새 회차 자동 확인</span></div>
+        <p class="kv" id="set-kakao-hint"></p>
+        <button class="primary" id="set-save">설정 저장</button>
+        <div id="set-msg"></div>
+        <h3 style="margin-top:22px">프로필</h3>
+        <p class="kv" id="info-profile"></p>
+        <div class="row"><button class="ghost" id="profile-edit">수정</button><button class="ghost" id="profile-clear">삭제</button></div>
+        <h3 style="margin-top:22px">저장된 데이터</h3>
+        <p class="kv" id="info-storage"></p>
+        <button class="ghost" id="clear-all">이 기기에 저장된 데이터 전부 지우기</button>
+      </div>
+      <div>
+        <div class="panel">
+          <h3>안내</h3>
+          <div class="warnbox" id="info-disclaimer"></div>
+          <p class="kv">이 프로그램이 실제로 하는 일은 두 가지입니다. 과거 당첨조합에서 흔했던 모양(합계·홀짝·AC값·구간 분포)에 맞는 조합만 남기는 것, 그리고 이월수·쌍둥이수·꿈수·행운수 같은 속설을 가중치로 얹는 것. 앞의 것은 확률을 바꾸지 못하고, 뒤의 것은 근거가 없습니다. 운세는 그중에서도 가장 재미 쪽에 있는 부분입니다.</p>
+          <p class="kv"><b>개인정보</b> — 이름·생년월일·태어난 시·저장한 번호·설정은 전부 이 컴퓨터의 <code>data/</code> 폴더 안 JSON 파일에만 저장됩니다. 외부 서버로 보내지 않습니다. 삭제하려면 위의 '프로필 삭제'를 누르거나 파일을 지우면 됩니다.</p>
+          <p class="kv"><b>데이터 출처</b> — 동행복권 회차별 당첨번호. 시작할 때 새 회차만 이어받습니다.</p>
+          <p class="kv" id="info-version"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><span id="foot-tagline"></span> · lottoracle · <a href="#" data-goto="info">설정 · 정보</a> · <a href="./privacy.html">개인정보처리방침</a></footer>
+
+<script type="module">
+import { createEngine } from './src/engine.js';
+import { createStorage } from './src/storage.js';
+import { branchChoices, TAGLINE, DISCLAIMER } from './src/fortune.js';
+import { DEFAULT_STRATEGIES } from './src/strategies.js';
+import { run as runBacktest, payload as backtestPayload } from './src/backtest.js';
+import { build as buildStats } from './src/stats.js';
+import { fit, calibrate } from './src/model.js';
+import { recommend as generate } from './src/generator.js';
+import { createFolklore } from './src/folklore.js';
+import { createStoreIndex, summarize, recentDraws } from './src/stores.js';
+
+const VERSION = '0.4.0';
+// 카카오맵 JavaScript 키. 페이지 소스에 드러나는 것이 정상인 키이며, 등록된 도메인에서만 동작한다.
+const KAKAO_JS_KEY = '14d51c1614df122e68dbc7ca849d5d40';
+const BUY_URL = 'https://www.dhlottery.co.kr/';
+
+const $ = s => document.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const fmt = n => Number(n).toLocaleString('ko-KR');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const colorOf = n => n <= 10 ? '노랑' : n <= 20 ? '파랑' : n <= 30 ? '빨강' : n <= 40 ? '회색' : '초록';
+const balls = (nums, colors, bonus, bonusColor, hits, small) => {
+  const H = new Set(hits || []);
+  colors = colors || nums.map(colorOf);
+  let s = nums.map((n,i) => `<span class="ball ${small?'sm':''} c-${colors[i]} ${H.has(n)?'hit':''}">${n}</span>`).join('');
+  if (bonus != null) s += `<span class="plus">+</span><span class="ball ${small?'sm':''} bonus c-${bonusColor||colorOf(bonus)}">${bonus}</span>`;
+  return s;
+};
+const showErr = (id, e) => { $(id).innerHTML = e ? `<div class="err">${esc(e.message || e)}</div>` : ''; };
+const dots = g => '●'.repeat(g) + '○'.repeat(5 - g);
+const SWATCH = {'노랑':'var(--yellow)','파랑':'var(--blue)','빨강':'var(--red)','회색':'var(--gray)','초록':'var(--green)'};
+const yieldToUI = () => new Promise(r => setTimeout(r, 0));
+
+// ---- 엔진 준비: 동봉된 회차 + 저장소 캐시
+const storage = createStorage();
+let ENGINE = null;
+async function boot() {
+  let draws = [];
+  try {
+    draws = await (await fetch('./data/draws.json')).json();
+  } catch (e) {
+    $('#meta').textContent = '회차 데이터를 불러오지 못했습니다. 새로고침해 보세요.';
+    throw e;
+  }
+  const cached = storage.loadDrawCache();
+  if (Array.isArray(cached) && cached.length >= draws.length) draws = cached;
+  ENGINE = createEngine(draws, storage);
+  renderMeta();
+  loadFortune();
+  autoRefresh();
+}
+
+function renderMeta() {
+  const p = ENGINE.previous ? ENGINE.drawPayload(ENGINE.previous) : null;
+  // 좁은 화면에서는 앞 문구를 줄여 당첨번호가 잘리지 않게 한다
+  const narrow = window.matchMedia('(max-width:640px)').matches;
+  $('#meta').innerHTML = p
+    ? (narrow
+      ? `<b>${p.no}회</b> <span class="kv" style="font-size:11.5px">${p.date.slice(5)}</span> ${balls(p.numbers, p.colors, p.bonus, p.bonusColor, null, true)}`
+      : `분석 ${fmt(ENGINE.draws.length)}회차 · 최신 <b>${p.no}회</b> (${p.date}) ${balls(p.numbers, p.colors, p.bonus, p.bonusColor, null, true)}`)
+    : '데이터 없음 — 규칙 필터만 적용됩니다';
+  if (p) $('#grade-draw').placeholder = '예: ' + p.no;
+  $('#foot-tagline').textContent = TAGLINE;
+  const box = $('#strategies');
+  if (!box.children.length) DEFAULT_STRATEGIES.forEach(s => {
+    const d = el('div', 'check');
+    d.innerHTML = `<input type="checkbox" value="${s.key}" title="${esc(s.concept)}"><span>${esc(s.name)} <small style="color:var(--muted)">${s.key}</small></span>`;
+    box.appendChild(d);
+  });
+}
+
+async function autoRefresh() {
+  const settings = storage.loadSettings();
+  if (settings.autoRefresh === false || !navigator.onLine) return;
+  const st = $('#refresh-status');
+  st.innerHTML = '<span class="spin"></span>새 회차 확인 중';
+  const r = await ENGINE.refresh({ timeout: 8000 });
+  if (r.ok && r.added > 0) { st.textContent = `새 회차 ${r.added}개 추가 (${r.after}회)`; renderMeta(); drawsLoaded = false; }
+  else if (r.ok) st.textContent = '최신 상태';
+  else { st.textContent = '오프라인 (기존 데이터 사용)'; st.title = r.error || ''; }
+  setTimeout(() => { st.textContent = ''; }, 6000);
+}
+
+// ---- 1~5등 당첨 현황 표 (회차 탭과 당첨 확인에서 같이 쓴다)
+const RANK_MATCH = {1:'6개', 2:'5개+보너스', 3:'5개', 4:'4개', 5:'3개'};
+function prizeTable(draw) {
+  if (!draw || !draw.hasPrizes) return `<p class="kv">이 회차의 등수별 당첨 현황은 아직 받아오지 못했습니다. 네트워크를 확인하고 다시 열어 보세요.</p>`;
+  return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨 게임 수</th><th class="num">1게임당</th><th class="num">등수별 총액</th></tr>` +
+    draw.prizes.map(p => `<tr><td class="rank-${p.rank}">${p.rank}등</td><td class="kv">${RANK_MATCH[p.rank] || ''}</td>
+      <td class="num">${fmt(p.winners)}</td><td class="num">${p.amount ? fmt(p.amount) + '원' : '-'}</td>
+      <td class="num kv">${p.total ? fmt(p.total) + '원' : '-'}</td></tr>`).join('') +
+    (draw.totalSales > 0 ? `<tr><th colspan="4">이 회차 총 판매금액</th><td class="num">${fmt(draw.totalSales)}원</td></tr>` : '') +
+    `</table>`;
+}
+
+// ---- 축하 컨페티: 양쪽 하단에서 쏘아 올린다. 등수가 높을수록 크고 오래.
+const CONFETTI_COLORS = ['#fbc400','#69c8f2','#ff7272','#b0d840','#f5d76e','#e6ebf1','#cd7f32','#7aa2ff'];
+let confettiTimer = null;
+function fireConfetti(rank) {
+  const cv = $('#confetti'), ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = window.innerWidth, H = window.innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cv.style.display = 'block';
+  const bursts = rank <= 3 ? 3 : 1;
+  const per = rank === 1 ? 130 : rank === 2 ? 110 : rank === 3 ? 90 : 60;
+  const parts = [];
+  const launch = () => {
+    [[0, 1], [W, -1]].forEach(([x0, dir]) => {
+      for (let i = 0; i < per; i++) {
+        const a = (Math.random() * 0.55 + 0.30) * Math.PI;
+        const sp = 11 + Math.random() * 13;
+        parts.push({ x: x0, y: H, vx: Math.cos(a) * sp * dir, vy: -Math.sin(a) * sp,
+          w: 5 + Math.random() * 6, h: 8 + Math.random() * 8,
+          rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4,
+          color: CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0], life: 0 });
+      }
+    });
+  };
+  launch();
+  for (let b = 1; b < bursts; b++) setTimeout(launch, b * 420);
+  if (confettiTimer) cancelAnimationFrame(confettiTimer);
+  const started = performance.now();
+  const tick = now => {
+    ctx.clearRect(0, 0, W, H);
+    let alive = 0;
+    for (const p of parts) {
+      p.life++; p.vy += 0.32; p.vx *= 0.995; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      if (p.y > H + 60) continue;
+      alive++;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.max(0, 1 - p.life / 260);
+      ctx.fillStyle = p.color; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+    if (alive && now - started < 9000) confettiTimer = requestAnimationFrame(tick);
+    else { ctx.clearRect(0, 0, W, H); cv.style.display = 'none'; confettiTimer = null; }
+  };
+  confettiTimer = requestAnimationFrame(tick);
+}
+
+const RANK_STYLE = {1:'rank-gold', 2:'rank-silver', 3:'rank-bronze', 4:'rank-plain', 5:'rank-plain'};
+function celebrateBanner(rank, prize, actual) {
+  if (!rank) return `<div class="celebrate rank-none"><div class="big">아쉽지만 이번엔 낙첨</div><div class="sub">다음 회차가 남아 있습니다</div></div>`;
+  return `<div class="celebrate ${RANK_STYLE[rank]}"><div class="big">축 ${rank}등 당첨</div>
+    <div class="sub">${prize ? fmt(prize) + '원' + (actual ? ' · 해당 회차 실제 당첨금' : ' · 평균치 추정') : ''}</div></div>`;
+}
+
+// ---- 탭
+const goto = name => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+  document.querySelectorAll('main section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+  if (name === 'stats' && !statsLoaded) loadStats();
+  if (name === 'draws' && !drawsLoaded) loadDraws();
+  if (name === 'picks') loadPicks();
+  if (name === 'shops') initShops();
+  if (name === 'info') loadInfo();
+  window.scrollTo({ top: 0 });
+};
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => goto(b.dataset.tab)));
+document.querySelectorAll('[data-goto]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); goto(a.dataset.goto); }));
+
+// ---- 운세
+function onboardingForm(profile) {
+  const [y, m, d] = (profile && profile.birthDate ? profile.birthDate : '--').split('-');
+  const cur = profile ? profile.birthBranch : '';
+  const branches = ['<option value="">모름</option>'].concat(branchChoices().map(b =>
+    `<option value="${b.value}" ${b.value === cur ? 'selected' : ''}>${esc(b.label)}</option>`)).join('');
+  return `<div class="fortune">
+    <div class="greet">${profile && profile.birthDate ? '프로필 수정' : '처음 오셨네요'}</div>
+    <p class="kv" style="font-size:13.5px">생년월일을 적으면 오늘의 운세와 번호 추천 입력이 한 번에 채워집니다. 입력한 정보는 이 기기에만 저장됩니다.</p>
+    <div class="row">
+      <div><label>이름 (선택)</label><input type="text" id="ob-name" maxlength="20" value="${esc(profile ? profile.name : '')}" placeholder="홍길동"></div>
+      <div><label>생년월일</label>
+        <div class="row" style="gap:6px">
+          <input type="text" inputmode="numeric" id="ob-y" maxlength="4" placeholder="1990" value="${esc(y || '')}" style="flex:1.4">
+          <input type="text" inputmode="numeric" id="ob-m" maxlength="2" placeholder="05" value="${esc(m || '')}">
+          <input type="text" inputmode="numeric" id="ob-d" maxlength="2" placeholder="21" value="${esc(d || '')}">
+        </div></div>
+      <div><label>태어난 시 (선택)</label><select id="ob-branch">${branches}</select></div>
+    </div>
+    <p class="kv">태어난 시는 요즘 사주에서 통용되는 30분 보정 기준입니다 (예: 진시 07:30~09:30). 모르면 비워 두세요.</p>
+    <div id="ob-error"></div>
+    <div class="actions"><button class="primary" id="ob-save">오늘의 운세 보기</button><button class="ghost" id="ob-skip">건너뛰고 번호만 뽑기</button></div>
+    <div class="tagline">${esc(TAGLINE)}</div>
+  </div>`;
+}
+function wireDateInputs() {
+  const seq = ['#ob-y', '#ob-m', '#ob-d'];
+  seq.forEach((sel, i) => {
+    const inp = $(sel), next = seq[i + 1] ? $(seq[i + 1]) : null, prev = i ? $(seq[i - 1]) : null;
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/\D/g, '').slice(0, inp.maxLength);
+      if (inp.value.length === inp.maxLength && next) { next.focus(); next.select(); }
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Backspace' && !inp.value && prev) { e.preventDefault(); prev.focus(); } });
+    inp.addEventListener('blur', () => { if (i > 0 && inp.value.length === 1) inp.value = '0' + inp.value; });
+  });
+}
+const obBirth = () => { const y = $('#ob-y').value, m = $('#ob-m').value, d = $('#ob-d').value; return (y || m || d) ? `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}` : ''; };
+
+function renderZodiac(list, mine) {
+  $('#zodiac-table').innerHTML = list.map(z => `<div class="z ${z.zodiac === mine ? 'me' : ''}"><b>${z.zodiac}띠</b><span class="dots">${dots(z.grade)}</span><div class="kv">${esc(z.label)} · ${esc(z.short)}</div><div style="margin-top:6px">${balls(z.numbers, z.colors, null, null, null, true)}</div></div>`).join('');
+}
+let FORTUNE = null;
+function renderFortune(r) {
+  FORTUNE = r;
+  const f = r.fortune;
+  const who = f.name ? `${esc(f.name)}님의 오늘` : '오늘의 기운';
+  $('#fortune-body').innerHTML = `<div class="fortune">
+    <div class="date">${f.date} ${f.tags.length ? '· ' + f.tags.map(esc).join(' · ') : ''}</div>
+    <div class="greet">${who}</div>
+    <div><span class="dots">${dots(f.grade)}</span><span class="label">${esc(f.label)}</span></div>
+    <div class="sentence">${esc(f.sentence)}</div>
+    <div class="items">
+      <div class="item"><div class="k">오늘의 숫자</div>${balls(f.numbers, f.colors)}</div>
+      <div class="item"><div class="k">오늘의 색</div><span class="swatch" style="background:${SWATCH[f.color]}"></span>${f.color}</div>
+      <div class="item"><div class="k">오늘의 한 단어</div><b style="font-size:16px">${esc(f.keyword)}</b></div>
+      <div class="item"><div class="k">하루 한 줄</div>${esc(f.tip)}</div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="f-recommend">이 기운으로 번호 뽑기</button>
+      <button class="ghost" id="f-edit">프로필 수정</button>
+      ${r.nextDrawNo ? `<span class="kv" style="align-self:center">다음 추첨 ${r.nextDrawNo}회 · ${r.nextDrawDate} (토)</span>` : ''}
+    </div>
+    <div class="tagline">${esc(f.tagline)}</div>
+  </div>`;
+  $('#f-recommend').addEventListener('click', () => {
+    const i = r.recommendInputs;
+    $('#birthday').value = i.birthday; $('#zodiac').value = i.zodiac; $('#lucky').value = i.lucky.join(' ');
+    $('#profile-hint').style.display = ''; $('#profile-hint').textContent = `프로필에서 생일·띠를, 오늘의 숫자 ${i.lucky.join('·')}을 행운수로 채웠습니다. 바꿔도 됩니다.`;
+    goto('recommend'); $('#run-recommend').click();
+  });
+  $('#f-edit').addEventListener('click', () => showOnboarding(r.profile));
+  renderZodiac(r.zodiacTable, f.zodiac);
+}
+function showOnboarding(profile) {
+  $('#fortune-body').innerHTML = onboardingForm(profile);
+  goto('fortune');
+  wireDateInputs();
+  $('#ob-save').addEventListener('click', () => {
+    showErr('#ob-error', null);
+    if (!obBirth()) return showErr('#ob-error', '생년월일을 입력하세요.');
+    try {
+      ENGINE.saveProfile({ name: $('#ob-name').value, birthDate: obBirth(), birthBranch: $('#ob-branch').value });
+      renderFortune(ENGINE.fortunePayload());
+    } catch (e) { showErr('#ob-error', e); }
+  });
+  $('#ob-skip').addEventListener('click', () => goto('recommend'));
+}
+function loadFortune() {
+  try {
+    const r = ENGINE.fortunePayload();
+    if (r.hasProfile) renderFortune(r);
+    else { showOnboarding(null); renderZodiac(r.zodiacTable, ''); }
+  } catch (e) { $('#fortune-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+// ---- 옵션 수집
+$('#coverage').addEventListener('input', e => $('#coverage-v').textContent = e.target.value + '%');
+$('#temperature').addEventListener('input', e => $('#temperature-v').textContent = (e.target.value/100).toFixed(2));
+const options = () => ({
+  lines: +$('#lines').value, seed: $('#seed').value,
+  strategies: [...document.querySelectorAll('#strategies input:checked')].map(i => i.value),
+  lucky: $('#lucky').value, avoid: $('#avoid').value, dream: $('#dream').value,
+  zodiac: $('#zodiac').value, birthday: $('#birthday').value,
+  folklore: $('#folklore').checked, calibrate: $('#calibrate').checked,
+  coverage: +$('#coverage').value / 100, temperature: +$('#temperature').value / 100,
+  candidates: +$('#candidates').value, maxOverlap: +$('#max_overlap').value,
+});
+
+// ---- 추천
+let LAST = null;
+$('#run-recommend').addEventListener('click', async () => {
+  const btn = $('#run-recommend'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>뽑는 중…';
+  showErr('#rec-error', null); $('#rec-actions').style.display = 'none'; $('#save-picks-msg').textContent = '';
+  await yieldToUI();
+  try {
+    const r = ENGINE.recommendPayload(options()); LAST = r;
+    const info = [];
+    if (r.previous) info.push(`기준 ${r.previous.no}회 → 목표 <b>${r.nextDrawNo}회</b> (${r.nextDrawDate} 토)`);
+    info.push(`분석 ${fmt(r.drawsUsed)}회차`);
+    if (r.seed != null) info.push(`시드 ${r.seed}`);
+    info.push('속설: ' + r.folklore.map(esc).join(' · '));
+    if (r.rules) info.push(`보정 규칙: 합계 ${r.rules.sumRange.join('~')} · 홀수 ${r.rules.oddRange.join('~')} · 저구간 ${r.rules.lowRange.join('~')} · AC≥${r.rules.acMin} · 끝수합 ${r.rules.endSumRange.join('~')}`);
+    $('#rec-info').innerHTML = info.join('<br>');
+    const out = $('#rec-results'); out.innerHTML = '';
+    r.lines.forEach(L => {
+      const c = el('div', 'card');
+      c.innerHTML = `
+        <div class="head"><div class="title">${L.index}조합 <small>${esc(L.strategyName)}</small></div>
+          <div class="kv">전형성 상위 <b>${(100 - L.percentile).toFixed(0)}%</b> · 기분점수 <b>${L.luck}</b>/100 ${L.relaxed ? `· <span style="color:var(--warn)">규칙 ${L.relaxed}단계 완화</span>` : ''}</div></div>
+        <div class="balls">${balls(L.numbers, L.colors, L.bonus, L.bonusColor)}</div>
+        <div class="note"><b>[분석 핵심]</b> ${esc(L.note)}</div>
+        <div class="mini">
+          <div><div class="kv">전형성 백분위 ${L.percentile}% (후보 ${L.poolSize}개 중 선택)</div><div class="bar"><i style="width:${L.percentile}%"></i></div></div>
+          <div><div class="kv">기분점수 ${L.luck}/100 — 확률과 무관</div><div class="bar luck"><i style="width:${L.luck}%"></i></div></div>
+        </div>
+        <div class="kv">${esc(L.metrics)}</div>
+        <div class="kv">${esc(L.zones)}</div>
+        <div class="tags">${L.omens.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>`;
+      out.appendChild(c);
+    });
+    $('#rec-actions').style.display = ''; $('#save-picks').textContent = `이 ${r.lines.length}줄을 내 번호로 저장 (목표 ${r.nextDrawNo}회)`;
+    $('#rec-foot').style.display = '';
+  } catch (e) { showErr('#rec-error', e); }
+  btn.disabled = false; btn.textContent = '추천 ' + $('#lines').value + '줄 뽑기';
+});
+$('#save-picks').addEventListener('click', () => {
+  if (!LAST) return;
+  const btn = $('#save-picks'); btn.disabled = true;
+  try {
+    ENGINE.addPick(LAST.lines.map(L => L.numbers), LAST.nextDrawNo, '추천');
+    $('#save-picks-msg').innerHTML = `저장했습니다 → <a href="#" data-goto="picks" style="color:var(--accent)">내 번호</a>`;
+    $('#save-picks-msg a').addEventListener('click', e => { e.preventDefault(); goto('picks'); });
+  } catch (e) { $('#save-picks-msg').textContent = '저장 실패: ' + e.message; btn.disabled = false; }
+});
+
+// ---- 내 번호
+let celebratedPick = null;
+function loadPicks() {
+  showErr('#picks-error', null);
+  try {
+    const picks = ENGINE.picksPayload();
+    renderPicks(picks);
+    const won = picks.find(p => p.results && p.bestRank);
+    if (won && celebratedPick !== won.id) { celebratedPick = won.id; fireConfetti(won.bestRank); }
+  } catch (e) { showErr('#picks-error', e); }
+}
+function renderPicks(picks) {
+  const body = $('#picks-body');
+  if (!picks.length) { body.innerHTML = '<p class="kv">아직 저장한 번호가 없습니다. 추천 탭에서 뽑은 뒤 "내 번호로 저장"을 누르세요.</p>'; return; }
+  body.innerHTML = picks.map(p => {
+    let badge, detail = '';
+    if (p.results) {
+      const best = p.bestRank;
+      badge = best ? `<span class="badge win">${best}등${p.totalPrize ? ' · ' + fmt(p.totalPrize) + '원' : ''}</span>` : '<span class="badge lose">낙첨</span>';
+      detail = (best ? celebrateBanner(best, p.totalPrize, p.actualPrize) : '') +
+        `<div class="kv" style="margin:6px 0">${p.draw.no}회 당첨번호 ${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonusColor, null, true)}</div>` +
+        p.results.map((g, i) => `<div class="kv">${i+1}줄 ${balls(g.numbers, null, null, null, g.hit, true)} <span class="rank-${g.rank}">${g.label}</span>${g.bonusHit ? ' +보너스' : ''}</div>`).join('');
+    } else {
+      badge = `<span class="badge wait">추첨 전 · ${p.drawDate} (토)</span>`;
+      detail = p.lines.map((row, i) => `<div class="kv">${i+1}줄 ${balls(row, p.colors[i], null, null, null, true)}</div>`).join('');
+    }
+    const buy = p.results ? '' : `<button class="ghost" data-buy="${p.id}" style="margin-top:10px">이 번호로 로또 사기</button>`;
+    return `<div class="card"><div class="head"><div class="title">${p.targetDraw}회 목표 <small>${esc(p.savedAt.replace('T',' '))} 저장${p.note ? ' · ' + esc(p.note) : ''}</small></div><div>${badge} <button class="ghost" data-del="${p.id}" title="삭제">✕</button></div></div>${detail}${buy}</div>`;
+  }).join('');
+  body.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => buyWith(picks.find(x => x.id === b.dataset.buy))));
+  body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    if (!confirm('이 기록을 삭제할까요?')) return;
+    ENGINE.deletePick(b.dataset.del); loadPicks();
+  }));
+}
+// 동행복권은 번호를 주소로 받는 공식 방법이 없어서, 번호를 복사해 두고 화면만 열어 준다.
+async function buyWith(pick) {
+  if (!pick) return;
+  const text = pick.lines.map(row => row.join(' ')).join('\n');
+  let copied = false;
+  try { await navigator.clipboard.writeText(text); copied = true; } catch { copied = false; }
+  $('#buy-msg').innerHTML = `<div class="okbox">동행복권을 열었습니다. ${copied ? '번호를 클립보드에 복사해 두었습니다 — 화면에서 직접 선택해 주세요.' : '아래 번호를 보고 직접 선택해 주세요.'}
+    <div class="kv" style="margin-top:6px;white-space:pre-line;color:var(--text)">${esc(text)}</div>
+    <div class="kv" style="margin-top:6px">구매에는 동행복권 로그인과 예치금이 필요합니다. 지출은 잃어도 괜찮은 금액까지만 · 상담 1336</div></div>`;
+  window.open(BUY_URL, '_blank', 'noopener');
+}
+$('#picks-reload').addEventListener('click', loadPicks);
+
+// ---- 통계
+let statsLoaded = false;
+function loadStats() {
+  try {
+    const s = ENGINE.statsPayload(30, 0.8); statsLoaded = true;
+    if (!s.drawsUsed) { $('#stats-body').innerHTML = '<p class="kv">분석할 회차 데이터가 없습니다.</p>'; return; }
+    const dist = (arr, label) => { const top = Math.max(...arr.map(x => x.ratio)) || 1; return `<div class="kv" style="margin-top:14px"><b>${label}</b></div><div class="dist">${arr.map(d => `<div style="height:${Math.max(2, d.ratio / top * 70)}px"><em>${(d.ratio*100).toFixed(0)}%</em><span>${d.key}</span></div>`).join('')}</div>`; };
+    const maxF = Math.max(...s.frequency.map(f => f.count));
+    const R = s.calibratedRules;
+    $('#stats-body').innerHTML = `
+      <div class="grid two">
+        <div class="panel"><h3>대한민국 로또 평균치 (${s.firstNo}~${s.lastNo}회, ${fmt(s.drawsUsed)}회차)</h3>
+          <table>
+            <tr><th>당첨번호 합 평균</th><td class="num">${s.meanSum} <span class="kv">(이론 138)</span></td></tr>
+            <tr><th>합계 80% 구간</th><td class="num">${s.sumRange80[0]} ~ ${s.sumRange80[1]}</td></tr>
+            <tr><th>끝수합 평균</th><td class="num">${s.endSumMean}</td></tr>
+            <tr><th>연속수 포함 비율</th><td class="num">${(s.consecutiveRatio*100).toFixed(1)}%</td></tr>
+            <tr><th>번호당 평균 출현</th><td class="num">${s.meanFrequency}회</td></tr>
+          </table>
+          ${dist(s.odd, '홀수 개수 분포')}${dist(s.low, '저구간(1~22) 개수 분포')}${dist(s.ac, 'AC값 분포')}${dist(s.carryover, '이월수(직전 회차 중복) 분포')}
+        </div>
+        <div class="panel"><h3>핫 / 콜드</h3>
+          <div class="kv"><b>최근 ${s.recentWindow}회 다출현</b></div><div style="margin:6px 0 12px">${s.hot.map(([n,c]) => `<span class="ball sm c-${colorOf(n)}" title="${c}회">${n}</span>`).join('')}</div>
+          <div class="kv"><b>장기 미출현</b></div><div style="margin:6px 0 12px">${s.cold.map(([n,g]) => `<span class="ball sm c-${colorOf(n)}" title="${g}회차째 미출현">${n}</span>`).join('')}</div>
+          <div class="kv" style="margin-top:14px"><b>자동 보정 규칙 (coverage ${(s.coverage*100).toFixed(0)}%)</b></div>
+          <table>
+            <tr><th>합계</th><td>${R.sumRange.join(' ~ ')}</td><th>홀수 개수</th><td>${R.oddRange.join(' ~ ')}</td></tr>
+            <tr><th>저구간</th><td>${R.lowRange.join(' ~ ')}</td><th>AC 최소</th><td>${R.acMin}</td></tr>
+            <tr><th>끝수합</th><td>${R.endSumRange.join(' ~ ')}</td><th>번호 폭 최소</th><td>${R.spreadMin}</td></tr>
+            <tr><th>연속쌍 최대</th><td>${R.maxConsecutivePairs}</td><th>이월수</th><td>${R.carryoverRange.join(' ~ ')}</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:20px"><h3>번호별 출현 횟수 (당첨번호 기준 · 툴팁에 보너스/최근/미출현)</h3>
+        <div class="freq">${s.frequency.map(f => `<div class="f" title="보너스 ${f.bonus}회 · 최근 ${s.recentWindow}회 중 ${f.recent}회 · ${f.gap}회차째 미출현"><span class="ball sm c-${f.color}">${f.n}</span><div class="bar"><i style="width:${f.count/maxF*100}%"></i></div><span>${f.count}</span></div>`).join('')}</div>
+      </div>`;
+  } catch (e) { $('#stats-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+// ---- 당첨 확인
+function addGradeLine(vals) {
+  const box = $('#grade-lines'); if (box.children.length >= 10) return;
+  const d = el('div', 'gradeline');
+  d.innerHTML = Array.from({length:6}, (_, i) => `<input type="number" min="1" max="45" value="${vals ? vals[i] : ''}">`).join('') + `<button class="ghost" title="삭제">✕</button>`;
+  d.querySelector('button').addEventListener('click', () => d.remove());
+  box.appendChild(d);
+}
+addGradeLine();
+$('#grade-add').addEventListener('click', () => addGradeLine());
+$('#grade-from-rec').addEventListener('click', () => { if (!LAST) return alert('먼저 추천을 실행하세요.'); $('#grade-lines').innerHTML=''; LAST.lines.forEach(L => addGradeLine(L.numbers)); });
+$('#grade-from-picks').addEventListener('click', () => {
+  const picks = ENGINE.picksPayload();
+  if (!picks.length) return alert('저장한 번호가 없습니다.');
+  const p = picks[0];
+  $('#grade-lines').innerHTML = ''; p.lines.slice(0, 10).forEach(addGradeLine);
+  $('#grade-draw').value = p.targetDraw;
+});
+$('#run-grade').addEventListener('click', () => {
+  showErr('#grade-error', null);
+  const lines = [...document.querySelectorAll('#grade-lines .gradeline')].map(d => [...d.querySelectorAll('input')].map(i => +i.value)).filter(r => r.some(Boolean));
+  try {
+    const r = ENGINE.gradePayload(lines, $('#grade-draw').value || null);
+    const d = r.draw;
+    $('#grade-results').innerHTML = celebrateBanner(r.bestRank, r.totalPrize, r.actualPrize) +
+      `<div class="card"><div class="title">${d.no}회차 (${d.date}) 당첨번호</div><div class="balls">${balls(d.numbers, d.colors, d.bonus, d.bonusColor)}</div>
+      <div class="kv" style="margin:10px 0 4px"><b>이 회차 등수별 당첨 현황</b></div>${prizeTable(d)}</div>` +
+      r.results.map((g, i) => `<div class="card"><div class="head"><div class="title">${i+1}줄</div><div class="rank-${g.rank}">${g.label}${g.prize ? ' · ' + fmt(g.prize) + '원' : ''}</div></div>
+        <div class="balls">${balls(g.numbers, null, null, null, g.hit)}</div>
+        <div class="kv">일치 ${g.hit.length}개 ${g.hit.length ? '[' + g.hit.join(', ') + ']' : ''}${g.bonusHit ? ' + 보너스' : ''}</div></div>`).join('') +
+      `<div class="card"><b>합계 ${fmt(r.totalPrize)}원</b> <span class="kv">${r.actualPrize ? '— ' + d.no + '회차 실제 당첨금 기준' : '— 회차별 실제 금액을 받지 못해 평균치로 계산했습니다'}</span></div>`;
+    if (r.bestRank) fireConfetti(r.bestRank);
+  } catch (e) { showErr('#grade-error', e); }
+});
+
+// ---- 백테스트 (무거워서 UI 를 양보하며 돌린다)
+$('#run-backtest').addEventListener('click', async () => {
+  const btn = $('#run-backtest'); btn.disabled = true;
+  showErr('#bt-error', null);
+  const rounds = Math.max(5, Math.min(300, +$('#bt-rounds').value || 52));
+  const seedRaw = $('#bt-seed').value;
+  const opts = ENGINE ? options() : {};
+  try {
+    const draws = ENGINE.draws;
+    const folklore = createFolklore({ enabled: opts.folklore, lucky: [], avoid: [], dream: '', birthday: '', zodiac: '' });
+    let lastYield = performance.now();
+    const recommender = (history, rng) => {
+      const st = buildStats(history, opts.recentWindow || 30);
+      const emp = fit(history);
+      const rules = opts.calibrate === false ? null : calibrate(history, opts.coverage || 0.8);
+      return generate(st, {
+        previous: history[history.length - 1], lines: opts.lines || 5, seed: rng.random(),
+        folklore, emp, reference: [], candidates: Math.min(opts.candidates || 40, 15),
+        temperature: opts.temperature || 1.0, maxOverlap: opts.maxOverlap ?? 3, rulesOverride: rules,
+      }).map(L => L.numbers);
+    };
+    const result = runBacktest(draws, recommender, {
+      rounds, linesPerRound: opts.lines || 5,
+      seed: seedRaw === '' ? null : Number(seedRaw),
+      onProgress: (done, total) => {
+        btn.innerHTML = `<span class="spin"></span>검증 중… ${done}/${total}`;
+      },
+    });
+    await yieldToUI();
+    const r = backtestPayload(result);
+    $('#bt-results').innerHTML = `<div class="card"><div class="title">${r.rounds}회차 × ${r.linesPerRound}줄 = ${fmt(r.tickets)}장 (투입 ${fmt(r.spent)}원)</div>
+      <table style="margin-top:10px"><tr><th>등수</th><th class="num">모델</th><th class="num">무작위</th><th class="num">이론 기대</th></tr>
+      ${r.rows.map(x => `<tr><td>${x.rank}</td><td class="num">${x.model}</td><td class="num">${x.random}</td><td class="num">${x.expected}</td></tr>`).join('')}
+      <tr><th>당첨금 합계</th><td class="num">${fmt(r.modelPrize)}원<br><span class="kv">회수율 ${(r.modelRoi*100).toFixed(1)}%</span></td><td class="num">${fmt(r.randomPrize)}원<br><span class="kv">회수율 ${(r.randomRoi*100).toFixed(1)}%</span></td><td class="num kv">장기 평균 약 50%</td></tr></table>
+      <p class="kv" style="margin-top:12px">모델과 무작위의 차이가 표본 오차 안에 있으면 정상입니다. 반복해서 돌려 보세요 — 시드를 바꿀 때마다 앞서거니 뒤서거니 합니다. 그게 이 도구가 확률을 바꾸지 못한다는 뜻입니다.</p>
+      ${r.best.length ? `<div class="kv" style="margin-top:8px"><b>모델 최고 성적</b></div>` + r.best.map(b => `<div class="kv">${b.no}회 <span class="rank-${{'1등':1,'2등':2,'3등':3,'4등':4,'5등':5}[b.rank]}">${b.rank}</span> ${balls(b.numbers, null, null, null, null, true)}</div>`).join('') : ''}
+    </div>`;
+  } catch (e) { showErr('#bt-error', e); }
+  btn.disabled = false; btn.textContent = '실행 (수 초~수십 초)';
+});
+
+// ---- 회차
+let drawsLoaded = false, drawLimit = 20;
+function loadDraws() {
+  try {
+    const rows = ENGINE.drawsPayload(drawLimit); drawsLoaded = true;
+    $('#draws-body').innerHTML = `<p class="kv">회차를 누르면 1~5등 당첨 현황이 펼쳐집니다.</p><table><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th class="num">1등</th><th class="num">1게임당</th></tr>` +
+      rows.map(d => `<tr class="drawrow" data-no="${d.no}" style="cursor:pointer"><td>${d.no}회 ▾</td><td>${d.date}</td><td>${balls(d.numbers, d.colors, d.bonus, d.bonusColor, null, true)}</td><td class="num">${d.firstWinners >= 0 ? fmt(d.firstWinners) + '명' : '-'}</td><td class="num">${d.firstPrize >= 0 ? fmt(d.firstPrize) + '원' : '-'}</td></tr>
+        <tr class="drawdetail" data-detail="${d.no}" style="display:none"><td colspan="5"><div id="dd-${d.no}"><span class="spin"></span>불러오는 중…</div></td></tr>`).join('') + '</table>';
+    $('#draws-body').querySelectorAll('.drawrow').forEach(tr => tr.addEventListener('click', () => toggleDraw(+tr.dataset.no)));
+  } catch (e) { $('#draws-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+async function toggleDraw(no) {
+  const row = $(`[data-detail="${no}"]`);
+  if (!row) return;
+  if (row.style.display !== 'none') { row.style.display = 'none'; return; }
+  $('#draws-body').querySelectorAll('.drawdetail').forEach(r => r.style.display = 'none');
+  row.style.display = '';
+  const box = $(`#dd-${no}`);
+  box.innerHTML = '<span class="spin"></span>불러오는 중…';
+  try {
+    const r = await ENGINE.drawDetailPayload(no, { timeout: 12000 });
+    box.innerHTML = prizeTable(r.draw);
+  } catch (e) { box.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+$('#draws-more').addEventListener('click', () => { drawLimit += 30; loadDraws(); });
+$('#draws-refresh').addEventListener('click', async () => {
+  const btn = $('#draws-refresh'); btn.disabled = true; $('#draws-msg').innerHTML = '<span class="spin"></span>동행복권에 확인 중…';
+  const r = await ENGINE.refresh({ timeout: 15000 });
+  if (r.ok) {
+    $('#draws-msg').innerHTML = r.added > 0
+      ? `<div class="okbox">새 회차 ${r.added}개를 받았습니다. 최신 ${r.after}회.</div>`
+      : `<div class="okbox">이미 최신 상태입니다 (${r.after}회).</div>`;
+    renderMeta(); statsLoaded = false; loadDraws();
+  } else {
+    $('#draws-msg').innerHTML = `<div class="err">${esc(r.error)}<br><span class="kv">동행복권 사이트가 바뀌었거나 네트워크가 막혀 있을 수 있습니다.</span></div>`;
+  }
+  btn.disabled = false;
+});
+
+// ---- 복권방 (카카오맵)
+let shopsInit = false, kmap = null, markers = [], places = null;
+let STORES = null, fameMarkers = [], fameWindow = null;
+
+/** 배출점 데이터를 한 번만 읽는다. 없으면 조용히 넘어간다(기능 축소). */
+async function loadStores() {
+  if (STORES) return STORES;
+  try {
+    STORES = createStoreIndex(await (await fetch('./data/stores.json')).json());
+    const n = STORES.hallOfFame(2).length;
+    $('#fame-note').innerHTML = STORES.coveredFrom
+      ? `${STORES.coveredFrom}~${STORES.coveredTo}회 기준 · 배출점 ${fmt(STORES.stores.length)}곳 (1등 2회 이상 ${n}곳). 동행복권 당첨판매점 자료입니다.`
+      : '';
+  } catch {
+    STORES = createStoreIndex(null);
+    $('#fame-note').textContent = '배출점 자료를 불러오지 못했습니다.';
+  }
+  return STORES;
+}
+
+/** 배출점을 지도에 금색 원으로 표시한다. 1등 횟수가 많을수록 크게. */
+function showFameMarkers(list) {
+  fameMarkers.forEach(m => m.setMap(null));
+  fameMarkers = [];
+  if (!$('#shop-fame').checked) return;
+  for (const st of list) {
+    const size = st.firstCount ? Math.min(34, 20 + st.firstCount * 4) : 16;
+    const color = st.firstCount ? '#f5d76e' : '#aaaaaa';
+    const marker = new kakao.maps.Marker({
+      map: kmap, position: new kakao.maps.LatLng(st.lat, st.lot), title: st.name, zIndex: 5,
+      image: new kakao.maps.MarkerImage(
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+             <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="${color}" fill-opacity="0.85"
+                     stroke="#0f1115" stroke-width="2"/>
+             ${st.firstCount ? `<text x="${size/2}" y="${size/2 + 4}" font-size="${Math.max(9, size/2.6)}"
+                     font-weight="700" fill="#0b0e14" text-anchor="middle">${st.firstCount}</text>` : ''}
+           </svg>`),
+        new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(size / 2, size / 2) }),
+    });
+    kakao.maps.event.addListener(marker, 'click', () => openFame(st, marker));
+    fameMarkers.push(marker);
+  }
+}
+
+/** 배출점 상세: 1등·2등 몇 번, 어느 회차였는지. */
+function openFame(st, marker) {
+  fameWindow?.close();
+  const rows = [];
+  if (st.firstCount) rows.push(`<b style="color:#b8860b">1등 ${st.firstCount}회</b> ${recentDraws(st.first).join(', ')}회`);
+  if (st.secondCount) rows.push(`2등 ${st.secondCount}회 ${recentDraws(st.second, 8).join(', ')}회`);
+  fameWindow = new kakao.maps.InfoWindow({
+    content: `<div style="padding:8px 11px;font-size:12px;color:#111;max-width:230px;line-height:1.5">
+        <b>${esc(st.name)}</b>${st.kind ? ` <span style="color:#666">${esc(st.kind)}</span>` : ''}<br>
+        <span style="color:#555">${esc(st.addr)}</span><br>${rows.join('<br>')}</div>`,
+  });
+  fameWindow.open(kmap, marker);
+}
+
+/** 목록 한 줄. 배출 실적이 있으면 금색 배지를 단다. */
+function storeRow(st, i, kind) {
+  const badge = st.firstCount
+    ? `<span class="badge" style="background:#4a3a10;color:#f5d76e">1등 ${st.firstCount}회</span>`
+    : st.secondCount ? `<span class="badge" style="background:#2a2f3a;color:var(--muted)">2등 ${st.secondCount}회</span>` : '';
+  const dist = st.distance != null ? ` · ${fmt(st.distance)}m` : '';
+  return `<div class="shop" data-${kind}="${i}"><b>${esc(st.name)} ${badge}</b><span class="kv">${esc(st.addr)}${dist}</span></div>`;
+}
+const KAKAO_ORIGINS = ['http://localhost:8765', 'http://127.0.0.1:8765'];
+/** 지도를 못 쓸 때(미등록 주소·로드 실패) 링크 검색과 배출점 목록으로 대체한다. */
+function useShopFallback(reason) {
+  $('#map').style.display = 'none';
+  $('#shop-fallback').style.display = '';
+  $('#shop-fallback').innerHTML = `<b style="color:var(--text)">지도 없이 바로 찾기</b><p>${esc(reason)}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ghost" id="fb-kakao" target="_blank" rel="noopener">카카오맵에서 복권판매점 찾기</a><a class="ghost" id="fb-naver" target="_blank" rel="noopener">네이버 지도에서 찾기</a></div>`;
+  const upd = () => { const q = ($('#shop-query').value.trim() + ' 복권판매점').trim(); $('#fb-kakao').href = 'https://map.kakao.com/?q=' + encodeURIComponent(q); $('#fb-naver').href = 'https://map.naver.com/p/search/' + encodeURIComponent(q); };
+  upd(); $('#shop-query').addEventListener('input', upd);
+  $('#shop-search').addEventListener('click', () => { upd(); window.open($('#fb-kakao').href, '_blank', 'noopener'); });
+  $('#shop-locate').addEventListener('click', () => window.open('https://map.kakao.com/?q=' + encodeURIComponent('복권판매점'), '_blank', 'noopener'));
+  // 지도가 없어도 배출점 목록은 검색할 수 있다
+  loadStores().then(idx => {
+    const render = () => {
+      const hits = idx.search($('#shop-query').value.trim(), 30);
+      $('#fame-list').innerHTML = hits.length
+        ? `<div class="kv" style="margin:10px 0 4px"><b>배출점 ${hits.length}곳</b></div>`
+          + hits.map(st => `<div class="shop"><b>${esc(st.name)} <span class="badge" style="background:#4a3a10;color:#f5d76e">${esc(summarize(st))}</span></b><span class="kv">${esc(st.addr)}</span></div>`).join('')
+        : '';
+    };
+    $('#shop-query').addEventListener('input', render);
+  });
+}
+
+function initShops() {
+  if (shopsInit) return; shopsInit = true;
+  // 등록된 도메인이 아니면 지도 대신 링크로 대체한다.
+  const registered = KAKAO_ORIGINS.includes(location.origin) || location.protocol === 'https:';
+  if (!registered) { useShopFallback('지금 주소에서는 아래 링크로 검색하세요.'); return; }
+  const s = document.createElement('script');
+  s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_JS_KEY)}&autoload=false&libraries=services`;
+  // 실패하면 빈 지도 자리를 남기지 말고 링크 검색으로 대체한다.
+  s.onerror = () => {
+    showErr('#shop-error', '카카오맵을 불러오지 못했습니다. 네트워크 연결을 확인하세요.');
+    useShopFallback('지도를 불러오지 못했습니다. 아래 링크로 검색하세요.');
+  };
+  s.onload = () => kakao.maps.load(() => {
+    kmap = new kakao.maps.Map($('#map'), { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5 });
+    places = new kakao.maps.services.Places();
+    $('#shop-search').addEventListener('click', async () => {
+      const q = $('#shop-query').value.trim();
+      searchShops(q, null);
+      // 검색어로 배출점도 같이 찾아 준다
+      const idx = await loadStores();
+      renderFame(idx.search(q, 40), `"${q}" 배출점`);
+    });
+    $('#shop-fame').addEventListener('change', () => renderFame(lastFame.list, lastFame.title));
+    loadStores();
+    $('#shop-query').addEventListener('keydown', e => { if (e.key === 'Enter') $('#shop-search').click(); });
+    $('#shop-locate').addEventListener('click', locateMe);
+  });
+  document.head.appendChild(s);
+}
+
+let lastFame = { list: [], title: '' };
+
+/** 배출점 목록과 마커를 함께 그린다. 토글이 꺼져 있으면 둘 다 감춘다. */
+function renderFame(list, title) {
+  lastFame = { list, title };
+  const on = $('#shop-fame').checked;
+  showFameMarkers(on ? list : []);
+  if (!on || !list.length) {
+    $('#fame-list').innerHTML = on && title ? `<p class="kv">${esc(title)} 기록된 배출점이 없습니다.</p>` : '';
+    return;
+  }
+  const withFirst = list.filter(s => s.firstCount).length;
+  $('#fame-list').innerHTML =
+    `<div class="kv" style="margin:10px 0 4px"><b>${esc(title)} ${list.length}곳</b>${withFirst ? ` (1등 배출 ${withFirst}곳)` : ''}</div>`
+    + list.map((st, i) => storeRow(st, i, 'fame')).join('');
+  $('#fame-list').querySelectorAll('[data-fame]').forEach(row => row.addEventListener('click', () => {
+    const st = list[+row.dataset.fame];
+    kmap.panTo(new kakao.maps.LatLng(st.lat, st.lot));
+    const marker = fameMarkers.find(m => m.getTitle() === st.name);
+    if (marker) openFame(st, marker);
+  }));
+}
+
+/** 내 주변 배출점. */
+async function showNearbyFame(lat, lot, radius = 5000) {
+  const idx = await loadStores();
+  if (!idx.stores.length) return;
+  renderFame(idx.near(lat, lot, radius, 60), `반경 ${radius / 1000}km 안 배출점`);
+}
+
+/** 현재 위치를 잡아 지도에 표시하고 주변을 검색한다. */
+function locateMe() {
+  const status = $('#shop-status');
+  showErr('#shop-error', null);
+  // 위치는 HTTPS(또는 localhost)에서만 허용된다.
+  if (!window.isSecureContext) {
+    status.innerHTML = '<span style="color:var(--warn)">이 주소에서는 위치를 쓸 수 없습니다 (HTTPS 필요). 동네 이름으로 검색해 주세요.</span>';
+    return;
+  }
+  if (!navigator.geolocation) {
+    status.textContent = '이 브라우저는 위치를 지원하지 않습니다. 동네 이름으로 검색해 주세요.';
+    return;
+  }
+  status.innerHTML = '<span class="spin"></span>현재 위치를 찾는 중…';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      const here = new kakao.maps.LatLng(latitude, longitude);
+      showHereMarker(here, accuracy);
+      kmap.setCenter(here);
+      kmap.setLevel(5);
+      status.innerHTML = accuracy > 3000
+        ? `현재 위치를 대략 ${fmt(Math.round(accuracy))}m 오차로 잡았습니다. PC 는 인터넷 주소로 추정해 부정확할 수 있으니, 빗나가면 동네 이름으로 검색해 주세요.`
+        : `현재 위치 기준 (오차 약 ${fmt(Math.round(accuracy))}m)`;
+      showNearbyFame(latitude, longitude);
+      searchShops('', here);
+    },
+    err => {
+      const guide = {
+        1: '위치 권한이 거부되어 있습니다. 브라우저 주소창의 자물쇠 아이콘에서 위치를 허용으로 바꾼 뒤 다시 눌러 주세요.',
+        2: '현재 위치를 확인할 수 없습니다. 실내이거나 신호가 약할 수 있습니다.',
+        3: '위치 확인이 오래 걸립니다. 잠시 후 다시 시도해 주세요.',
+      }[err.code] || '위치를 가져오지 못했습니다.';
+      status.innerHTML = `<span style="color:var(--warn)">${esc(guide)}</span> 동네 이름으로 검색해도 됩니다.`;
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+  );
+}
+
+let hereMarker = null, hereCircle = null;
+/** 내 위치를 파란 점과 오차 반경으로 표시한다. */
+function showHereMarker(pos, accuracy) {
+  hereMarker?.setMap(null);
+  hereCircle?.setMap(null);
+  hereMarker = new kakao.maps.Marker({
+    map: kmap, position: pos, zIndex: 10, title: '현재 위치',
+    image: new kakao.maps.MarkerImage(
+      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+           <circle cx="12" cy="12" r="7" fill="#7aa2ff" stroke="#fff" stroke-width="3"/></svg>`),
+      new kakao.maps.Size(24, 24), { offset: new kakao.maps.Point(12, 12) }),
+  });
+  if (accuracy && accuracy > 50) {
+    hereCircle = new kakao.maps.Circle({
+      map: kmap, center: pos, radius: Math.min(accuracy, 5000),
+      strokeWeight: 1, strokeColor: '#7aa2ff', strokeOpacity: 0.6,
+      fillColor: '#7aa2ff', fillOpacity: 0.12,
+    });
+  }
+}
+
+function searchShops(query, loc, radius = 2000) {
+  showErr('#shop-error', null);
+  const opts = loc ? { location: loc, radius, sort: kakao.maps.services.SortBy.DISTANCE } : {};
+  places.keywordSearch((query ? query + ' ' : '') + '복권판매점', (data, status) => {
+    if (status !== kakao.maps.services.Status.OK) {
+      // 내 위치 검색인데 결과가 없으면 반경을 넓혀 한 번 더 (최대 20km)
+      if (loc && radius < 20000) return searchShops(query, loc, radius * 2.5);
+      $('#shop-list').innerHTML = '<p class="kv">검색 결과가 없습니다. 동네 이름이나 역 이름으로 찾아보세요.</p>';
+      return;
+    }
+    if (loc) {
+      $('#shop-status').innerHTML += ` · 반경 ${radius >= 1000 ? (radius / 1000) + 'km' : radius + 'm'} 안 ${data.length}곳`;
+    }
+    markers.forEach(m => m.setMap(null)); markers = [];
+    const bounds = new kakao.maps.LatLngBounds();
+    $('#shop-list').innerHTML = data.map((d, i) => `<div class="shop" data-i="${i}"><b>${esc(d.place_name)}</b><span class="kv">${esc(d.road_address_name || d.address_name)}${d.phone ? ' · ' + esc(d.phone) : ''}${d.distance ? ' · ' + fmt(d.distance) + 'm' : ''}</span></div>`).join('');
+    data.forEach((d, i) => {
+      const pos = new kakao.maps.LatLng(d.y, d.x);
+      const m = new kakao.maps.Marker({ map: kmap, position: pos, title: d.place_name }); markers.push(m); bounds.extend(pos);
+      const iw = new kakao.maps.InfoWindow({ content: `<div style="padding:6px 10px;font-size:12px;color:#111">${esc(d.place_name)}<br><a href="${d.place_url}" target="_blank" rel="noopener">상세 보기</a></div>` });
+      kakao.maps.event.addListener(m, 'click', () => iw.open(kmap, m));
+      $('#shop-list').querySelector(`[data-i="${i}"]`).addEventListener('click', () => { kmap.panTo(pos); iw.open(kmap, m); });
+    });
+    if (loc) bounds.extend(loc);
+    kmap.setBounds(bounds);
+  }, opts);
+}
+
+// ---- 설정 · 정보
+function loadInfo() {
+  $('#info-disclaimer').textContent = DISCLAIMER;
+  $('#info-version').textContent = `lottoracle v${VERSION}`;
+  const settings = storage.loadSettings();
+  $('#set-autorefresh').checked = settings.autoRefresh !== false;
+  $('#set-kakao-hint').textContent = '';
+  const p = ENGINE.loadProfile();
+  $('#info-profile').textContent = p.isEmpty ? '프로필이 없습니다.'
+    : `${p.name || '(이름 없음)'} · ${p.birthDate} · ${p.zodiac}띠${p.hourLabel ? ' · ' + p.hourLabel + '생' : ''}`;
+  const picks = ENGINE.picksPayload().length;
+  $('#info-storage').textContent = `저장한 번호 ${picks}건 · 회차 캐시 ${ENGINE.draws.length}회차. 모두 이 기기에만 있습니다.`;
+}
+$('#set-save').addEventListener('click', () => {
+  storage.saveSettings({ autoRefresh: $('#set-autorefresh').checked });
+  $('#set-msg').innerHTML = '<div class="okbox">저장했습니다.</div>';
+});
+$('#profile-edit').addEventListener('click', () => {
+  const p = ENGINE.loadProfile();
+  showOnboarding(p.isEmpty ? null : p);
+});
+$('#profile-clear').addEventListener('click', () => {
+  if (!confirm('프로필을 삭제할까요? 저장한 번호는 남습니다.')) return;
+  ENGINE.clearProfile(); loadInfo(); loadFortune();
+});
+$('#clear-all').addEventListener('click', () => {
+  if (!confirm('이 기기에 저장된 프로필·내 번호·설정을 모두 지웁니다. 계속할까요?')) return;
+  storage.clearAll(); celebratedPick = null; loadInfo(); loadFortune();
+  $('#set-msg').innerHTML = '<div class="okbox">모두 지웠습니다.</div>';
+});
+
+// ---- 오프라인 표시
+const updateOnline = () => { $('#offline-badge').style.display = navigator.onLine ? 'none' : ''; };
+window.matchMedia('(max-width:640px)').addEventListener('change', () => { if (ENGINE) renderMeta(); });
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ---- 서비스 워커 (오프라인에서도 열리게)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('./sw.js').catch(() => { /* 실패해도 앱은 돈다 */ });
+}
+
+boot();
+</script>
+</body>
+</html>

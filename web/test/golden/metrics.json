@@ -1,0 +1,876 @@
+{
+ "cases": [
+  {
+   "noPrev": {
+    "ac": 9,
+    "carryover": 0,
+    "consecutive": 1,
+    "endSum": 17,
+    "even": 3,
+    "high": 3,
+    "low": 3,
+    "maxRun": 2,
+    "mult3": 2,
+    "numbers": [
+     11,
+     13,
+     22,
+     32,
+     33,
+     36
+    ],
+    "odd": 3,
+    "sameEnding": 2,
+    "spread": 25,
+    "summary": "합계 147 · 홀짝 3:3 · 고저 3:3 · AC 9 · 끝수합 17 · 연속 1 · 구간 0-2-1-3-0 · 이월 0",
+    "total": 147,
+    "zones": [
+     0,
+     2,
+     1,
+     3,
+     0
+    ]
+   },
+   "numbers": [
+    11,
+    13,
+    22,
+    32,
+    33,
+    36
+   ],
+   "withPrev": {
+    "ac": 9,
+    "carryover": 6,
+    "consecutive": 1,
+    "endSum": 17,
+    "even": 3,
+    "high": 3,
+    "low": 3,
+    "maxRun": 2,
+    "mult3": 2,
+    "numbers": [
+     11,
+     13,
+     22,
+     32,
+     33,
+     36
+    ],
+    "odd": 3,
+    "sameEnding": 2,
+    "spread": 25,
+    "summary": "합계 147 · 홀짝 3:3 · 고저 3:3 · AC 9 · 끝수합 17 · 연속 1 · 구간 0-2-1-3-0 · 이월 6",
+    "total": 147,
+    "zones": [
+     0,
+     2,
+     1,
+     3,
+     0
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 9,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 22,
+    "even": 2,
+    "high": 5,
+    "low": 1,
+    "maxRun": 1,
+    "mult3": 1,
+    "numbers": [
+     10,
+     23,
+     29,
+     33,
+     37,
+     40
+    ],
+    "odd": 4,
+    "sameEnding": 2,
+    "spread": 30,
+    "summary": "합계 172 · 홀짝 4:2 · 고저 1:5 · AC 9 · 끝수합 22 · 연속 0 · 구간 0-1-2-2-1 · 이월 0",
+    "total": 172,
+    "zones": [
+     0,
+     1,
+     2,
+     2,
+     1
+    ]
+   },
+   "numbers": [
+    10,
+    23,
+    29,
+    33,
+    37,
+    40
+   ],
+   "withPrev": {
+    "ac": 9,
+    "carryover": 1,
+    "consecutive": 0,
+    "endSum": 22,
+    "even": 2,
+    "high": 5,
+    "low": 1,
+    "maxRun": 1,
+    "mult3": 1,
+    "numbers": [
+     10,
+     23,
+     29,
+     33,
+     37,
+     40
+    ],
+    "odd": 4,
+    "sameEnding": 2,
+    "spread": 30,
+    "summary": "합계 172 · 홀짝 4:2 · 고저 1:5 · AC 9 · 끝수합 22 · 연속 0 · 구간 0-1-2-2-1 · 이월 1",
+    "total": 172,
+    "zones": [
+     0,
+     1,
+     2,
+     2,
+     1
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 5,
+    "endSum": 21,
+    "even": 3,
+    "high": 0,
+    "low": 6,
+    "maxRun": 6,
+    "mult3": 2,
+    "numbers": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 5,
+    "summary": "합계 21 · 홀짝 3:3 · 고저 6:0 · AC 0 · 끝수합 21 · 연속 5 · 구간 6-0-0-0-0 · 이월 0",
+    "total": 21,
+    "zones": [
+     6,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "numbers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "withPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 5,
+    "endSum": 21,
+    "even": 3,
+    "high": 0,
+    "low": 6,
+    "maxRun": 6,
+    "mult3": 2,
+    "numbers": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 5,
+    "summary": "합계 21 · 홀짝 3:3 · 고저 6:0 · AC 0 · 끝수합 21 · 연속 5 · 구간 6-0-0-0-0 · 이월 0",
+    "total": 21,
+    "zones": [
+     6,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 5,
+    "endSum": 15,
+    "even": 3,
+    "high": 6,
+    "low": 0,
+    "maxRun": 6,
+    "mult3": 2,
+    "numbers": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 5,
+    "summary": "합계 255 · 홀짝 3:3 · 고저 0:6 · AC 0 · 끝수합 15 · 연속 5 · 구간 0-0-0-0-6 · 이월 0",
+    "total": 255,
+    "zones": [
+     0,
+     0,
+     0,
+     0,
+     6
+    ]
+   },
+   "numbers": [
+    40,
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "withPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 5,
+    "endSum": 15,
+    "even": 3,
+    "high": 6,
+    "low": 0,
+    "maxRun": 6,
+    "mult3": 2,
+    "numbers": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 5,
+    "summary": "합계 255 · 홀짝 3:3 · 고저 0:6 · AC 0 · 끝수합 15 · 연속 5 · 구간 0-0-0-0-6 · 이월 0",
+    "total": 255,
+    "zones": [
+     0,
+     0,
+     0,
+     0,
+     6
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 26,
+    "even": 0,
+    "high": 0,
+    "low": 6,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11
+    ],
+    "odd": 6,
+    "sameEnding": 2,
+    "spread": 10,
+    "summary": "합계 36 · 홀짝 6:0 · 고저 6:0 · AC 0 · 끝수합 26 · 연속 0 · 구간 5-1-0-0-0 · 이월 0",
+    "total": 36,
+    "zones": [
+     5,
+     1,
+     0,
+     0,
+     0
+    ]
+   },
+   "numbers": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11
+   ],
+   "withPrev": {
+    "ac": 0,
+    "carryover": 1,
+    "consecutive": 0,
+    "endSum": 26,
+    "even": 0,
+    "high": 0,
+    "low": 6,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11
+    ],
+    "odd": 6,
+    "sameEnding": 2,
+    "spread": 10,
+    "summary": "합계 36 · 홀짝 6:0 · 고저 6:0 · AC 0 · 끝수합 26 · 연속 0 · 구간 5-1-0-0-0 · 이월 1",
+    "total": 36,
+    "zones": [
+     5,
+     1,
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 22,
+    "even": 6,
+    "high": 0,
+    "low": 6,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     2,
+     4,
+     6,
+     8,
+     10,
+     12
+    ],
+    "odd": 0,
+    "sameEnding": 2,
+    "spread": 10,
+    "summary": "합계 42 · 홀짝 0:6 · 고저 6:0 · AC 0 · 끝수합 22 · 연속 0 · 구간 4-2-0-0-0 · 이월 0",
+    "total": 42,
+    "zones": [
+     4,
+     2,
+     0,
+     0,
+     0
+    ]
+   },
+   "numbers": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12
+   ],
+   "withPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 22,
+    "even": 6,
+    "high": 0,
+    "low": 6,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     2,
+     4,
+     6,
+     8,
+     10,
+     12
+    ],
+    "odd": 0,
+    "sameEnding": 2,
+    "spread": 10,
+    "summary": "합계 42 · 홀짝 0:6 · 고저 6:0 · AC 0 · 끝수합 22 · 연속 0 · 구간 4-2-0-0-0 · 이월 0",
+    "total": 42,
+    "zones": [
+     4,
+     2,
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 7,
+    "carryover": 0,
+    "consecutive": 1,
+    "endSum": 16,
+    "even": 2,
+    "high": 3,
+    "low": 3,
+    "maxRun": 2,
+    "mult3": 2,
+    "numbers": [
+     1,
+     11,
+     22,
+     33,
+     44,
+     45
+    ],
+    "odd": 4,
+    "sameEnding": 2,
+    "spread": 44,
+    "summary": "합계 156 · 홀짝 4:2 · 고저 3:3 · AC 7 · 끝수합 16 · 연속 1 · 구간 1-1-1-1-2 · 이월 0",
+    "total": 156,
+    "zones": [
+     1,
+     1,
+     1,
+     1,
+     2
+    ]
+   },
+   "numbers": [
+    11,
+    22,
+    33,
+    44,
+    1,
+    45
+   ],
+   "withPrev": {
+    "ac": 7,
+    "carryover": 3,
+    "consecutive": 1,
+    "endSum": 16,
+    "even": 2,
+    "high": 3,
+    "low": 3,
+    "maxRun": 2,
+    "mult3": 2,
+    "numbers": [
+     1,
+     11,
+     22,
+     33,
+     44,
+     45
+    ],
+    "odd": 4,
+    "sameEnding": 2,
+    "spread": 44,
+    "summary": "합계 156 · 홀짝 4:2 · 고저 3:3 · AC 7 · 끝수합 16 · 연속 1 · 구간 1-1-1-1-2 · 이월 3",
+    "total": 156,
+    "zones": [
+     1,
+     1,
+     1,
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 4,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 20,
+    "even": 0,
+    "high": 3,
+    "low": 3,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     3,
+     5,
+     13,
+     23,
+     33,
+     43
+    ],
+    "odd": 6,
+    "sameEnding": 5,
+    "spread": 40,
+    "summary": "합계 120 · 홀짝 6:0 · 고저 3:3 · AC 4 · 끝수합 20 · 연속 0 · 구간 2-1-1-1-1 · 이월 0",
+    "total": 120,
+    "zones": [
+     2,
+     1,
+     1,
+     1,
+     1
+    ]
+   },
+   "numbers": [
+    3,
+    13,
+    23,
+    33,
+    43,
+    5
+   ],
+   "withPrev": {
+    "ac": 4,
+    "carryover": 2,
+    "consecutive": 0,
+    "endSum": 20,
+    "even": 0,
+    "high": 3,
+    "low": 3,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     3,
+     5,
+     13,
+     23,
+     33,
+     43
+    ],
+    "odd": 6,
+    "sameEnding": 5,
+    "spread": 40,
+    "summary": "합계 120 · 홀짝 6:0 · 고저 3:3 · AC 4 · 끝수합 20 · 연속 0 · 구간 2-1-1-1-1 · 이월 2",
+    "total": 120,
+    "zones": [
+     2,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 2,
+    "carryover": 0,
+    "consecutive": 4,
+    "endSum": 18,
+    "even": 2,
+    "high": 3,
+    "low": 3,
+    "maxRun": 3,
+    "mult3": 2,
+    "numbers": [
+     1,
+     2,
+     3,
+     43,
+     44,
+     45
+    ],
+    "odd": 4,
+    "sameEnding": 2,
+    "spread": 44,
+    "summary": "합계 138 · 홀짝 4:2 · 고저 3:3 · AC 2 · 끝수합 18 · 연속 4 · 구간 3-0-0-0-3 · 이월 0",
+    "total": 138,
+    "zones": [
+     3,
+     0,
+     0,
+     0,
+     3
+    ]
+   },
+   "numbers": [
+    1,
+    2,
+    3,
+    43,
+    44,
+    45
+   ],
+   "withPrev": {
+    "ac": 2,
+    "carryover": 0,
+    "consecutive": 4,
+    "endSum": 18,
+    "even": 2,
+    "high": 3,
+    "low": 3,
+    "maxRun": 3,
+    "mult3": 2,
+    "numbers": [
+     1,
+     2,
+     3,
+     43,
+     44,
+     45
+    ],
+    "odd": 4,
+    "sameEnding": 2,
+    "spread": 44,
+    "summary": "합계 138 · 홀짝 4:2 · 고저 3:3 · AC 2 · 끝수합 18 · 연속 4 · 구간 3-0-0-0-3 · 이월 0",
+    "total": 138,
+    "zones": [
+     3,
+     0,
+     0,
+     0,
+     3
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 27,
+    "even": 3,
+    "high": 3,
+    "low": 3,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     7,
+     14,
+     21,
+     28,
+     35,
+     42
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 35,
+    "summary": "합계 147 · 홀짝 3:3 · 고저 3:3 · AC 0 · 끝수합 27 · 연속 0 · 구간 1-1-2-1-1 · 이월 0",
+    "total": 147,
+    "zones": [
+     1,
+     1,
+     2,
+     1,
+     1
+    ]
+   },
+   "numbers": [
+    7,
+    14,
+    21,
+    28,
+    35,
+    42
+   ],
+   "withPrev": {
+    "ac": 0,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 27,
+    "even": 3,
+    "high": 3,
+    "low": 3,
+    "maxRun": 1,
+    "mult3": 2,
+    "numbers": [
+     7,
+     14,
+     21,
+     28,
+     35,
+     42
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 35,
+    "summary": "합계 147 · 홀짝 3:3 · 고저 3:3 · AC 0 · 끝수합 27 · 연속 0 · 구간 1-1-2-1-1 · 이월 0",
+    "total": 147,
+    "zones": [
+     1,
+     1,
+     2,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 3,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 31,
+    "even": 3,
+    "high": 3,
+    "low": 3,
+    "maxRun": 1,
+    "mult3": 1,
+    "numbers": [
+     5,
+     12,
+     19,
+     26,
+     31,
+     38
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 33,
+    "summary": "합계 131 · 홀짝 3:3 · 고저 3:3 · AC 3 · 끝수합 31 · 연속 0 · 구간 1-2-1-2-0 · 이월 0",
+    "total": 131,
+    "zones": [
+     1,
+     2,
+     1,
+     2,
+     0
+    ]
+   },
+   "numbers": [
+    5,
+    12,
+    19,
+    26,
+    31,
+    38
+   ],
+   "withPrev": {
+    "ac": 3,
+    "carryover": 0,
+    "consecutive": 0,
+    "endSum": 31,
+    "even": 3,
+    "high": 3,
+    "low": 3,
+    "maxRun": 1,
+    "mult3": 1,
+    "numbers": [
+     5,
+     12,
+     19,
+     26,
+     31,
+     38
+    ],
+    "odd": 3,
+    "sameEnding": 1,
+    "spread": 33,
+    "summary": "합계 131 · 홀짝 3:3 · 고저 3:3 · AC 3 · 끝수합 31 · 연속 0 · 구간 1-2-1-2-0 · 이월 0",
+    "total": 131,
+    "zones": [
+     1,
+     2,
+     1,
+     2,
+     0
+    ]
+   }
+  },
+  {
+   "noPrev": {
+    "ac": 9,
+    "carryover": 0,
+    "consecutive": 1,
+    "endSum": 26,
+    "even": 2,
+    "high": 2,
+    "low": 4,
+    "maxRun": 2,
+    "mult3": 1,
+    "numbers": [
+     1,
+     8,
+     17,
+     22,
+     23,
+     45
+    ],
+    "odd": 4,
+    "sameEnding": 1,
+    "spread": 44,
+    "summary": "합계 116 · 홀짝 4:2 · 고저 4:2 · AC 9 · 끝수합 26 · 연속 1 · 구간 2-1-2-0-1 · 이월 0",
+    "total": 116,
+    "zones": [
+     2,
+     1,
+     2,
+     0,
+     1
+    ]
+   },
+   "numbers": [
+    45,
+    1,
+    23,
+    22,
+    8,
+    17
+   ],
+   "withPrev": {
+    "ac": 9,
+    "carryover": 1,
+    "consecutive": 1,
+    "endSum": 26,
+    "even": 2,
+    "high": 2,
+    "low": 4,
+    "maxRun": 2,
+    "mult3": 1,
+    "numbers": [
+     1,
+     8,
+     17,
+     22,
+     23,
+     45
+    ],
+    "odd": 4,
+    "sameEnding": 1,
+    "spread": 44,
+    "summary": "합계 116 · 홀짝 4:2 · 고저 4:2 · AC 9 · 끝수합 26 · 연속 1 · 구간 2-1-2-0-1 · 이월 1",
+    "total": 116,
+    "zones": [
+     2,
+     1,
+     2,
+     0,
+     1
+    ]
+   }
+  }
+ ],
+ "previous": [
+  11,
+  13,
+  22,
+  32,
+  33,
+  36
+ ]
+}
