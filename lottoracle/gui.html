@@ -266,11 +266,8 @@
     <div class="grid">
       <div class="panel">
         <h3>설정</h3>
-        <label>카카오맵 JavaScript 키 <small style="color:var(--muted)">(복권방 지도용 · 선택)</small></label>
-        <input type="password" id="set-kakao" placeholder="비우면 내장 기본 키 사용">
-        <p class="kv" id="set-kakao-hint"></p>
-        <p class="kv">내장 기본 키는 <code>http://localhost:8765</code> 와 <code>http://127.0.0.1:8765</code> 에서만 동작합니다. 다른 포트나 주소(<code id="set-origin"></code>)로 열었다면 카카오 개발자 콘솔에서 자기 키를 발급받아 그 주소를 등록하고 여기에 넣으세요. 키는 이 컴퓨터의 data/settings.json 에만 저장됩니다.</p>
         <div class="check"><input type="checkbox" id="set-autorefresh" checked><span>시작할 때 새 회차 자동 확인</span></div>
+        <p class="kv" id="set-kakao-hint"></p>
         <button class="primary" id="set-save">설정 저장</button>
         <div id="set-msg"></div>
         <h3 style="margin-top:22px">프로필</h3>
@@ -653,11 +650,11 @@
   let shopsInit = false, kmap = null, markers = [], places = null;
   function initShops(){
     if (shopsInit) return; shopsInit = true;
-    $('#set-origin').textContent = location.origin;
-    if (!META.kakao_js_key) {
+    const registered = (META.kakao_default_origins || []).includes(location.origin) || META.kakao_key_source !== 'default';
+    if (!META.kakao_js_key || !registered) {
       $('#map').style.display = 'none';
       $('#shop-fallback').style.display = '';
-      $('#shop-fallback').innerHTML = `<b style="color:var(--text)">지도 없이 바로 찾기</b><p>카카오맵 키를 넣지 않아도 아래 링크로 검색할 수 있습니다. 키를 넣으면 이 자리에 지도가 뜹니다 (설정 · 정보 탭).</p>
+      $('#shop-fallback').innerHTML = `<b style="color:var(--text)">지도 없이 바로 찾기</b><p>지도는 ${(META.kakao_default_origins || []).map(esc).join(' 또는 ')} 로 열었을 때 뜹니다. 지금 주소에서는 아래 링크로 검색하세요.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ghost" id="fb-kakao" target="_blank" rel="noopener">카카오맵에서 복권판매점 찾기</a><a class="ghost" id="fb-naver" target="_blank" rel="noopener">네이버 지도에서 찾기</a></div>`;
       const upd = () => { const q = ($('#shop-query').value.trim() + ' 복권판매점').trim(); $('#fb-kakao').href = 'https://map.kakao.com/?q=' + encodeURIComponent(q); $('#fb-naver').href = 'https://map.naver.com/p/search/' + encodeURIComponent(q); };
       upd(); $('#shop-query').addEventListener('input', upd);
@@ -667,9 +664,7 @@
     }
     const s = document.createElement('script');
     s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(META.kakao_js_key)}&autoload=false&libraries=services`;
-    s.onerror = () => showErr('#shop-error', '카카오맵 SDK를 불러오지 못했습니다. ' + ((META.kakao_default_origins || []).includes(location.origin)
-      ? '네트워크를 확인하거나, 카카오 개발자 콘솔에서 카카오맵이 활성화되어 있는지 확인하세요.'
-      : '현재 주소 ' + location.origin + ' 는 내장 키에 등록되어 있지 않습니다. 설정 탭에서 자기 키를 넣으세요.'));
+    s.onerror = () => showErr('#shop-error', '카카오맵을 불러오지 못했습니다. 네트워크 연결을 확인하세요.');
     s.onload = () => kakao.maps.load(() => {
       const center = new kakao.maps.LatLng(37.5665, 126.9780);
       kmap = new kakao.maps.Map($('#map'), {center, level: 5});
@@ -708,14 +703,10 @@
 
   // ---- 설정 · 정보
   async function loadInfo(){
-    $('#set-origin').textContent = location.origin;
     $('#info-disclaimer').textContent = META.disclaimer;
     $('#info-version').textContent = `lottoracle v${META.version}`;
-    $('#set-kakao').value = META.kakao_key_source === 'settings' ? META.kakao_js_key : '';
     const okOrigin = (META.kakao_default_origins || []).includes(location.origin);
-    $('#set-kakao-hint').innerHTML = META.kakao_key_source === 'default'
-      ? (okOrigin ? '현재 내장 기본 키를 쓰고 있고, 이 주소는 등록되어 있습니다.' : `<span style="color:var(--warn)">현재 주소 ${esc(location.origin)} 는 내장 키에 등록되어 있지 않아 지도가 뜨지 않을 수 있습니다.</span>`)
-      : (META.kakao_key_source === 'env' ? '환경변수 LOTTORACLE_KAKAO_JS_KEY 의 키를 쓰고 있습니다.' : '설정에 저장된 키를 쓰고 있습니다.');
+    $('#set-kakao-hint').innerHTML = okOrigin ? '' : `<span style="color:var(--warn)">복권방 지도는 ${(META.kakao_default_origins || []).join(' · ')} 에서만 뜹니다. 현재 주소 ${esc(location.origin)} 에서는 링크로 대체됩니다.</span>`;
     $('#set-autorefresh').checked = !!META.auto_refresh;
     try {
       const r = await api('/api/profile'); const p = r.profile;
@@ -724,8 +715,8 @@
   }
   $('#set-save').addEventListener('click', async () => {
     try {
-      await api('/api/settings', {settings: {kakao_js_key: $('#set-kakao').value.trim(), auto_refresh: $('#set-autorefresh').checked}});
-      $('#set-msg').innerHTML = '<div class="okbox">저장했습니다. 지도 설정은 새로고침 후 적용됩니다.</div>';
+      await api('/api/settings', {settings: {auto_refresh: $('#set-autorefresh').checked}});
+      $('#set-msg').innerHTML = '<div class="okbox">저장했습니다.</div>';
       await loadMeta();
     } catch (e) { $('#set-msg').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
   });

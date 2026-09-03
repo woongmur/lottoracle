@@ -111,7 +111,7 @@ class UserStore:
         return raw if isinstance(raw, dict) else {}
 
     def save_settings(self, patch: dict[str, Any]) -> dict[str, Any]:
-        allowed = {"kakao_js_key", "auto_refresh"}
+        allowed = {"auto_refresh"}
         with self._lock:
             current = self.load_settings()
             for k, v in patch.items():

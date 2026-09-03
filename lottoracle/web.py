@@ -31,15 +31,13 @@ GUI_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gui.html")
 
 # 카카오맵 JavaScript 키. 페이지 소스에 드러나는 것이 정상인 키이며, 카카오 개발자 콘솔에
 # 등록된 도메인(http://localhost:8765, http://127.0.0.1:8765)에서만 동작한다.
-# 다른 포트·주소로 쓰려면 설정 탭이나 LOTTORACLE_KAKAO_JS_KEY 환경변수로 자기 키를 넣는다.
+# 개발용으로 다른 키를 쓰려면 LOTTORACLE_KAKAO_JS_KEY 환경변수로 덮어쓴다.
 DEFAULT_KAKAO_JS_KEY = "14d51c1614df122e68dbc7ca849d5d40"
 DEFAULT_PORT = 8765
 
 
-def kakao_js_key(settings: dict[str, Any]) -> tuple[str, str]:
-    """(키, 출처). 우선순위: 설정 파일 → 환경변수 → 내장 기본 키."""
-    if settings.get("kakao_js_key"):
-        return str(settings["kakao_js_key"]), "settings"
+def kakao_js_key() -> tuple[str, str]:
+    """(키, 출처). 환경변수가 있으면 그것, 없으면 내장 기본 키."""
     if os.environ.get("LOTTORACLE_KAKAO_JS_KEY"):
         return os.environ["LOTTORACLE_KAKAO_JS_KEY"], "env"
     return DEFAULT_KAKAO_JS_KEY, "default"
@@ -104,7 +102,7 @@ class Handler(BaseHTTPRequestHandler):
         prev = eng.previous
         profile = eng.store.load_profile()
         settings = eng.store.load_settings()
-        key, key_source = kakao_js_key(settings)
+        key, key_source = kakao_js_key()
         return {
             "version": __version__,
             "draws_used": len(eng.draws),

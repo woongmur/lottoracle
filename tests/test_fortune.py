@@ -157,9 +157,9 @@ class StoreTest(unittest.TestCase):
 
     def test_settings_whitelist(self):
         s = self.store.save_settings({"kakao_js_key": "abc", "evil": 1, "auto_refresh": False})
-        self.assertEqual(s, {"kakao_js_key": "abc", "auto_refresh": False})
-        s = self.store.save_settings({"kakao_js_key": ""})
-        self.assertNotIn("kakao_js_key", s)
+        self.assertEqual(s, {"auto_refresh": False})
+        s = self.store.save_settings({"auto_refresh": ""})
+        self.assertNotIn("auto_refresh", s)
 
     def test_corrupt_file_is_ignored(self):
         os.makedirs(self.store.dir, exist_ok=True)
@@ -271,14 +271,10 @@ class WebNewApiTest(unittest.TestCase):
         self.assertEqual(m["kakao_key_source"], "default")
         self.assertEqual(len(m["kakao_js_key"]), 32)
         status, r = self._req("/api/settings", {"settings": {"kakao_js_key": "k", "auto_refresh": False}})
-        self.assertEqual(r["settings"]["kakao_js_key"], "k")
-        status, m = self._req("/api/meta")
-        self.assertEqual(m["kakao_js_key"], "k")
-        self.assertEqual(m["kakao_key_source"], "settings")
-        self.assertFalse(m["auto_refresh"])
-        self._req("/api/settings", {"settings": {"kakao_js_key": ""}})
+        self.assertNotIn("kakao_js_key", r["settings"])   # 키는 설정으로 바꿀 수 없다
         status, m = self._req("/api/meta")
         self.assertEqual(m["kakao_key_source"], "default")
+        self.assertFalse(m["auto_refresh"])
 
         status, r = self._req("/api/profile/delete", {})
         self.assertTrue(r["ok"])
