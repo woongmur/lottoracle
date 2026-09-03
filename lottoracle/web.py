@@ -34,6 +34,8 @@ GUI_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gui.html")
 # 개발용으로 다른 키를 쓰려면 LOTTORACLE_KAKAO_JS_KEY 환경변수로 덮어쓴다.
 DEFAULT_KAKAO_JS_KEY = "14d51c1614df122e68dbc7ca849d5d40"
 DEFAULT_PORT = 8765
+# 동행복권 인터넷 구매 페이지. 번호를 URL 로 넘기는 공식 방법은 없어서 화면만 열어 준다.
+BUY_URL = "https://ol.dhlottery.co.kr/olotto/game/game645.do"
 
 
 def kakao_js_key() -> tuple[str, str]:
@@ -119,6 +121,7 @@ class Handler(BaseHTTPRequestHandler):
             "online_refresh": eng.path.lower().endswith(".json"),
             "today": date.today().isoformat(),
             "branch_choices": branch_choices(),
+            "buy_url": BUY_URL,
         }
 
     def do_GET(self) -> None:
@@ -177,6 +180,8 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(eng.backtest_payload(
                         opts, rounds=rounds, seed=int(seed) if seed not in (None, "") else None
                     ))
+            elif url.path == "/api/qr":
+                self._json(eng.qr_payload(str(body.get("text", ""))))
             elif url.path == "/api/profile":
                 profile = Profile.from_dict(body.get("profile", body))
                 if profile.is_empty:
