@@ -6,6 +6,8 @@ import csv
 import json
 import os
 import re
+import time
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
@@ -13,7 +15,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Iterable, Sequence
 
-API_URL = "https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo={no}"
+# 동행복권 회차별 당첨정보 API. srchLtEpsd 를 생략하면 최신 회차가 온다.
+API_URL = "https://www.dhlottery.co.kr/lt645/selectPstLt645Info.do"
 FIRST_DRAW_DATE = date(2002, 12, 7)  # 1회차 추첨일 (토요일)
 DEFAULT_CACHE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "draws.json"
@@ -81,23 +84,59 @@ def estimate_latest_draw_no(today: date | None = None) -> int:
 
 # ---------------------------------------------------------------- 원격 수집
 
+def _parse_payload(payload: dict) -> Draw | None:
+    """selectPstLt645Info.do 응답(JSON)을 Draw 로 바꾼다. 회차가 없으면 None.
+
+    응답 예::
+
+        {"resultCode": null, "resultMessage": null,
+         "data": {"list": [{"ltEpsd": 1239, "tm1WnNo": 11, ..., "tm6WnNo": 36,
+                            "bnsWnNo": 8, "ltRflYmd": "20260829",
+                            "rnk1WnNope": 13, "rnk1WnAmt": 2214789375, ...}]}}
+    """
+    items = ((payload or {}).get("data") or {}).get("list") or []
+    if not items:
+        return None
+    row = items[0]
+    ymd = str(row.get("ltRflYmd") or "")
+    draw_date = f"{ymd[:4]}-{ymd[4:6]}-{ymd[6:8]}" if len(ymd) == 8 else ymd
+    return Draw(
+        no=int(row["ltEpsd"]),
+        numbers=tuple(sorted(int(row[f"tm{i}WnNo"]) for i in range(1, 7))),
+        bonus=int(row["bnsWnNo"]),
+        draw_date=draw_date,
+        first_winners=int(row.get("rnk1WnNope", -1)),
+        first_prize=int(row.get("rnk1WnAmt", -1)),
+    )
+
+
+def _request(no: int | None, timeout: float, retries: int = 2) -> dict:
+    """API 를 호출해 JSON 을 돌려준다. 일시적 네트워크 오류는 retries 번 더 시도한다."""
+    url = API_URL if no is None else f"{API_URL}?srchLtEpsd={no}"
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "lottoracle/0.1", "Accept": "application/json"}
+    )
+    last_err: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as err:
+            last_err = err
+            if attempt < retries:
+                time.sleep(1.0 * (attempt + 1))
+    assert last_err is not None
+    raise last_err
+
+
 def fetch_draw(no: int, timeout: float = 10.0) -> Draw | None:
     """동행복권 공개 API에서 한 회차를 가져온다. 아직 추첨 전이면 None."""
-    req = urllib.request.Request(
-        API_URL.format(no=no), headers={"User-Agent": "lottoracle/0.1"}
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        payload = json.loads(resp.read().decode("utf-8"))
-    if payload.get("returnValue") != "success":
-        return None
-    return Draw(
-        no=int(payload["drwNo"]),
-        numbers=tuple(sorted(int(payload[f"drwtNo{i}"]) for i in range(1, 7))),
-        bonus=int(payload["bnusNo"]),
-        draw_date=str(payload.get("drwNoDate", "")),
-        first_winners=int(payload.get("firstPrzwnerCo", -1)),
-        first_prize=int(payload.get("firstWinamnt", -1)),
-    )
+    return _parse_payload(_request(no, timeout))
+
+
+def fetch_latest(timeout: float = 10.0) -> Draw | None:
+    """API가 알려주는 가장 최근 추첨 회차를 가져온다."""
+    return _parse_payload(_request(None, timeout))
 
 
 def fetch_range(start: int, end: int, timeout: float = 10.0) -> list[Draw]:
@@ -115,7 +154,11 @@ def update_cache(path: str = DEFAULT_CACHE, timeout: float = 10.0) -> list[Draw]
     """캐시에 없는 최신 회차만 이어서 받아 저장한다."""
     draws = load_draws(path, required=False)
     start = (max(d.no for d in draws) + 1) if draws else 1
-    end = estimate_latest_draw_no() + 1  # 추정이 하나 밀릴 수 있으니 여유를 둔다
+    newest = fetch_latest(timeout=timeout)
+    if newest is not None:
+        end = newest.no
+    else:
+        end = estimate_latest_draw_no() + 1  # 추정이 하나 밀릴 수 있으니 여유를 둔다
     if start <= end:
         draws.extend(fetch_range(start, end, timeout=timeout))
     save_draws(draws, path)
