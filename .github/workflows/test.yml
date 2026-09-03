@@ -24,3 +24,21 @@ jobs:
           python -m lottoracle --version
           python -m lottoracle fortune --birth 1990-05-21 --name 테스트 --hour 4
           python -m lottoracle recommend --offline --seed 1 -n 2
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run web tests
+        working-directory: web
+        run: npm test
+      - name: 골든 데이터가 파이썬 결과와 어긋나지 않았는지 확인
+        run: |
+          python3 tools/gen_golden.py
+          git diff --exit-code web/test/golden/ || {
+            echo "::error::골든 데이터가 파이썬 결과와 다릅니다. tools/gen_golden.py 를 돌리고 커밋하세요."
+            exit 1
+          }

@@ -53,7 +53,40 @@ python3 tools/gen_golden.py    # 저장소 루트에서
 | `storage.js` | 완료 — localStorage, 막힌 브라우저는 메모리로 물러섬 |
 | `dhlottery.js` | 완료 — 회차 조회·파싱·병합 (가짜 fetch 로 검사) |
 | `engine.js` | 완료 — 추천·통계·채점·운세·내 번호·갱신 |
-| UI (`index.html`) · PWA · 배포 | 예정 |
+| `backtest.js` | 완료 — 과거 회차 검증 |
+| `index.html` | 완료 — 엔진을 직접 부르는 단일 페이지 |
+| PWA (`manifest` · `sw.js` · 아이콘) | 완료 — 홈 화면 추가·오프라인 |
+| 배포 (GitHub Actions) | 완료 — 테스트 → Pages 배포, 매주 회차 자동 갱신 |
+
+## 실행
+
+```bash
+cd web && npm test                  # 테스트
+python3 -m http.server 8801         # web/ 에서 열고 http://127.0.0.1:8801
+```
+
+`file://` 로 열면 ES 모듈이 막히므로 반드시 서버로 띄운다.
+
+## 배포
+
+`.github/workflows/deploy.yml` 이 기본 브랜치의 `web/**` 변경을 감지해 GitHub Pages 로 올린다.
+테스트가 통과해야 배포된다. 저장소 설정 → Pages → Source 를 **GitHub Actions** 로 바꿔 두면 된다.
+
+Cloudflare Pages 를 쓰려면 빌드 명령 없이 출력 디렉터리만 `web` 으로 지정하면 된다.
+빌드 단계가 없어서 어느 정적 호스팅에도 그대로 올라간다.
+
+### 회차 자동 갱신
+
+`.github/workflows/update-draws.yml` 이 매주 일요일 새벽(KST)에 새 회차를 받아
+`data/draws.json` 과 `web/data/draws.json` 을 갱신하고, 골든 데이터를 다시 만든 뒤
+테스트가 통과하면 커밋한다. 방문자가 동행복권을 직접 부르지 않아도 최신 데이터를 받게 된다.
+
+브라우저에서도 시작할 때 새 회차를 확인하므로(설정에서 끌 수 있다), 배포가 늦어도 최신 회차가 뜬다.
+
+## 개인정보
+
+이름·생년월일·저장한 번호·설정은 전부 `localStorage` 에만 있고 서버로 가지 않는다.
+`web/public/privacy.html` 이 그 내용을 담은 개인정보처리방침이며, 앱 스토어 등록 시 이 URL 을 낸다.
 
 ## 서버가 없어도 되는 이유
 
