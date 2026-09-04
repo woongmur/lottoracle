@@ -5,6 +5,20 @@
 const PREFIX = 'lottoracle.';
 const MAX_PICKS = 200;
 
+/** 화면이 기대하는 모양인지 검사한다.
+ *
+ * addPick 이 저장할 때 이미 검사하지만, 저장소에는 예전 판이 쓴 값이나
+ * 손상된 값이 남아 있을 수 있다. 읽을 때 걸러 두지 않으면 그리는 쪽에서
+ * p.lines.map(...) 이 터지면서 '내 번호' 화면 전체가 죽는다.
+ */
+function isPick(p) {
+  return !!p && typeof p === 'object'
+    && Number.isFinite(Number(p.targetDraw))
+    && Array.isArray(p.lines) && p.lines.length > 0
+    && p.lines.every(row => Array.isArray(row) && row.length === 6
+      && row.every(n => Number.isInteger(n) && n >= 1 && n <= 45));
+}
+
 /** localStorage 흉내를 내는 메모리 백엔드. */
 function memoryBackend() {
   const map = new Map();
@@ -60,7 +74,7 @@ export function createStorage(backend = null) {
     // ---- 내 번호
     listPicks() {
       const raw = read('picks', []);
-      return Array.isArray(raw) ? raw : [];
+      return Array.isArray(raw) ? raw.filter(isPick) : [];
     },
     addPick(lines, targetDraw, note = '') {
       const clean = lines.map(row => {

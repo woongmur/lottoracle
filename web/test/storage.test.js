@@ -82,3 +82,31 @@ test('전체 삭제', () => {
   assert.equal(s.loadProfile(), null);
   assert.deepEqual(s.listPicks(), []);
 });
+
+// 저장소에는 예전 판이 쓴 값이나 손상된 값이 남아 있을 수 있다.
+// 걸러 두지 않으면 화면을 그릴 때 p.lines.map(...) 이 터져 '내 번호' 가 죽는다.
+test('lines 가 없거나 어긋난 내 번호 기록은 읽을 때 걸러낸다', () => {
+  const map = new Map();
+  const backend = {
+    getItem: k => (map.has(k) ? map.get(k) : null),
+    setItem: (k, v) => map.set(k, String(v)),
+    removeItem: k => map.delete(k),
+  };
+  backend.setItem('lottoracle.picks', JSON.stringify([
+    { id: 'a', targetDraw: 1240, lines: [[1, 2, 3, 4, 5, 6]] },   // 정상
+    { id: 'b', targetDraw: 1240, numbers: [1, 2, 3, 4, 5, 6] },   // lines 없음
+    { id: 'c', targetDraw: 1240, lines: [] },                     // 빈 lines
+    { id: 'd', targetDraw: 1240, lines: [[1, 2, 3]] },            // 6개가 아님
+    { id: 'e', targetDraw: 1240, lines: [[1, 2, 3, 4, 5, 99]] },  // 범위 밖
+    { id: 'f', lines: [[1, 2, 3, 4, 5, 6]] },                     // targetDraw 없음
+    null, 'nope', 42,
+  ]));
+  assert.deepEqual(createStorage(backend).listPicks().map(p => p.id), ['a']);
+});
+
+test('정상 기록은 그대로 읽힌다', () => {
+  const s = fresh();
+  s.addPick([[1, 2, 3, 4, 5, 6]], 1240);
+  assert.equal(s.listPicks().length, 1);
+  assert.deepEqual(s.listPicks()[0].lines, [[1, 2, 3, 4, 5, 6]]);
+});
