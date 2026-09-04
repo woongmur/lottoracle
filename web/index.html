@@ -49,6 +49,10 @@
   input[type=text],input[type=number],input[type=date],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:8px;font-size:14px}
   input[type=range]{width:100%}
   .row{display:flex;gap:10px}.row>*{flex:1}
+  /* 생년월일: 연-월-일 자릿수만큼 폭을 잡고 가운데 정렬 */
+  .onb-date>input{text-align:center}
+  .onb-date>#ob-y{flex:1.6;min-width:64px}
+  .onb-date>#ob-m,.onb-date>#ob-d{min-width:44px}
   .check{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13.5px;color:var(--text)}
   .check input{width:auto}
   button.primary{width:100%;margin-top:14px;background:var(--accent);color:#0b0e14;border:0;padding:11px;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer}
@@ -158,6 +162,13 @@
     nav button{padding:12px 11px;font-size:14px;flex:0 0 auto}
     /* 터치 목표 확보 + iOS 자동 확대 방지(16px 미만이면 확대된다) */
     input[type=text],input[type=number],input[type=date],input[type=password],select{font-size:16px;padding:10px}
+    /* 프로필: 이름·생년월일·태어난 시를 한 줄에 넣으면 연도 칸이 두 자리도 못 보인다.
+       (16px 글꼴 + 좌우 10px 여백이라 칸 하나당 최소 64px 은 있어야 한다) */
+    .onb-row{flex-wrap:wrap}
+    .onb-row>*{flex:1 1 100%}
+    .onb-date{gap:8px !important}
+    .onb-date>#ob-y{flex:1.5}
+    .onb-date>#ob-m,.onb-date>#ob-d{flex:1;min-width:56px}
     button.ghost{padding:10px 12px;font-size:13.5px}
     button.primary{padding:13px}
     /* 공: 6개 + 보너스가 한 줄에 들어가게 */
@@ -395,7 +406,7 @@ import { build as buildStats } from './src/stats.js';
 import { fit, calibrate } from './src/model.js';
 import { recommend as generate } from './src/generator.js';
 import { createFolklore } from './src/folklore.js';
-import { createStoreIndex, summarize, recentDraws } from './src/stores.js';
+import { createStoreIndex, summarize, recentDraws, distanceMeters } from './src/stores.js';
 
 const VERSION = '0.4.0';
 // 카카오맵 JavaScript 키. 페이지 소스에 드러나는 것이 정상인 키이며, 등록된 도메인에서만 동작한다.
@@ -557,10 +568,10 @@ function onboardingForm(profile) {
   return `<div class="fortune">
     <div class="greet">${profile && profile.birthDate ? '프로필 수정' : '처음 오셨네요'}</div>
     <p class="kv" style="font-size:13.5px">생년월일을 적으면 오늘의 운세와 번호 추천 입력이 한 번에 채워집니다. 입력한 정보는 이 기기에만 저장됩니다.</p>
-    <div class="row">
+    <div class="row onb-row">
       <div><label>이름 (선택)</label><input type="text" id="ob-name" maxlength="20" value="${esc(profile ? profile.name : '')}" placeholder="홍길동"></div>
       <div><label>생년월일</label>
-        <div class="row" style="gap:6px">
+        <div class="row onb-date" style="gap:6px">
           <input type="text" inputmode="numeric" id="ob-y" maxlength="4" placeholder="1990" value="${esc(y || '')}" style="flex:1.4">
           <input type="text" inputmode="numeric" id="ob-m" maxlength="2" placeholder="05" value="${esc(m || '')}">
           <input type="text" inputmode="numeric" id="ob-d" maxlength="2" placeholder="21" value="${esc(d || '')}">
@@ -1012,13 +1023,8 @@ function initShops() {
   s.onload = () => kakao.maps.load(() => {
     kmap = new kakao.maps.Map($('#map'), { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5 });
     places = new kakao.maps.services.Places();
-    $('#shop-search').addEventListener('click', async () => {
-      const q = $('#shop-query').value.trim();
-      searchShops(q, null);
-      // 검색어로 배출점도 같이 찾아 준다
-      const idx = await loadStores();
-      renderFame(idx.search(q, 40), `"${q}" 배출점`);
-    });
+    // 배출점은 searchShops 가 지도 영역을 잡은 뒤 좌표로 고른다 (fameInBounds).
+    $('#shop-search').addEventListener('click', () => searchShops($('#shop-query').value.trim(), null));
     $('#shop-fame').addEventListener('change', () => renderFame(lastFame.list, lastFame.title));
     loadStores();
     $('#shop-query').addEventListener('keydown', e => { if (e.key === 'Enter') $('#shop-search').click(); });
@@ -1048,6 +1054,24 @@ function renderFame(list, title) {
     const marker = fameMarkers.find(m => m.getTitle() === st.name);
     if (marker) openFame(st, marker);
   }));
+}
+
+/** 검색으로 좁혀진 지도 영역의 배출점.
+ *
+ * 검색어 문자열로 고르면 안 된다. 동행복권 주소에는 읍·면·동이 빠져 있어서
+ * ('충북 청주시 흥덕구 봉산2길 20-9') '오송'은 가게 이름에 우연히 걸리고
+ * '오송읍'은 하나도 안 걸린다. 같은 동네를 가리키는 말인데 결과가 갈린다.
+ * 좌표로 고르면 표기가 어떻든 같은 곳이 나온다.
+ */
+async function fameInBounds(bounds, label) {
+  const idx = await loadStores();
+  if (!idx.stores.length) return;
+  const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+  const lat = (sw.getLat() + ne.getLat()) / 2, lot = (sw.getLng() + ne.getLng()) / 2;
+  // 검색 결과가 퍼져 있으면 반경도 넓어진다. 너무 좁거나 넓지 않게 자른다.
+  const radius = Math.min(10000, Math.max(1500, distanceMeters(lat, lot, ne.getLat(), ne.getLng())));
+  const km = (radius / 1000).toFixed(radius < 10000 ? 1 : 0);
+  renderFame(idx.near(lat, lot, radius, 60), `${label} 반경 ${km}km 안 배출점`);
 }
 
 /** 내 주변 배출점. */
@@ -1126,6 +1150,7 @@ function searchShops(query, loc, radius = 2000) {
       // 내 위치 검색인데 결과가 없으면 반경을 넓혀 한 번 더 (최대 20km)
       if (loc && radius < 20000) return searchShops(query, loc, radius * 2.5);
       $('#shop-list').innerHTML = '<p class="kv">검색 결과가 없습니다. 동네 이름이나 역 이름으로 찾아보세요.</p>';
+      if (!loc) renderFame([], `"${query}"`);   // 직전 검색 결과가 남지 않게
       return;
     }
     if (loc) {
@@ -1143,6 +1168,9 @@ function searchShops(query, loc, radius = 2000) {
     });
     if (loc) bounds.extend(loc);
     kmap.setBounds(bounds);
+    // '내 위치로'는 locateMe 가 정확한 GPS 좌표로 이미 배출점을 그렸다.
+    // 검색어로 찾은 경우에만 지도 영역 기준으로 다시 고른다.
+    if (!loc) fameInBounds(bounds, query ? `"${query}"` : '이 지역');
   }, opts);
 }
 
