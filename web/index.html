@@ -96,8 +96,11 @@
   .dist>div{flex:1;background:var(--accent);border-radius:4px 4px 0 0;position:relative;min-height:2px}
   .dist>div span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
   .dist>div em{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--muted);font-style:normal}
-  .gradeline{display:flex;gap:6px;margin:6px 0;align-items:center;flex-wrap:wrap}
-  .gradeline input{width:52px;text-align:center}
+  /* 6칸 + 삭제 버튼은 항상 한 줄이어야 한다. flex + 고정폭이면 패널이 좁을 때
+     줄바꿈돼 마지막 칸이 아래로 밀린다. 그리드로 폭에 맞춰 줄여 담는다. */
+  .gradeline{display:grid;grid-template-columns:repeat(6,minmax(0,56px)) auto;
+    gap:6px;margin:6px 0;align-items:center}
+  .gradeline input{width:100%;text-align:center}
   .rank-1,.rank-2,.rank-3{color:var(--ok);font-weight:700}.rank-4,.rank-5{color:var(--warn);font-weight:700}.rank-0{color:var(--muted)}
   .hit{outline:3px solid var(--ok);outline-offset:1px}
   footer{color:var(--muted);font-size:12px;padding:20px 24px;border-top:1px solid var(--line);text-align:center}
