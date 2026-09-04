@@ -36,6 +36,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: 배포할 파일만 모은다 (테스트·골든 데이터는 뺀다)
         run: |
           mkdir -p dist
@@ -51,8 +54,10 @@ jobs:
           if [ -s dist/CNAME ]; then BASE="https://$(head -n1 dist/CNAME | tr -d '[:space:]')";
           else BASE="https://${GITHUB_REPOSITORY%%/*}.github.io/${GITHUB_REPOSITORY#*/}"; fi
           echo "사이트 주소: $BASE"
-          sed -i "s#__BASE__#${BASE}#g" dist/robots.txt dist/sitemap.xml
-          sed -i "s#__BASE__#${BASE}#g" dist/index.html
+          sed -i "s#__BASE__#${BASE}#g" dist/robots.txt dist/index.html
+          # 크롤러가 읽을 정적 페이지(회차별 당첨번호·명당)와 사이트맵을 만든다.
+          # 앱 본체는 JS 로 그려져서 크롤러에게는 사실상 빈 페이지다.
+          python3 tools/gen_pages.py --base "$BASE" --out dist
           find dist -type f | sort
       # 첫 배포 전에 저장소 Settings → Pages → Source 를 "GitHub Actions" 로
       # 한 번 켜 둬야 한다. enablement: true 로 워크플로가 대신 켜게 해 봤지만
