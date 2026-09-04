@@ -96,8 +96,11 @@
   .dist>div{flex:1;background:var(--accent);border-radius:4px 4px 0 0;position:relative;min-height:2px}
   .dist>div span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
   .dist>div em{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--muted);font-style:normal}
-  .gradeline{display:flex;gap:6px;margin:6px 0;align-items:center;flex-wrap:wrap}
-  .gradeline input{width:52px;text-align:center}
+  /* 6칸 + 삭제 버튼은 항상 한 줄이어야 한다. flex + 고정폭이면 패널이 좁을 때
+     줄바꿈돼 마지막 칸이 아래로 밀린다. 그리드로 폭에 맞춰 줄여 담는다. */
+  .gradeline{display:grid;grid-template-columns:repeat(6,minmax(0,56px)) auto;
+    gap:6px;margin:6px 0;align-items:center}
+  .gradeline input{width:100%;text-align:center}
   .rank-1,.rank-2,.rank-3{color:var(--ok);font-weight:700}.rank-4,.rank-5{color:var(--warn);font-weight:700}.rank-0{color:var(--muted)}
   .hit{outline:3px solid var(--ok);outline-offset:1px}
   footer{color:var(--muted);font-size:12px;padding:20px 24px;border-top:1px solid var(--line);text-align:center}
@@ -879,7 +882,38 @@ $('#run-backtest').addEventListener('click', async () => {
 });
 
 // ---- 회차
-let drawsLoaded = false, drawLimit = 20;
+let drawsLoaded = false, drawLimit = 20, fillToken = 0;
+
+/** 목록에 보이는 회차 중 당첨 현황이 빠진 것을 뒤에서 채운다.
+ *
+ * 1,239회차를 미리 받아 두려 했지만 동행복권이 지속적인 요청을 막는다.
+ * 보이는 것만 받으면 스무 번이면 되고, 받은 값은 drawDetailPayload 가
+ * 저장소에 남기므로 다음 방문에는 다시 받지 않는다.
+ */
+async function fillDrawPrizes(nos, token) {
+  let miss = 0;
+  for (const no of nos) {
+    if (token !== fillToken) return;              // 목록이 다시 그려졌다
+    let r = null;
+    try {
+      r = await ENGINE.drawDetailPayload(no, { timeout: 8000 });
+    } catch { /* 아래에서 연속 실패로 센다 */ }
+    if (token !== fillToken) return;
+    if (r && r.hasPrizes) {
+      miss = 0;
+      const row = $(`.drawrow[data-no="${no}"]`);
+      if (row) {
+        row.children[3].textContent = fmt(r.draw.firstWinners) + '명';
+        row.children[4].textContent = fmt(r.draw.firstPrize) + '원';
+      }
+    } else if (++miss >= 3) {
+      return;                                     // 오프라인이거나 막혔다 — '-' 로 둔다
+    }
+    await yieldFor(300);                          // 몰아치면 연결이 끊긴다
+  }
+}
+const yieldFor = ms => new Promise(r => setTimeout(r, ms));
+
 function loadDraws() {
   try {
     const rows = ENGINE.drawsPayload(drawLimit); drawsLoaded = true;
@@ -887,6 +921,8 @@ function loadDraws() {
       rows.map(d => `<tr class="drawrow" data-no="${d.no}" style="cursor:pointer"><td>${d.no}회 ▾</td><td>${d.date}</td><td>${balls(d.numbers, d.colors, d.bonus, d.bonusColor, null, true)}</td><td class="num">${d.firstWinners >= 0 ? fmt(d.firstWinners) + '명' : '-'}</td><td class="num">${d.firstPrize >= 0 ? fmt(d.firstPrize) + '원' : '-'}</td></tr>
         <tr class="drawdetail" data-detail="${d.no}" style="display:none"><td colspan="5"><div id="dd-${d.no}"><span class="spin"></span>불러오는 중…</div></td></tr>`).join('') + '</table>';
     $('#draws-body').querySelectorAll('.drawrow').forEach(tr => tr.addEventListener('click', () => toggleDraw(+tr.dataset.no)));
+    const missing = rows.filter(d => d.firstWinners < 0).map(d => d.no);
+    if (missing.length) fillDrawPrizes(missing, ++fillToken);
   } catch (e) { $('#draws-body').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
 async function toggleDraw(no) {
