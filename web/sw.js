@@ -3,7 +3,9 @@
  * 정적 파일은 캐시 우선(빠름), 회차 데이터는 네트워크 우선(최신 우선, 실패 시 캐시).
  * 동행복권 API 는 캐시하지 않는다.
  */
-const VERSION = 'v0.4.0';
+// __BUILD__ 는 배포할 때 커밋 해시로 바뀐다 (deploy.yml).
+// 이 값이 안 바뀌면 캐시가 그대로라 배포해도 예전 화면이 계속 나온다.
+const VERSION = 'v0.4.0-__BUILD__';
 const SHELL = `shell-${VERSION}`;
 const DATA = `data-${VERSION}`;
 const SHELL_FILES = [

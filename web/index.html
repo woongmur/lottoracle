@@ -6,6 +6,15 @@
 <title>lottoracle · 오늘의 운세와 로또 6/45 조합</title>
 <meta name="description" content="오늘의 운세와 로또 6/45 조합 생성기. 통계 필터와 민간속설을 코드로 옮긴 도구이며, 당첨 확률을 바꾸지 않습니다.">
 <meta name="theme-color" content="#0f1115">
+<link rel="canonical" href="__BASE__/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="lottoracle">
+<meta property="og:title" content="lottoracle · 오늘의 운세와 로또 6/45 조합">
+<meta property="og:description" content="오늘의 운세로 시작해 번호를 뽑고, 내 주변 복권방과 1·2등 배출점을 지도에서 봅니다. 당첨 확률은 바뀌지 않습니다.">
+<meta property="og:url" content="__BASE__/">
+<meta property="og:image" content="__BASE__/icon-512.png">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -48,6 +57,11 @@
   label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
   input[type=text],input[type=number],input[type=date],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:8px;font-size:14px}
   input[type=range]{width:100%}
+  #update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;
+    display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+    background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.45);
+    font-size:13.5px;color:var(--text);max-width:calc(100vw - 24px)}
+  #update-bar button{padding:6px 10px;font-size:13px}
   .row{display:flex;gap:10px}.row>*{flex:1}
   /* 생년월일: 연-월-일 자릿수만큼 폭을 잡고 가운데 정렬 */
   .onb-date>input{text-align:center}
@@ -1272,8 +1286,32 @@ window.addEventListener('offline', updateOnline);
 updateOnline();
 
 // ---- 서비스 워커 (오프라인에서도 열리게)
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('./sw.js').catch(() => { /* 실패해도 앱은 돈다 */ });
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    // 새 워커가 설치되면 알려 준다. 이미 이 페이지를 열어 둔 사람은 예전 파일을
+    // 들고 있어서, 새로고침해야 바뀐 화면을 본다.
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      if (!sw) return;
+      sw.addEventListener('statechange', () => {
+        // controller 가 있어야 '갱신'이다. 없으면 첫 설치라 알릴 게 없다.
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBar();
+      });
+    });
+  }).catch(() => { /* 실패해도 앱은 돈다 */ });
+}
+
+/** 새 버전이 준비됐을 때의 안내 막대. 누르면 새로고침. */
+function showUpdateBar() {
+  if ($('#update-bar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'update-bar';
+  bar.innerHTML = `<span>새 버전이 준비됐습니다.</span>
+    <button class="ghost" id="update-now">새로고침</button>
+    <button class="ghost" id="update-later" aria-label="닫기">✕</button>`;
+  document.body.appendChild(bar);
+  $('#update-now').addEventListener('click', () => location.reload());
+  $('#update-later').addEventListener('click', () => bar.remove());
 }
 
 boot();
