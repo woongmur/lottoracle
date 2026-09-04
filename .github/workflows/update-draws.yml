@@ -9,6 +9,9 @@ on:
       store_backfill:
         description: "배출점을 최근 N회차까지 채운다 (0이면 새 회차만)"
         default: "0"
+      prize_backfill:
+        description: "당첨 현황이 빠진 회차를 최대 N개 채운다 (0이면 안 함)"
+        default: "0"
 
 permissions:
   contents: write
@@ -47,6 +50,14 @@ jobs:
             echo "새 회차가 없어 배출점도 건너뜁니다."
           fi
 
+      # 회차 목록의 '1등 N명 · 1게임당 M원' 은 미리 받아 둔 값으로 그린다.
+      # 로컬에서 몰아 부르면 동행복권이 연결을 끊으므로 여기서 나눠 채운다.
+      - name: 당첨 현황 채우기 (요청 시)
+        if: inputs.prize_backfill != '' && inputs.prize_backfill != '0'
+        run: |
+          python3 tools/backfill_prizes.py --limit "${{ inputs.prize_backfill }}" --delay 1.2
+          cp data/draws.json web/data/draws.json
+
       - name: 골든 데이터 재생성 (회차가 늘면 통계도 바뀐다)
         if: steps.fetch.outputs.before != steps.fetch.outputs.after
         run: python3 tools/gen_golden.py
@@ -62,5 +73,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A data/ web/data/ web/test/golden/
           git diff --cached --quiet && { echo "바뀐 것이 없습니다."; exit 0; }
-          git commit -m "data: ${{ steps.fetch.outputs.after }}회차까지 갱신 (회차·배출점)"
+          git commit -m "data: ${{ steps.fetch.outputs.after }}회차까지 갱신 (회차·배출점·당첨현황)"
           git push
