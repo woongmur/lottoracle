@@ -70,6 +70,8 @@
     font-size:13.5px;color:var(--text);max-width:calc(100vw - 24px)}
   #update-bar button{padding:6px 10px;font-size:13px}
   .row{display:flex;gap:10px}.row>*{flex:1}
+  /* 버튼이 넷 이상이면 좁은 화면에서 글자가 세로로 눌린다 */
+  .row.wrap{flex-wrap:wrap}.row.wrap>*{flex:1 1 calc(50% - 5px)}
   /* 생년월일: 연-월-일 자릿수만큼 폭을 잡고 가운데 정렬 */
   .onb-date>input{text-align:center}
   .onb-date>#ob-y{flex:1.6;min-width:64px}
@@ -330,7 +332,7 @@
         <label>기준 회차 (비우면 최신)</label><input type="number" id="grade-draw" placeholder="예: 1239">
         <label>조합 (한 줄에 6개, 최대 10줄)</label>
         <div id="grade-lines"></div>
-        <div class="row" style="margin-top:8px">
+        <div class="row wrap" style="margin-top:8px">
           <button class="ghost" id="grade-add">줄 추가</button>
           <button class="ghost" id="grade-from-rec">추천 결과 가져오기</button>
           <button class="ghost" id="grade-from-picks">내 번호 가져오기</button>
@@ -607,6 +609,7 @@ function celebrateBanner(rank, prize, actual) {
 
 // ---- 탭
 const goto = name => {
+  if (name !== 'grade') stopQr();     // 탭을 옮기면 카메라를 끈다
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
   document.querySelectorAll('main section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
   if (name === 'stats' && !statsLoaded) loadStats();
@@ -879,22 +882,27 @@ $('#grade-add').addEventListener('click', () => addGradeLine());
 
 // ---- QR 스캔
 //
-// 브라우저 내장 BarcodeDetector 가 있으면 그걸 쓰고(안드로이드 크롬 등),
+// 브라우저 내장 BarcodeDetector 가 QR 을 지원하면 그걸 쓰고(안드로이드 크롬 등),
 // 없으면 저장소에 넣어 둔 jsQR 을 그때 불러온다(아이폰 사파리 등).
-// 250KB 짜리라 미리 받지 않고, 스캔을 누른 사람에게만 내려간다.
-let qrStream = null, qrDetector = null, qrRunning = false;
+// 250KB 라 미리 받지 않고, 스캔을 누른 사람에게만 내려간다.
+//
+// 카메라는 확실히 꺼야 한다. 켠 채로 탭을 옮기거나 창을 덮으면 그대로 남는다.
+// 그래서 세션 번호(qrSession)를 두고, 그 번호가 바뀌면 이전 흐름은 전부 손을 뗀다.
+let qrStream = null, qrDetector = null, qrSession = 0, qrTimers = [];
+
+/** stopQr 로 한 번에 지울 수 있는 타이머. */
+function qrLater(fn, ms) { qrTimers.push(setTimeout(fn, ms)); }
 
 async function loadJsQR() {
-  if (window.jsQR) return window.jsQR;
+  if (window.jsQR) return;
   await new Promise((ok, no) => {
-    const s = document.createElement('script');
-    s.src = './src/vendor/jsQR.js';
-    s.onload = ok;
-    s.onerror = () => no(new Error('QR 인식기를 불러오지 못했습니다.'));
-    document.head.appendChild(s);
+    const el = document.createElement('script');
+    el.src = './src/vendor/jsQR.js';
+    el.onload = ok;
+    el.onerror = () => no(new Error('QR 인식기를 불러오지 못했습니다. 번호를 직접 입력해 주세요.'));
+    document.head.appendChild(el);
   });
-  if (!window.jsQR) throw new Error('QR 인식기를 불러오지 못했습니다.');
-  return window.jsQR;
+  if (!window.jsQR) throw new Error('QR 인식기를 불러오지 못했습니다. 번호를 직접 입력해 주세요.');
 }
 
 /** 한 프레임에서 QR 문자열을 찾는다. 없으면 null. */
@@ -902,8 +910,15 @@ async function readQrFrame(video, canvas) {
   const w = video.videoWidth, h = video.videoHeight;
   if (!w || !h) return null;
   if (qrDetector) {
-    const found = await qrDetector.detect(video).catch(() => []);
-    return found.length ? found[0].rawValue : null;
+    // 안드로이드는 인식 모듈을 나중에 내려받는다. 계속 실패하면 jsQR 로 갈아탄다.
+    try {
+      const found = await qrDetector.detect(video);
+      return found.length ? found[0].rawValue : null;
+    } catch {
+      qrDetector = null;
+      await loadJsQR();
+      return null;
+    }
   }
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -914,13 +929,16 @@ async function readQrFrame(video, canvas) {
 }
 
 function stopQr() {
-  qrRunning = false;
+  qrSession++;                      // 돌고 있던 루프·타이머는 이 시점에 무효가 된다
+  qrTimers.forEach(clearTimeout); qrTimers = [];
   if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
-  $('#qr-video').srcObject = null;
+  const v = $('#qr-video');
+  if (v) { v.pause?.(); v.srcObject = null; }
   $('#qr-box').hidden = true;
 }
 
 async function startQr() {
+  if (qrStream) return;             // 두 번 눌러도 카메라는 하나만
   showErr('#qr-error', null);
   if (!window.isSecureContext) {
     return showErr('#qr-error', new Error('카메라는 https 에서만 쓸 수 있습니다. 번호를 직접 입력해 주세요.'));
@@ -928,11 +946,12 @@ async function startQr() {
   if (!navigator.mediaDevices?.getUserMedia) {
     return showErr('#qr-error', new Error('이 브라우저는 카메라를 지원하지 않습니다. 번호를 직접 입력해 주세요.'));
   }
-  const status = $('#qr-status');
+  const mine = ++qrSession;         // 이 실행의 표. 중간에 닫히면 달라진다
+  const alive = () => mine === qrSession;
   $('#qr-box').hidden = false;
-  status.textContent = 'QR 인식기를 준비하는 중…';
+  $('#qr-status').textContent = 'QR 인식기를 준비하는 중…';
+
   try {
-    // 내장 API 가 QR 을 지원할 때만 쓴다. 있다고 다 되는 게 아니라 형식을 확인한다.
     qrDetector = null;
     if ('BarcodeDetector' in window) {
       const fmts = await window.BarcodeDetector.getSupportedFormats().catch(() => []);
@@ -940,68 +959,111 @@ async function startQr() {
     }
     if (!qrDetector) await loadJsQR();
   } catch (e) {
-    $('#qr-box').hidden = true;
-    return showErr('#qr-error', e);
+    if (alive()) { $('#qr-box').hidden = true; showErr('#qr-error', e); }
+    return;
   }
+  if (!alive()) return;             // 준비하는 동안 닫았다
+
+  let stream;
   try {
-    qrStream = await navigator.mediaDevices.getUserMedia({
+    stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false,
     });
   } catch (e) {
-    $('#qr-box').hidden = true;
-    const guide = e && e.name === 'NotAllowedError'
-      ? '카메라 권한이 거부되었습니다. 주소창의 자물쇠 아이콘에서 허용으로 바꾼 뒤 다시 눌러 주세요.'
-      : '카메라를 열지 못했습니다. 번호를 직접 입력해 주세요.';
-    return showErr('#qr-error', new Error(guide));
+    if (alive()) {
+      $('#qr-box').hidden = true;
+      showErr('#qr-error', new Error(e && e.name === 'NotAllowedError'
+        ? '카메라 권한이 거부되었습니다. 주소창의 자물쇠 아이콘에서 허용으로 바꾼 뒤 다시 눌러 주세요.'
+        : '카메라를 열지 못했습니다. 번호를 직접 입력해 주세요.'));
+    }
+    return;
   }
-  const video = $('#qr-video');
-  video.srcObject = qrStream;
-  await video.play().catch(() => {});
-  status.textContent = '용지의 QR 을 화면 안에 맞춰 주세요';
-  qrRunning = true;
-  qrTick = makeQrTick(video);
-  qrTick();
-}
+  if (!alive()) {                   // 권한 대화상자 사이에 닫았다 — 열린 카메라를 바로 끈다
+    stream.getTracks().forEach(t => t.stop());
+    return;
+  }
 
-/** 프레임을 계속 훑는 루프. 파싱에 실패하면 같은 루프를 다시 돌린다. */
-let qrTick = null;
-function makeQrTick(video) {
+  qrStream = stream;
+  const video = $('#qr-video');
+  video.srcObject = stream;
+  await video.play().catch(() => {});
+  if (!alive()) return;
+  $('#qr-status').textContent = '용지의 QR 을 화면 안에 맞춰 주세요';
+
   const canvas = document.createElement('canvas');
   const tick = async () => {
-    if (!qrRunning) return;
+    if (!alive()) return;
     let text = null;
     try { text = await readQrFrame(video, canvas); } catch { /* 다음 프레임에서 다시 */ }
-    if (!qrRunning) return;
-    if (text) return applyQr(text);
-    setTimeout(tick, 120);          // 매 프레임 다 볼 필요는 없다
+    if (!alive()) return;
+    if (text) return applyQr(text, mine, tick);
+    qrLater(tick, 120);             // 매 프레임 다 볼 필요는 없다
   };
-  return tick;
+  tick();
 }
 
-/** 읽은 QR 을 채점 입력칸에 채운다. 판정은 기존 흐름 그대로. */
-function applyQr(text) {
+/** 읽은 QR 을 그 자리에서 판정한다. 아직 추첨 전인 용지도 그대로 보여 준다. */
+function applyQr(text, mine, resume) {
   let r;
   try {
     r = ENGINE.qrPayload(text);
   } catch (e) {
     // 다른 QR 을 비췄을 수 있다. 알려 주고 계속 본다.
+    if (mine !== qrSession) return;
     $('#qr-status').textContent = `${e.message} 다시 맞춰 주세요.`;
-    setTimeout(() => {
-      if (!qrRunning) return;
-      $('#qr-status').textContent = '용지의 QR 을 화면 안에 맞춰 주세요';
-    }, 2500);
-    setTimeout(() => { if (qrRunning && qrTick) qrTick(); }, 700);
+    qrLater(() => { if (mine === qrSession) $('#qr-status').textContent = '용지의 QR 을 화면 안에 맞춰 주세요'; }, 2500);
+    qrLater(() => { if (mine === qrSession) resume(); }, 700);
     return;
   }
   stopQr();
-  $('#grade-draw').value = r.ticket.drawNo;
+  renderQr(r);
+}
+
+/** QR 판정 결과. 채점 화면과 같은 자리에 그린다. */
+function renderQr(r) {
+  showErr('#grade-error', null);
+  const t = r.ticket;
+  $('#grade-draw').value = t.drawNo;
   $('#grade-lines').innerHTML = '';
-  r.ticket.lines.slice(0, 10).forEach(addGradeLine);
-  $('#run-grade').click();
+  t.lines.slice(0, 10).forEach(addGradeLine);
+
+  const head = `<div class="card"><div class="head"><div class="title">${t.drawNo}회 용지</div>
+      <div class="kv">${esc(r.drawDate || '')}</div></div>` +
+    t.lines.map((row, i) => `<div class="kv" style="margin:6px 0">${String.fromCharCode(65 + i)}
+      <span class="badge">${esc((t.kinds && t.kinds[i]) || '')}</span>
+      ${balls(row, r.colors[i], null, null, r.status === 'graded' ? r.results[i].hit : null, true)}</div>`).join('') +
+    `</div>`;
+
+  if (r.status === 'pending') {
+    $('#grade-results').innerHTML =
+      `<div class="celebrate rank-plain"><div class="big">아직 추첨 전입니다</div>
+        <div class="sub">${t.drawNo}회 추첨 후에 다시 확인해 주세요${r.latestDraw ? ` · 현재 최신 ${r.latestDraw}회` : ''}</div></div>` + head;
+    return;
+  }
+  if (r.status === 'missing') {
+    $('#grade-results').innerHTML =
+      `<div class="celebrate rank-none"><div class="big">${t.drawNo}회 자료가 없습니다</div>
+        <div class="sub">번호는 아래에 채워 두었습니다. 회차를 확인하고 채점하기를 눌러 주세요.</div></div>` + head;
+    return;
+  }
+  const d = r.draw;
+  $('#grade-results').innerHTML = celebrateBanner(r.bestRank, r.totalPrize, r.actualPrize) + head +
+    `<div class="card"><div class="title">${d.no}회차 (${d.date}) 당첨번호</div>
+      <div class="balls">${balls(d.numbers, d.colors, d.bonus, d.bonusColor)}</div>
+      <div class="kv" style="margin:10px 0 4px"><b>이 회차 등수별 당첨 현황</b></div>${prizeTable(d)}</div>` +
+    r.results.map((g, i) => `<div class="card"><div class="head"><div class="title">${String.fromCharCode(65 + i)}줄</div>
+      <div class="rank-${g.rank}">${g.label}${g.prize ? ' · ' + fmt(g.prize) + '원' : ''}</div></div>
+      <div class="kv">일치 ${g.hit.length}개 ${g.hit.length ? '[' + g.hit.join(', ') + ']' : ''}${g.bonusHit ? ' + 보너스' : ''}</div></div>`).join('') +
+    `<div class="card"><b>합계 ${fmt(r.totalPrize)}원</b> <span class="kv">${r.actualPrize ? '— ' + d.no + '회차 실제 당첨금 기준' : '— 회차별 실제 금액을 받지 못해 평균치로 계산했습니다'}</span></div>`;
+  if (r.bestRank) fireConfetti(r.bestRank);
 }
 
 $('#grade-qr').addEventListener('click', startQr);
 $('#qr-stop').addEventListener('click', stopQr);
+// 탭을 옮기거나 창을 덮으면 카메라를 끈다. 켜 둔 채로 두면 안 된다.
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopQr(); });
+window.addEventListener('pagehide', stopQr);
+
 $('#grade-from-rec').addEventListener('click', () => { if (!LAST) return alert('먼저 추천을 실행하세요.'); $('#grade-lines').innerHTML=''; LAST.lines.forEach(L => addGradeLine(L.numbers)); });
 $('#grade-from-picks').addEventListener('click', () => {
   const picks = ENGINE.picksPayload();
