@@ -25,6 +25,9 @@ WEB_OUT = os.path.join(ROOT, "web", "data", "draws.json")
 def main() -> int:
     ap = argparse.ArgumentParser(description="회차 당첨 현황 백필")
     ap.add_argument("--recent", type=int, default=0, help="최근 N회차만")
+    ap.add_argument("--limit", type=int, default=0, help="이번 실행에서 최대 N회차만")
+    ap.add_argument("--delay", type=float, default=1.0,
+                    help="요청 사이 간격(초). 너무 빨리 부르면 동행복권이 연결을 끊는다")
     ap.add_argument("--retries", type=int, default=4)
     args = ap.parse_args()
 
@@ -36,6 +39,8 @@ def main() -> int:
     if args.recent:
         targets = [n for n in targets if n > latest - args.recent]
     targets.sort(reverse=True)          # 최근 회차부터 — 중간에 멈춰도 쓸모 있게
+    if args.limit:
+        targets = targets[:args.limit]
 
     if not targets:
         print("채울 회차가 없습니다.")
@@ -43,7 +48,10 @@ def main() -> int:
     print(f"{len(targets)}개 회차 백필: {targets[0]}~{targets[-1]}")
 
     filled, empty, failed = 0, [], []
+    streak = 0                          # 연속 실패 — 차단당하면 계속 실패한다
     for i, no in enumerate(targets, start=1):
+        if i > 1 and args.delay:
+            time.sleep(args.delay)
         got = None
         for attempt in range(args.retries + 1):
             try:
@@ -54,13 +62,19 @@ def main() -> int:
                     time.sleep(min(8.0, 1.5 * (attempt + 1)))
         if got is None:
             failed.append(no)
+            streak += 1
+            if streak >= 10:
+                print(f"  연속 {streak}회 실패 — 차단으로 보고 중단합니다. 나중에 다시 돌리세요.", flush=True)
+                break
         elif got.prizes:
             by_no[no] = got             # 번호는 그대로, 당첨 현황이 붙은 판으로 교체
             filled += 1
+            streak = 0
         else:
             empty.append(no)            # API 가 그 회차 당첨 현황을 주지 않는다
+            streak = 0
 
-        if i % 50 == 0 or i == len(targets):
+        if i % 25 == 0 or i == len(targets):
             data.save_draws([by_no[n] for n in sorted(by_no)], data.DEFAULT_CACHE)
             print(f"  {i}/{len(targets)} · 채움 {filled} · 자료없음 {len(empty)} · 실패 {len(failed)}", flush=True)
 
