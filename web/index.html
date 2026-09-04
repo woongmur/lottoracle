@@ -581,7 +581,9 @@ function onboardingForm(profile) {
         </div></div>
       <div><label>태어난 시 (선택)</label><select id="ob-branch">${branches}</select></div>
     </div>
-    <p class="kv">태어난 시는 요즘 사주에서 통용되는 30분 보정 기준입니다 (예: 진시 07:30~09:30). 모르면 비워 두세요.</p>
+    <div class="check" style="margin-top:8px"><input type="checkbox" id="ob-lunar" ${profile && profile.lunar ? 'checked' : ''}><span>생년월일이 음력입니다</span></div>
+    <p class="kv">태어난 시는 요즘 사주에서 통용되는 30분 보정 기준입니다 (예: 진시 07:30~09:30). 모르면 비워 두세요.
+      띠는 음력 해를 따르므로, 설 전에 태어났다면 음력 여부에 따라 띠가 달라집니다.</p>
     <div id="ob-error"></div>
     <div class="actions"><button class="primary" id="ob-save">오늘의 운세 보기</button><button class="ghost" id="ob-skip">건너뛰고 번호만 뽑기</button></div>
     <div class="tagline">${esc(TAGLINE)}</div>
@@ -644,7 +646,7 @@ function showOnboarding(profile) {
     showErr('#ob-error', null);
     if (!obBirth()) return showErr('#ob-error', '생년월일을 입력하세요.');
     try {
-      ENGINE.saveProfile({ name: $('#ob-name').value, birthDate: obBirth(), birthBranch: $('#ob-branch').value });
+      ENGINE.saveProfile({ name: $('#ob-name').value, birthDate: obBirth(), birthBranch: $('#ob-branch').value, lunar: $('#ob-lunar').checked });
       renderFortune(ENGINE.fortunePayload());
     } catch (e) { showErr('#ob-error', e); }
   });
@@ -1240,7 +1242,7 @@ function loadInfo() {
   $('#set-kakao-hint').textContent = '';
   const p = ENGINE.loadProfile();
   $('#info-profile').textContent = p.isEmpty ? '프로필이 없습니다.'
-    : `${p.name || '(이름 없음)'} · ${p.birthDate} · ${p.zodiac}띠${p.hourLabel ? ' · ' + p.hourLabel + '생' : ''}`;
+    : `${p.name || '(이름 없음)'} · ${p.birthDate}${p.lunar ? ' (음력)' : ''} · ${p.zodiac}띠${p.hourLabel ? ' · ' + p.hourLabel + '생' : ''}`;
   const picks = ENGINE.picksPayload().length;
   $('#info-storage').textContent = `저장한 번호 ${picks}건 · 회차 캐시 ${ENGINE.draws.length}회차. 모두 이 기기에만 있습니다.`;
 }

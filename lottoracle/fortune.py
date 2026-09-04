@@ -22,6 +22,7 @@ from .folklore import (
     ball_color,
     birthday_numbers,
     zodiac_numbers,
+    zodiac_of_birth,
     zodiac_of_year,
 )
 from .metrics import NUMBER_POOL
@@ -143,8 +144,10 @@ class Profile:
     birth_date: str = ""          # YYYY-MM-DD
     birth_branch: str = ""        # 태어난 시의 12지지 한 글자 ('진'), 모르면 빈 문자열
     birth_hour: int | None = None  # (하위 호환) 0~23. birth_branch 가 비어 있으면 여기서 유도
+    lunar: bool = False           # 생년월일을 음력으로 적었는가 (기본은 양력)
 
     def __post_init__(self) -> None:
+        self.lunar = bool(self.lunar)
         self.name = str(self.name or "").strip()[:20]
         self.birth_date = str(self.birth_date or "").strip()
         if self.birth_date:
@@ -179,7 +182,7 @@ class Profile:
 
     @property
     def zodiac(self) -> str:
-        return zodiac_of_year(self.year) if self.year else ""
+        return zodiac_of_birth(self.birth_date, self.lunar) if self.year else ""
 
     @property
     def hour_animal(self) -> str:
@@ -206,6 +209,7 @@ class Profile:
             "birth_hour": self.birth_hour,
             "hour_label": self.hour_label,
             "zodiac": self.zodiac,
+            "lunar": self.lunar,
         }
 
     @classmethod
@@ -216,6 +220,7 @@ class Profile:
             birth_date=raw.get("birth_date", ""),
             birth_branch=raw.get("birth_branch", ""),
             birth_hour=raw.get("birth_hour", None),
+            lunar=bool(raw.get("lunar", False)),
         )
 
     def recommend_inputs(self, today: date | None = None) -> dict[str, Any]:

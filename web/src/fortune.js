@@ -6,7 +6,7 @@
  *   - 좋은 날도 단정하지 않고, 나쁜 날도 겁주지 않는다. 나쁜 날은 내일로 이어 준다.
  *   - 구매를 부추기는 표현을 쓰지 않는다.
  */
-import { ZODIAC_NUMBERS, ballColor, birthdayNumbers, zodiacNumbers, zodiacOfYear } from './folklore.js';
+import { ZODIAC_NUMBERS, ballColor, birthdayNumbers, zodiacNumbers, zodiacOfBirth } from './folklore.js';
 import { NUMBER_POOL } from './metrics.js';
 import { createRng } from './rng.js';
 
@@ -141,11 +141,12 @@ export function createProfile(opts = {}) {
   let birthBranch = normalizeBranch(opts.birthBranch);
   if (!birthBranch && birthHour !== null) birthBranch = branchOfTime(birthHour);
 
+  const lunar = !!opts.lunar;
   const year = birthDate ? Number(birthDate.slice(0, 4)) : null;
-  const zodiac = year ? zodiacOfYear(year) : '';
+  const zodiac = year ? zodiacOfBirth(birthDate, lunar) : '';
   const hourAnimal = birthBranch ? BRANCH_ANIMAL[birthBranch] : '';
   return {
-    name, birthDate, birthBranch, birthHour, zodiac, hourAnimal,
+    name, birthDate, birthBranch, birthHour, zodiac, hourAnimal, lunar,
     hourLabel: birthBranch ? `${birthBranch}시(${hourAnimal})` : '',
     isEmpty: !birthDate,
   };

@@ -244,6 +244,7 @@ export function createEngine(initialDraws = [], storage = null) {
       storage?.saveProfile({
         name: profile.name, birthDate: profile.birthDate,
         birthBranch: profile.birthBranch, birthHour: profile.birthHour,
+        lunar: profile.lunar,
       });
       return profile;
     },
