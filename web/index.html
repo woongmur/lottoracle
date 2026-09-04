@@ -119,6 +119,11 @@
   .dist>div em{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--muted);font-style:normal}
   /* 6칸 + 삭제 버튼은 항상 한 줄이어야 한다. flex + 고정폭이면 패널이 좁을 때
      줄바꿈돼 마지막 칸이 아래로 밀린다. 그리드로 폭에 맞춰 줄여 담는다. */
+  .qr-view{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;background:#000;
+    border:1px solid var(--line)}
+  .qr-view video{display:block;width:100%;max-height:60vh;object-fit:cover}
+  .qr-frame{position:absolute;inset:12% 14%;border:2px solid rgba(122,162,255,.9);border-radius:10px;
+    box-shadow:0 0 0 100vmax rgba(0,0,0,.35);pointer-events:none}
   .gradeline{display:grid;grid-template-columns:repeat(6,minmax(0,56px)) auto;
     gap:6px;margin:6px 0;align-items:center}
   .gradeline input{width:100%;text-align:center}
@@ -329,7 +334,17 @@
           <button class="ghost" id="grade-add">줄 추가</button>
           <button class="ghost" id="grade-from-rec">추천 결과 가져오기</button>
           <button class="ghost" id="grade-from-picks">내 번호 가져오기</button>
+          <button class="ghost" id="grade-qr">QR 스캔</button>
         </div>
+        <div id="qr-box" hidden>
+          <div class="qr-view"><video id="qr-video" playsinline muted></video><div class="qr-frame"></div></div>
+          <div class="row" style="margin-top:8px">
+            <button class="ghost" id="qr-stop">닫기</button>
+            <span class="kv" id="qr-status" style="align-self:center">용지의 QR 을 화면 안에 맞춰 주세요</span>
+          </div>
+          <p class="caution">카메라 영상은 이 기기 안에서만 처리되고 어디로도 전송되지 않습니다.</p>
+        </div>
+        <div id="qr-error"></div>
         <button class="primary" id="run-grade">채점하기</button>
       </div>
       <div>
@@ -861,6 +876,132 @@ function addGradeLine(vals) {
 }
 addGradeLine();
 $('#grade-add').addEventListener('click', () => addGradeLine());
+
+// ---- QR 스캔
+//
+// 브라우저 내장 BarcodeDetector 가 있으면 그걸 쓰고(안드로이드 크롬 등),
+// 없으면 저장소에 넣어 둔 jsQR 을 그때 불러온다(아이폰 사파리 등).
+// 250KB 짜리라 미리 받지 않고, 스캔을 누른 사람에게만 내려간다.
+let qrStream = null, qrDetector = null, qrRunning = false;
+
+async function loadJsQR() {
+  if (window.jsQR) return window.jsQR;
+  await new Promise((ok, no) => {
+    const s = document.createElement('script');
+    s.src = './src/vendor/jsQR.js';
+    s.onload = ok;
+    s.onerror = () => no(new Error('QR 인식기를 불러오지 못했습니다.'));
+    document.head.appendChild(s);
+  });
+  if (!window.jsQR) throw new Error('QR 인식기를 불러오지 못했습니다.');
+  return window.jsQR;
+}
+
+/** 한 프레임에서 QR 문자열을 찾는다. 없으면 null. */
+async function readQrFrame(video, canvas) {
+  const w = video.videoWidth, h = video.videoHeight;
+  if (!w || !h) return null;
+  if (qrDetector) {
+    const found = await qrDetector.detect(video).catch(() => []);
+    return found.length ? found[0].rawValue : null;
+  }
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, w, h);
+  const img = ctx.getImageData(0, 0, w, h);
+  const hit = window.jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' });
+  return hit ? hit.data : null;
+}
+
+function stopQr() {
+  qrRunning = false;
+  if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+  $('#qr-video').srcObject = null;
+  $('#qr-box').hidden = true;
+}
+
+async function startQr() {
+  showErr('#qr-error', null);
+  if (!window.isSecureContext) {
+    return showErr('#qr-error', new Error('카메라는 https 에서만 쓸 수 있습니다. 번호를 직접 입력해 주세요.'));
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return showErr('#qr-error', new Error('이 브라우저는 카메라를 지원하지 않습니다. 번호를 직접 입력해 주세요.'));
+  }
+  const status = $('#qr-status');
+  $('#qr-box').hidden = false;
+  status.textContent = 'QR 인식기를 준비하는 중…';
+  try {
+    // 내장 API 가 QR 을 지원할 때만 쓴다. 있다고 다 되는 게 아니라 형식을 확인한다.
+    qrDetector = null;
+    if ('BarcodeDetector' in window) {
+      const fmts = await window.BarcodeDetector.getSupportedFormats().catch(() => []);
+      if (fmts.includes('qr_code')) qrDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    }
+    if (!qrDetector) await loadJsQR();
+  } catch (e) {
+    $('#qr-box').hidden = true;
+    return showErr('#qr-error', e);
+  }
+  try {
+    qrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false,
+    });
+  } catch (e) {
+    $('#qr-box').hidden = true;
+    const guide = e && e.name === 'NotAllowedError'
+      ? '카메라 권한이 거부되었습니다. 주소창의 자물쇠 아이콘에서 허용으로 바꾼 뒤 다시 눌러 주세요.'
+      : '카메라를 열지 못했습니다. 번호를 직접 입력해 주세요.';
+    return showErr('#qr-error', new Error(guide));
+  }
+  const video = $('#qr-video');
+  video.srcObject = qrStream;
+  await video.play().catch(() => {});
+  status.textContent = '용지의 QR 을 화면 안에 맞춰 주세요';
+  qrRunning = true;
+  qrTick = makeQrTick(video);
+  qrTick();
+}
+
+/** 프레임을 계속 훑는 루프. 파싱에 실패하면 같은 루프를 다시 돌린다. */
+let qrTick = null;
+function makeQrTick(video) {
+  const canvas = document.createElement('canvas');
+  const tick = async () => {
+    if (!qrRunning) return;
+    let text = null;
+    try { text = await readQrFrame(video, canvas); } catch { /* 다음 프레임에서 다시 */ }
+    if (!qrRunning) return;
+    if (text) return applyQr(text);
+    setTimeout(tick, 120);          // 매 프레임 다 볼 필요는 없다
+  };
+  return tick;
+}
+
+/** 읽은 QR 을 채점 입력칸에 채운다. 판정은 기존 흐름 그대로. */
+function applyQr(text) {
+  let r;
+  try {
+    r = ENGINE.qrPayload(text);
+  } catch (e) {
+    // 다른 QR 을 비췄을 수 있다. 알려 주고 계속 본다.
+    $('#qr-status').textContent = `${e.message} 다시 맞춰 주세요.`;
+    setTimeout(() => {
+      if (!qrRunning) return;
+      $('#qr-status').textContent = '용지의 QR 을 화면 안에 맞춰 주세요';
+    }, 2500);
+    setTimeout(() => { if (qrRunning && qrTick) qrTick(); }, 700);
+    return;
+  }
+  stopQr();
+  $('#grade-draw').value = r.ticket.drawNo;
+  $('#grade-lines').innerHTML = '';
+  r.ticket.lines.slice(0, 10).forEach(addGradeLine);
+  $('#run-grade').click();
+}
+
+$('#grade-qr').addEventListener('click', startQr);
+$('#qr-stop').addEventListener('click', stopQr);
 $('#grade-from-rec').addEventListener('click', () => { if (!LAST) return alert('먼저 추천을 실행하세요.'); $('#grade-lines').innerHTML=''; LAST.lines.forEach(L => addGradeLine(L.numbers)); });
 $('#grade-from-picks').addEventListener('click', () => {
   const picks = ENGINE.picksPayload();
