@@ -955,7 +955,15 @@ $('#draws-refresh').addEventListener('click', async () => {
 
 // ---- 복권방 (카카오맵)
 let shopsInit = false, kmap = null, markers = [], places = null;
-let STORES = null, fameMarkers = [], fameWindow = null;
+let STORES = null, fameMarkers = [], openWindow = null;
+
+/** 말풍선은 한 번에 하나만 띄운다.
+ *  검색 마커와 배출점 마커가 각자 닫으면 서로 안 닫혀 화면에 쌓인다. */
+function openInfo(iw, marker) {
+  openWindow?.close();
+  openWindow = iw;
+  iw.open(kmap, marker);
+}
 
 /** 배출점 데이터를 한 번만 읽는다. 없으면 조용히 넘어간다(기능 축소). */
 async function loadStores() {
@@ -977,6 +985,8 @@ async function loadStores() {
 function showFameMarkers(list) {
   fameMarkers.forEach(m => m.setMap(null));
   fameMarkers = [];
+  openWindow?.close();          // 사라진 마커에 붙은 말풍선이 남지 않게
+  openWindow = null;
   if (!$('#shop-fame').checked) return;
   for (const st of list) {
     const size = st.firstCount ? Math.min(34, 20 + st.firstCount * 4) : 16;
@@ -1000,17 +1010,26 @@ function showFameMarkers(list) {
 
 /** 배출점 상세: 1등·2등 몇 번, 어느 회차였는지. */
 function openFame(st, marker) {
-  fameWindow?.close();
   const rows = [];
-  if (st.firstCount) rows.push(`<b style="color:#b8860b">1등 ${st.firstCount}회</b> ${recentDraws(st.first).join(', ')}회`);
-  if (st.secondCount) rows.push(`2등 ${st.secondCount}회 ${recentDraws(st.second, 8).join(', ')}회`);
-  fameWindow = new kakao.maps.InfoWindow({
-    content: `<div style="padding:8px 11px;font-size:12px;color:#111;max-width:230px;line-height:1.5">
-        <b>${esc(st.name)}</b>${st.kind ? ` <span style="color:#666">${esc(st.kind)}</span>` : ''}<br>
-        <span style="color:#555">${esc(st.addr)}</span><br>${rows.join('<br>')}</div>`,
-  });
-  fameWindow.open(kmap, marker);
+  if (st.firstCount) rows.push(`<b style="color:#b8860b">1등 ${st.firstCount}회</b> ${drawList(st.first, st.firstCount)}`);
+  if (st.secondCount) rows.push(`2등 ${st.secondCount}회 ${drawList(st.second, st.secondCount)}`);
+  openInfo(new kakao.maps.InfoWindow({ content: infoBox(
+    `<b>${esc(st.name)}</b>${st.kind ? ` <span style="color:#666">${esc(st.kind)}</span>` : ''}<br>
+     <span style="color:#555">${esc(st.addr)}</span><br>${rows.join('<br>')}`) }), marker);
 }
+
+/** 배출 회차를 몇 개만 보이고 나머지는 '외 N회' 로 줄인다. */
+function drawList(list, count, limit = 6) {
+  const shown = recentDraws(list, limit);
+  const rest = count - shown.length;
+  return `${shown.join(', ')}회${rest > 0 ? ` 외 ${rest}회` : ''}`;
+}
+
+/** 말풍선 속살. 짧으면 작게, 길면 230px 에서 줄바꿈.
+ *  '센타포인트명동앞복지가판점' 처럼 띄어쓰기 없는 긴 한글도 쪼개지게 한다. */
+const infoBox = html =>
+  `<div style="max-width:230px;padding:8px 11px;font-size:12px;color:#111;line-height:1.5;
+     word-break:break-all;overflow-wrap:anywhere">${html}</div>`;
 
 /** 목록 한 줄. 배출 실적이 있으면 금색 배지를 단다. */
 function storeRow(st, i, kind) {
@@ -1193,14 +1212,16 @@ function searchShops(query, loc, radius = 2000) {
       $('#shop-status').innerHTML += ` · 반경 ${radius >= 1000 ? (radius / 1000) + 'km' : radius + 'm'} 안 ${data.length}곳`;
     }
     markers.forEach(m => m.setMap(null)); markers = [];
+    openWindow?.close(); openWindow = null;   // 새 검색이면 이전 말풍선도 정리
     const bounds = new kakao.maps.LatLngBounds();
     $('#shop-list').innerHTML = data.map((d, i) => `<div class="shop" data-i="${i}"><b>${esc(d.place_name)}</b><span class="kv">${esc(d.road_address_name || d.address_name)}${d.phone ? ' · ' + esc(d.phone) : ''}${d.distance ? ' · ' + fmt(d.distance) + 'm' : ''}</span></div>`).join('');
     data.forEach((d, i) => {
       const pos = new kakao.maps.LatLng(d.y, d.x);
       const m = new kakao.maps.Marker({ map: kmap, position: pos, title: d.place_name }); markers.push(m); bounds.extend(pos);
-      const iw = new kakao.maps.InfoWindow({ content: `<div style="padding:6px 10px;font-size:12px;color:#111">${esc(d.place_name)}<br><a href="${d.place_url}" target="_blank" rel="noopener">상세 보기</a></div>` });
-      kakao.maps.event.addListener(m, 'click', () => iw.open(kmap, m));
-      $('#shop-list').querySelector(`[data-i="${i}"]`).addEventListener('click', () => { kmap.panTo(pos); iw.open(kmap, m); });
+      const iw = new kakao.maps.InfoWindow({ content: infoBox(
+        `${esc(d.place_name)}<br><a href="${esc(d.place_url)}" target="_blank" rel="noopener">상세 보기</a>`) });
+      kakao.maps.event.addListener(m, 'click', () => openInfo(iw, m));
+      $('#shop-list').querySelector(`[data-i="${i}"]`).addEventListener('click', () => { kmap.panTo(pos); openInfo(iw, m); });
     });
     if (loc) bounds.extend(loc);
     kmap.setBounds(bounds);
