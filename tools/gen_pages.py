@@ -81,7 +81,8 @@ def page(title: str, desc: str, canonical: str, body: str, base: str) -> str:
 <body><div class="wrap">
 {body}
 <footer>
-  <a href="{E(base)}/">lottoracle</a> · <a href="{E(base)}/privacy.html">개인정보처리방침</a><br>
+  <a href="{E(base)}/">lottoracle</a> · <a href="{E(base)}/about.html">소개 · 연락처</a>
+  · <a href="{E(base)}/privacy.html">개인정보처리방침</a><br>
   당첨번호·판매점 자료 출처는 동행복권입니다. 모든 조합의 1등 확률은 1/8,145,060 으로 같습니다.
   이 사이트의 어떤 기능도 확률을 바꾸지 않습니다. 19세 미만 구매 불가 · 도박문제 상담 1336
 </footer>
@@ -225,9 +226,9 @@ def main() -> int:
     written.append("fame.html")
 
     # ---- 사이트맵. 크롤러가 이 페이지들을 찾아가는 지도다.
-    urls = ["", "draws.html", "fame.html", "privacy.html"] + [f"draw-{n}.html" for n in reversed(nos)]
+    urls = ["", "draws.html", "fame.html", "about.html", "privacy.html"] + [f"draw-{n}.html" for n in reversed(nos)]
     def entry(u: str) -> str:
-        prio = "1.0" if u == "" else "0.8" if u in ("draws.html", "fame.html") else "0.3" if u == "privacy.html" else "0.6"
+        prio = "1.0" if u == "" else "0.8" if u in ("draws.html", "fame.html") else "0.4" if u == "about.html" else "0.3" if u == "privacy.html" else "0.6"
         freq = "weekly" if u in ("", "draws.html", "fame.html") else "yearly"
         return f"  <url><loc>{base}/{u}</loc><changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n'
