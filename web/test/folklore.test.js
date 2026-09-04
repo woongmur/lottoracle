@@ -100,3 +100,25 @@ test('속설을 끄면 모든 배수가 1.0', () => {
   for (const n of NUMBER_POOL) assert.equal(m.get(n), 1.0);
   assert.equal(fk.accepts(FL_OFF, [1, 2, 3, 4, 5, 6]), true);
 });
+
+// 띠는 음력 해를 따른다. 양력 생일이 설 전이면 아직 지난 해의 띠다.
+// 설날 표는 tools/gen_seollal.py 가 한국천문연구원 자료에서 만든다.
+test('설 전에 태어나면 지난 해의 띠 (양력)', () => {
+  assert.equal(fk.zodiacOfBirth('1990-01-15'), '뱀');   // 1990 설날 1/27 보다 앞
+  assert.equal(fk.zodiacOfBirth('1990-01-27'), '말');   // 설날 당일부터 새 띠
+  assert.equal(fk.zodiacOfBirth('1990-05-21'), '말');
+  assert.equal(fk.zodiacOfBirth('2024-02-09'), '토끼'); // 2024 설날 2/10
+  assert.equal(fk.zodiacOfBirth('2024-02-10'), '용');
+});
+
+test('음력으로 적었으면 연도가 곧 음력 해', () => {
+  assert.equal(fk.zodiacOfBirth('1990-01-15', true), '말');
+  assert.equal(fk.zodiacOfBirth('2024-01-01', true), '용');
+});
+
+test('표 밖 연도나 형식이 모자라면 연도만으로 정한다', () => {
+  assert.equal(fk.zodiacOfBirth('2099-01-05'), fk.zodiacOfYear(2099));
+  assert.equal(fk.zodiacOfBirth('1990'), '말');          // 월·일이 없으면 보정 못 함
+  assert.equal(fk.zodiacOfBirth(''), '');
+  assert.equal(fk.zodiacOfBirth(null), '');
+});

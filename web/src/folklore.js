@@ -5,6 +5,7 @@
  * 정직하게 구현해 둔다. 켜고 끄는 건 사용자 몫.
  */
 import { NUMBER_POOL, TWIN_NUMBERS, sortedNums } from './metrics.js';
+import { SEOLLAL } from './seollal.js';
 
 // ---------------------------------------------------------------- 실제 볼 색상
 // 동행복권 추첨 볼의 색: 노랑 1~10, 파랑 11~20, 빨강 21~30, 회색 31~40, 초록 41~45
@@ -136,6 +137,26 @@ export const ZODIAC_NUMBERS = {
 export const ZODIAC_ORDER = ['원숭이', '닭', '개', '돼지', '쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양'];
 
 export const zodiacOfYear = year => ZODIAC_ORDER[((year % 12) + 12) % 12];
+
+/** 생년월일에서 띠. 띠는 음력 해를 따른다.
+ *
+ * 음력으로 적었으면 연도가 곧 음력 해라 그대로 쓰면 된다.
+ * 양력이면 그해 설날보다 앞인지 봐야 한다 — 앞이면 아직 지난 해의 띠다.
+ * 예: 1990-01-15(양력)은 1990년 설날(1/27)보다 앞이라 말띠가 아니라 뱀띠.
+ *
+ * 설날을 모르는 연도(표 밖)는 연도만으로 정한다. 없는 것보다는 낫다.
+ */
+export function zodiacOfBirth(birthDate, lunar = false) {
+  const s = String(birthDate || '');
+  if (s.length < 4) return '';
+  let year = Number(s.slice(0, 4));
+  if (!Number.isInteger(year)) return '';
+  if (!lunar && s.length >= 10) {
+    const seollal = SEOLLAL[year];
+    if (seollal && s.slice(5, 10) < seollal) year -= 1;
+  }
+  return zodiacOfYear(year);
+}
 
 export function zodiacNumbers(nameOrYear) {
   if (!nameOrYear) return [];

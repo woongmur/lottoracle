@@ -14,6 +14,7 @@ from typing import Sequence
 
 from .data import Draw
 from .metrics import NUMBER_POOL, TWIN_NUMBERS
+from .seollal import SEOLLAL
 
 # ---------------------------------------------------------------- 실제 볼 색상
 # 동행복권 추첨 볼의 색: 노랑 1~10, 파랑 11~20, 빨강 21~30, 회색 31~40, 초록 41~45
@@ -164,6 +165,25 @@ ZODIAC_ORDER = ("원숭이", "닭", "개", "돼지", "쥐", "소", "호랑이", 
 
 def zodiac_of_year(year: int) -> str:
     return ZODIAC_ORDER[year % 12]
+
+
+def zodiac_of_birth(birth_date: str, lunar: bool = False) -> str:
+    """생년월일에서 띠. 띠는 음력 해를 따른다.
+
+    음력으로 적었으면 연도가 곧 음력 해라 그대로 쓰면 된다.
+    양력이면 그해 설날보다 앞인지 봐야 한다 — 앞이면 아직 지난 해의 띠다.
+    예: 1990-01-15(양력)은 1990년 설날(1/27)보다 앞이라 말띠가 아니라 뱀띠.
+
+    설날을 모르는 연도(표 밖)는 연도만으로 정한다. 없는 것보다는 낫다.
+    """
+    if not birth_date or len(birth_date) < 4:
+        return ""
+    year = int(birth_date[:4])
+    if not lunar and len(birth_date) >= 10:
+        seollal = SEOLLAL.get(year)
+        if seollal and birth_date[5:10] < seollal:
+            year -= 1
+    return zodiac_of_year(year)
 
 
 def zodiac_numbers(name_or_year: str) -> tuple[int, ...]:
