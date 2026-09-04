@@ -19150,9 +19150,42 @@
    40
   ],
   "bonus": 29,
-  "draw_date": "",
+  "draw_date": "2026-07-18",
   "first_winners": 31,
-  "first_prize": 837965396
+  "first_prize": 837965396,
+  "prizes": [
+   {
+    "rank": 1,
+    "winners": 31,
+    "amount": 837965396,
+    "total": 25976927276
+   },
+   {
+    "rank": 2,
+    "winners": 76,
+    "amount": 56966946,
+    "total": 4329487896
+   },
+   {
+    "rank": 3,
+    "winners": 4438,
+    "amount": 975550,
+    "total": 4329490900
+   },
+   {
+    "rank": 4,
+    "winners": 185487,
+    "amount": 50000,
+    "total": 9274350000
+   },
+   {
+    "rank": 5,
+    "winners": 2833927,
+    "amount": 5000,
+    "total": 14169635000
+   }
+  ],
+  "total_sales": 58079891072
  },
  {
   "no": 1234,
@@ -19165,9 +19198,42 @@
    43
   ],
   "bonus": 27,
-  "draw_date": "",
+  "draw_date": "2026-07-25",
   "first_winners": 18,
-  "first_prize": 1595129563
+  "first_prize": 1595129563,
+  "prizes": [
+   {
+    "rank": 1,
+    "winners": 18,
+    "amount": 1595129563,
+    "total": 28712332134
+   },
+   {
+    "rank": 2,
+    "winners": 71,
+    "amount": 67399841,
+    "total": 4785388711
+   },
+   {
+    "rank": 3,
+    "winners": 2985,
+    "amount": 1603146,
+    "total": 4785390810
+   },
+   {
+    "rank": 4,
+    "winners": 146684,
+    "amount": 50000,
+    "total": 7334200000
+   },
+   {
+    "rank": 5,
+    "winners": 2475581,
+    "amount": 5000,
+    "total": 12377905000
+   }
+  ],
+  "total_sales": 57995216655
  },
  {
   "no": 1235,
@@ -19180,9 +19246,42 @@
    43
   ],
   "bonus": 20,
-  "draw_date": "",
+  "draw_date": "2026-08-01",
   "first_winners": 9,
-  "first_prize": 3090961625
+  "first_prize": 3090961625,
+  "prizes": [
+   {
+    "rank": 1,
+    "winners": 9,
+    "amount": 3090961625,
+    "total": 27818654625
+   },
+   {
+    "rank": 2,
+    "winners": 82,
+    "amount": 56541981,
+    "total": 4636442442
+   },
+   {
+    "rank": 3,
+    "winners": 2859,
+    "amount": 1621701,
+    "total": 4636443159
+   },
+   {
+    "rank": 4,
+    "winners": 154048,
+    "amount": 50000,
+    "total": 7702400000
+   },
+   {
+    "rank": 5,
+    "winners": 2585719,
+    "amount": 5000,
+    "total": 12928595000
+   }
+  ],
+  "total_sales": 57722535226
  },
  {
   "no": 1236,
@@ -19195,9 +19294,42 @@
    38
   ],
   "bonus": 10,
-  "draw_date": "",
+  "draw_date": "2026-08-08",
   "first_winners": 11,
-  "first_prize": 2441919375
+  "first_prize": 2441919375,
+  "prizes": [
+   {
+    "rank": 1,
+    "winners": 11,
+    "amount": 2441919375,
+    "total": 26861113125
+   },
+   {
+    "rank": 2,
+    "winners": 84,
+    "amount": 53295860,
+    "total": 4476852240
+   },
+   {
+    "rank": 3,
+    "winners": 3371,
+    "amount": 1328049,
+    "total": 4476853179
+   },
+   {
+    "rank": 4,
+    "winners": 161927,
+    "amount": 50000,
+    "total": 8096350000
+   },
+   {
+    "rank": 5,
+    "winners": 2624850,
+    "amount": 5000,
+    "total": 13124250000
+   }
+  ],
+  "total_sales": 57035418544
  },
  {
   "no": 1237,
@@ -19210,9 +19342,42 @@
    40
   ],
   "bonus": 36,
-  "draw_date": "",
+  "draw_date": "2026-08-15",
   "first_winners": 23,
-  "first_prize": 1214932680
+  "first_prize": 1214932680,
+  "prizes": [
+   {
+    "rank": 1,
+    "winners": 23,
+    "amount": 1214932680,
+    "total": 27943451640
+   },
+   {
+    "rank": 2,
+    "winners": 75,
+    "amount": 62096560,
+    "total": 4657242000
+   },
+   {
+    "rank": 3,
+    "winners": 3745,
+    "amount": 1243590,
+    "total": 4657244550
+   },
+   {
+    "rank": 4,
+    "winners": 172132,
+    "amount": 50000,
+    "total": 8606600000
+   },
+   {
+    "rank": 5,
+    "winners": 2663409,
+    "amount": 5000,
+    "total": 13317045000
+   }
+  ],
+  "total_sales": 59181583190
  },
  {
   "no": 1238,
@@ -19225,9 +19390,42 @@
    42
   ],
   "bonus": 22,
-  "draw_date": "",
+  "draw_date": "2026-08-22",
   "first_winners": 23,
-  "first_prize": 1197258718
+  "first_prize": 1197258718,
+  "prizes": [
+   {
+    "rank": 1,
+    "winners": 23,
+    "amount": 1197258718,
+    "total": 27536950514
+   },
+   {
+    "rank": 2,
+    "winners": 84,
+    "amount": 54636807,
+    "total": 4589491788
+   },
+   {
+    "rank": 3,
+    "winners": 3235,
+    "amount": 1418700,
+    "total": 4589494500
+   },
+   {
+    "rank": 4,
+    "winners": 156141,
+    "amount": 50000,
+    "total": 7807050000
+   },
+   {
+    "rank": 5,
+    "winners": 2549183,
+    "amount": 5000,
+    "total": 12745915000
+   }
+  ],
+  "total_sales": 57268901802
  },
  {
   "no": 1239,
