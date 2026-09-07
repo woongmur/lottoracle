@@ -6,6 +6,11 @@ on:
     paths:
       - "web/**"
       - ".github/workflows/deploy.yml"
+      # 배포물은 web/ 만이 아니다. gen_pages.py 가 정적 페이지 122개를 만들고,
+      # 그 과정에서 lottoracle 패키지(draw_date_of, profile)를 불러 쓴다.
+      # 이게 빠져 있어서 gen_pages.py 만 고친 변경(PR #18)이 배포되지 않았다.
+      - "tools/gen_pages.py"
+      - "lottoracle/**"
   workflow_dispatch:
 
 permissions:
