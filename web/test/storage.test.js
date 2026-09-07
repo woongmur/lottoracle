@@ -110,3 +110,90 @@ test('정상 기록은 그대로 읽힌다', () => {
   assert.equal(s.listPicks().length, 1);
   assert.deepEqual(s.listPicks()[0].lines, [[1, 2, 3, 4, 5, 6]]);
 });
+
+// ---- 백업
+
+test('내보낸 꾸러미에 프로필·내 번호·설정이 담긴다', () => {
+  const s = fresh();
+  s.saveProfile({ name: '홍길동', birthDate: '1990-05-21' });
+  s.addPick([[1, 2, 3, 4, 5, 6]], 1240);
+  s.saveSettings({ autoRefresh: true });
+  const dump = s.exportAll();
+  assert.equal(dump.app, 'lottoracle');
+  assert.equal(dump.format, 1);
+  assert.equal(dump.profile.name, '홍길동');
+  assert.equal(dump.picks.length, 1);
+  assert.equal(dump.settings.autoRefresh, true);
+  assert.ok(!('draws' in dump), '회차 캐시는 빼고 내보낸다');
+});
+
+test('빈 기기에 그대로 복원된다', () => {
+  const a = fresh();
+  a.saveProfile({ name: '홍길동', birthDate: '1990-05-21' });
+  a.addPick([[1, 2, 3, 4, 5, 6]], 1240);
+  const dump = JSON.parse(JSON.stringify(a.exportAll()));   // 파일을 거친 셈
+
+  const b = fresh();
+  const r = b.importAll(dump);
+  assert.equal(r.added, 1);
+  assert.equal(r.profileRestored, true);
+  assert.equal(b.loadProfile().name, '홍길동');
+  assert.deepEqual(b.listPicks()[0].lines, [[1, 2, 3, 4, 5, 6]]);
+});
+
+test('같은 백업을 두 번 넣어도 중복되지 않는다', () => {
+  const s = fresh();
+  s.addPick([[1, 2, 3, 4, 5, 6]], 1240);
+  const dump = s.exportAll();
+  const r = s.importAll(dump);
+  assert.equal(r.added, 0);
+  assert.equal(r.duplicates, 1);
+  assert.equal(s.listPicks().length, 1);
+});
+
+test('가져오기는 기존 기록을 지우지 않고 합친다', () => {
+  const a = fresh();
+  a.addPick([[1, 2, 3, 4, 5, 6]], 1240);
+  const dump = a.exportAll();
+
+  const b = fresh();
+  b.addPick([[7, 8, 9, 10, 11, 12]], 1241);
+  b.importAll(dump);
+  assert.equal(b.listPicks().length, 2, '원래 있던 기록이 남아 있어야 한다');
+});
+
+test('기존 프로필은 허락 없이 덮어쓰지 않는다', () => {
+  const s = fresh();
+  s.saveProfile({ name: '원래사람', birthDate: '1980-01-01' });
+  const dump = { app: 'lottoracle', format: 1, profile: { name: '백업사람' }, picks: [], settings: {} };
+
+  assert.equal(s.importAll(dump).profileRestored, false);
+  assert.equal(s.loadProfile().name, '원래사람');
+
+  assert.equal(s.importAll(dump, { replaceProfile: true }).profileRestored, true);
+  assert.equal(s.loadProfile().name, '백업사람');
+});
+
+test('손상된 기록은 걸러 내고 몇 개를 버렸는지 알려 준다', () => {
+  const s = fresh();
+  const r = s.importAll({
+    app: 'lottoracle',
+    format: 1,
+    picks: [
+      { id: 'ok', targetDraw: 1240, lines: [[1, 2, 3, 4, 5, 6]] },
+      { id: 'bad1', targetDraw: 1240, lines: [[1, 2, 3]] },
+      { id: 'bad2', lines: [[1, 2, 3, 4, 5, 6]] },
+      null,
+    ],
+  });
+  assert.equal(r.added, 1);
+  assert.equal(r.skipped, 3);
+  assert.equal(s.listPicks().length, 1);
+});
+
+test('남의 파일이나 엉뚱한 값은 거절한다', () => {
+  const s = fresh();
+  for (const bad of [null, 42, 'nope', {}, { app: 'other' }]) {
+    assert.throws(() => s.importAll(bad));
+  }
+});

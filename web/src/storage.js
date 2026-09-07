@@ -129,5 +129,47 @@ export function createStorage(backend = null) {
     clearAll() {
       for (const k of ['profile', 'picks', 'settings', 'draws']) drop(k);
     },
+
+    // ---- 백업
+    /** 내보낼 꾸러미. 회차 캐시는 다시 받으면 되므로 넣지 않는다. */
+    exportAll() {
+      return {
+        app: 'lottoracle',
+        format: 1,
+        exportedAt: new Date().toISOString().slice(0, 19),
+        profile: this.loadProfile(),
+        picks: this.listPicks(),
+        settings: this.loadSettings(),
+      };
+    },
+
+    /**
+     * 백업을 되돌린다. 있는 것을 지우지 않는 쪽으로 붙인다.
+     *
+     * 내 번호는 id 로 합친다 — 같은 기기에서 다시 넣어도 중복되지 않고,
+     * 새 기기에서는 그대로 복원된다. 프로필과 설정은 파일에 든 경우에만,
+     * 그리고 replaceProfile 이 켜져 있을 때만 덮어쓴다.
+     */
+    importAll(data, { replaceProfile = false } = {}) {
+      if (!data || typeof data !== 'object') throw new Error('백업 파일 형식이 아닙니다.');
+      if (data.app !== 'lottoracle') throw new Error('lottoracle 백업 파일이 아닙니다.');
+
+      const incoming = Array.isArray(data.picks) ? data.picks.filter(isPick) : [];
+      const skipped = (Array.isArray(data.picks) ? data.picks.length : 0) - incoming.length;
+      const current = this.listPicks();
+      const seen = new Set(current.map(p => p.id));
+      const added = incoming.filter(p => !seen.has(p.id));
+      if (added.length) write('picks', [...current, ...added].slice(-MAX_PICKS));
+
+      let profileRestored = false;
+      if (data.profile && typeof data.profile === 'object'
+        && (replaceProfile || !this.loadProfile())) {
+        write('profile', data.profile);
+        profileRestored = true;
+      }
+      if (data.settings && typeof data.settings === 'object') this.saveSettings(data.settings);
+
+      return { added: added.length, duplicates: incoming.length - added.length, skipped, profileRestored };
+    },
   };
 }

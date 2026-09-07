@@ -10,6 +10,7 @@ import { NUMBER_POOL, summary } from './metrics.js';
 import { calibrate, fit, referenceScores } from './model.js';
 import { parse as parseQr } from './qr.js';
 import { recommend } from './generator.js';
+import { sheetSummary } from './sheet.js';
 import { build as buildStats, cold, hot, meanFrequency, profileStats } from './stats.js';
 import { DEFAULT_STRATEGIES, byKey } from './strategies.js';
 import {
@@ -285,6 +286,7 @@ export function createEngine(initialDraws = [], storage = null) {
             item.bestRank = g.bestRank;
             item.totalPrize = g.totalPrize;
             item.actualPrize = g.actualPrize;
+            item.sheet = sheetSummary(p.lines, draw);
           }
           return item;
         });

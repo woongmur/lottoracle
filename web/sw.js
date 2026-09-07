@@ -15,7 +15,7 @@ const SHELL_FILES = [
   './src/model.js', './src/stats.js', './src/metrics.js', './src/filters.js',
   './src/folklore.js', './src/fortune.js', './src/explain.js', './src/grade.js',
   './src/qr.js', './src/rng.js', './src/strategies.js', './src/backtest.js',
-  './src/stores.js',
+  './src/stores.js', './src/sheet.js',
 ];
 
 self.addEventListener('install', event => {
