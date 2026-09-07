@@ -19,6 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from lottoracle.engine import draw_date_of
 from lottoracle.metrics import profile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,8 +48,12 @@ h2{font-size:17px;margin:28px 0 8px;padding-top:14px;border-top:1px solid #23283
 .plus{color:#8b95a5;margin:0 6px;font-weight:700}
 .bonus{outline:2px dashed #8b95a5;outline-offset:2px;margin-left:4px}
 table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}
+.tw{overflow-x:auto;margin:10px 0}
+.tw>table{margin:0}
+/* 칸이 많은 표는 좁은 화면에서 쭈그러들지 않고 가로로 스크롤되게 한다 */
+.tw>table.wide{min-width:620px}
 th,td{border-bottom:1px solid #232833;padding:7px 8px;text-align:left}
-td.n,th.n{text-align:right}
+td.n,th.n{text-align:right;white-space:nowrap}
 th{color:#8b95a5;font-weight:600}
 ul{padding-left:18px;margin:8px 0}
 li{margin:4px 0}
@@ -100,12 +105,13 @@ def ball_html(nums, bonus=None) -> str:
 
 
 def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
-    no, date = d["no"], d.get("draw_date") or ""
+    no = d["no"]
+    date = d.get("draw_date") or draw_date_of(no)
     nums, bonus = d["numbers"], d["bonus"]
     p = profile(nums)
     title = f"{no}회 로또 당첨번호 — {' · '.join(str(n) for n in nums)} + {bonus}"
     desc = (f"{no}회 로또 6/45 당첨번호는 {', '.join(str(n) for n in nums)} 이고 보너스는 {bonus} 입니다."
-            + (f" {date} 추첨." if date else ""))
+            f" {date} 추첨.")
 
     rows = ""
     if d.get("prizes"):
@@ -114,9 +120,9 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
             f'<tr><td>{pz["rank"]}등</td><td class="kv">{match.get(pz["rank"], "")}</td>'
             f'<td class="n">{pz["winners"]:,}게임</td><td class="n">{won(pz["amount"])}</td></tr>'
             for pz in d["prizes"])
-        rows = ('<h2>등수별 당첨 현황</h2><table>'
+        rows = ('<h2>등수별 당첨 현황</h2><div class="tw"><table>'
                 '<tr><th>등수</th><th>일치</th><th class="n">당첨 게임 수</th><th class="n">1게임당</th></tr>'
-                + body + "</table>")
+                + body + "</table></div>")
         if d.get("total_sales", -1) > 0:
             rows += f'<p class="kv">이 회차 총 판매금액 {won(d["total_sales"])}</p>'
 
@@ -149,11 +155,11 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
 <p class="kv">당첨번호 {', '.join(str(n) for n in nums)} · 보너스 {bonus}</p>
 {rows}
 <h2>조합 특징</h2>
-<table>
+<div class="tw"><table>
 <tr><th>번호 합계</th><td class="n">{p.total}</td><th>홀수 개수</th><td class="n">{p.odd}개</td></tr>
 <tr><th>저구간(1~22)</th><td class="n">{p.low}개</td><th>AC값</th><td class="n">{p.ac}</td></tr>
 <tr><th>끝수 합</th><td class="n">{p.end_sum}</td><th>연속 번호쌍</th><td class="n">{p.consecutive}</td></tr>
-</table>
+</table></div>
 {shops}
 <a class="cta" href="{base}/">번호 뽑아보기 · 내 주변 복권방 찾기</a>
 {nav}"""
@@ -190,7 +196,7 @@ def main() -> int:
     # ---- 회차 목록 허브
     items = "".join(
         f'<li><a href="{base}/draw-{d["no"]}.html">{d["no"]}회</a> '
-        f'<span class="kv">{E(d.get("draw_date") or "")} · '
+        f'<span class="kv">{E(d.get("draw_date") or draw_date_of(d["no"]))} · '
         f'{", ".join(str(n) for n in d["numbers"])} + {d["bonus"]}</span></li>'
         for d in reversed(targets))
     body = (f'<p class="kv"><a href="{base}/">lottoracle</a> › 회차별 당첨번호</p>'
@@ -207,16 +213,18 @@ def main() -> int:
     fame = sorted((s for s in stores if len(s["r1"]) >= 2),
                   key=lambda s: (-len(s["r1"]), -len(s["r2"])))
     rows = "".join(
-        f'<tr><td>{E(s["name"])}</td><td class="kv">{E(s["addr"])}</td>'
+        f'<tr><td>{E(s["name"])}</td>'
         f'<td class="n">{len(s["r1"])}회</td><td class="n">{len(s["r2"])}회</td>'
+        f'<td class="kv">{E(s["addr"])}</td>'
         f'<td class="kv">{", ".join(str(n) for n in sorted(s["r1"], reverse=True)[:6])}</td></tr>'
         for s in fame)
     body = (f'<p class="kv"><a href="{base}/">lottoracle</a> › 로또 명당</p>'
             f"<h1>로또 명당 — 1등을 두 번 이상 배출한 판매점</h1>"
             f'<p class="sub">{min(raw["draws"])}회~{max(raw["draws"])}회 기준 {len(fame)}곳. '
             f'동행복권 당첨판매점 자료입니다.</p>'
-            f'<table><tr><th>판매점</th><th>주소</th><th class="n">1등</th><th class="n">2등</th><th>배출 회차</th></tr>'
-            f"{rows}</table>"
+            f'<div class="tw"><table class="wide"><tr><th>판매점</th><th class="n">1등</th>'
+            f'<th class="n">2등</th><th>주소</th><th>배출 회차</th></tr>'
+            f"{rows}</table></div>"
             f'<p class="kv">많이 배출한 곳은 그만큼 많이 팔린 곳이기도 합니다. 어느 판매점에서 사든 1등 확률은 1/8,145,060 으로 같습니다.</p>'
             f'<a class="cta" href="{base}/">지도에서 내 주변 배출점 보기</a>')
     open(os.path.join(args.out, "fame.html"), "w", encoding="utf-8").write(page(
