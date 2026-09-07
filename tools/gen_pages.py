@@ -46,6 +46,13 @@ h2{font-size:17px;margin:28px 0 8px;padding-top:14px;border-top:1px solid #23283
 .c1{background:#fbc400}.c2{background:#69c8f2}.c3{background:#ff7272}
 .c4{background:#aaa}.c5{background:#b0d840}
 .plus{color:#8b95a5;margin:0 6px;font-weight:700}
+.b.s{width:27px;height:27px;font-size:12.5px;margin-right:4px}
+/* 회차 목록: 글머리표 대신 줄로 나누고 당첨번호를 공으로 보여 준다 */
+.dl{list-style:none;padding:0;margin:14px 0}
+.dl li{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;
+  padding:9px 0;margin:0;border-bottom:1px solid #232833}
+.dl .no{font-weight:700;min-width:58px}
+.dl .balls{margin:0}
 .bonus{outline:2px dashed #8b95a5;outline-offset:2px;margin-left:4px}
 table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}
 .tw{overflow-x:auto;margin:10px 0}
@@ -95,12 +102,13 @@ def page(title: str, desc: str, canonical: str, body: str, base: str) -> str:
 """
 
 
-def ball_html(nums, bonus=None) -> str:
+def ball_html(nums, bonus=None, small=False) -> str:
     def cls(n):
         return f"c{1 if n <= 10 else 2 if n <= 20 else 3 if n <= 30 else 4 if n <= 40 else 5}"
-    out = "".join(f'<span class="b {cls(n)}">{n}</span>' for n in nums)
+    sz = " s" if small else ""
+    out = "".join(f'<span class="b{sz} {cls(n)}">{n}</span>' for n in nums)
     if bonus is not None:
-        out += f'<span class="plus">+</span><span class="b {cls(bonus)} bonus">{bonus}</span>'
+        out += f'<span class="plus">+</span><span class="b{sz} {cls(bonus)} bonus">{bonus}</span>'
     return f'<div class="balls">{out}</div>'
 
 
@@ -195,14 +203,14 @@ def main() -> int:
 
     # ---- 회차 목록 허브
     items = "".join(
-        f'<li><a href="{base}/draw-{d["no"]}.html">{d["no"]}회</a> '
-        f'<span class="kv">{E(d.get("draw_date") or draw_date_of(d["no"]))} · '
-        f'{", ".join(str(n) for n in d["numbers"])} + {d["bonus"]}</span></li>'
+        f'<li><a class="no" href="{base}/draw-{d["no"]}.html">{d["no"]}회</a>'
+        f'<span class="kv">{E(d.get("draw_date") or draw_date_of(d["no"]))}</span>'
+        f'{ball_html(d["numbers"], d["bonus"], small=True)}</li>'
         for d in reversed(targets))
     body = (f'<p class="kv"><a href="{base}/">lottoracle</a> › 회차별 당첨번호</p>'
             f"<h1>로또 6/45 회차별 당첨번호</h1>"
             f'<p class="sub">{nos[0]}회부터 {nos[-1]}회까지. 회차를 누르면 등수별 당첨금과 그 회차 1·2등 배출점을 볼 수 있습니다.</p>'
-            f"<ul>{items}</ul>"
+            f'<ul class="dl">{items}</ul>'
             f'<a class="cta" href="{base}/">번호 뽑아보기</a>')
     open(os.path.join(args.out, "draws.html"), "w", encoding="utf-8").write(page(
         "로또 회차별 당첨번호 모음", f"{nos[0]}회~{nos[-1]}회 로또 6/45 당첨번호와 등수별 당첨금, 회차별 1·2등 배출점.",
