@@ -45,6 +45,9 @@
   main{padding:20px 24px;max-width:1180px;margin:0 auto}
   section{display:none}section.active{display:block}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+  /* 그리드 자식은 기본 min-width:auto 라 안쪽 표 폭에 밀려 안 줄어든다.
+     좁은 화면에서 패널이 화면 밖으로 나가던 원인. */
+  .grid>*{min-width:0}
   .grid.two{grid-template-columns:1fr 1fr}
   /* 복권방: 데스크톱은 왼쪽에 검색+목록, 오른쪽에 지도 */
   .grid.shops{grid-template-areas:"ctl map" "lists map";align-items:start}
@@ -218,8 +221,8 @@
     button.ghost{padding:10px 12px;font-size:13.5px}
     button.primary{padding:13px}
     /* 공: 6개 + 보너스가 한 줄에 들어가게 */
-    .ball{width:34px;height:34px;font-size:14px;margin-right:3px}
-    .ball.sm{width:26px;height:26px;font-size:11.5px;margin-right:3px}
+    .ball{width:34px;height:34px;font-size:14px;margin-right:6px}
+    .ball.sm{width:28px;height:28px;font-size:12px;margin-right:5px}
     .plus{margin:0 3px}
     /* 채점 입력: 6칸 + 삭제 버튼을 한 줄에 */
     .gradeline{display:grid;grid-template-columns:repeat(6,1fr) auto;gap:4px}
@@ -840,7 +843,7 @@ function renderPicks(picks) {
       const best = p.bestRank;
       badge = best ? `<span class="badge win">${best}등${p.totalPrize ? ' · ' + fmt(p.totalPrize) + '원' : ''}</span>` : '<span class="badge lose">낙첨</span>';
       detail = (best ? celebrateBanner(best, p.totalPrize, p.actualPrize) : '') +
-        `<div class="kv" style="margin:6px 0">${p.draw.no}회 당첨번호 ${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonusColor, null, true)}</div>` +
+        `<div class="kv" style="margin:6px 0 2px">${p.draw.no}회 당첨번호</div><div style="margin:0 0 8px">${balls(p.draw.numbers, p.draw.colors, p.draw.bonus, p.draw.bonusColor, null, true)}</div>` +
         sheetBox(p.sheet) +
         p.results.map((g, i) => `<div class="kv">${i+1}줄 ${balls(g.numbers, null, null, null, g.hit, true)} <span class="rank-${g.rank}">${g.label}</span>${g.bonusHit ? ' +보너스' : ''}</div>`).join('');
     } else {
