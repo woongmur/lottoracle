@@ -189,8 +189,12 @@ def sido_of(addr: str) -> str:
 
 
 def sgg_of(addr: str) -> str:
+    """시·군·구 이름. 세종은 시·군·구 체계가 없어 두 번째 단어가 도로명이므로
+    걸러 낸다 — 안 그러면 '세종 한누리대로' 같은 지역이 생긴다."""
     w = addr.split()
-    return w[1] if len(w) > 1 else ""
+    if len(w) < 2 or not w[1].endswith(("시", "군", "구")):
+        return ""
+    return w[1]
 
 
 def region_file(sido: str, sgg: str = "") -> str:
@@ -232,6 +236,20 @@ def shop_table(shops, base) -> str:
     return ('<div class="tw"><table class="wide">'
             '<tr><th>판매점</th><th class="n">1등</th><th class="n">2등</th>'
             '<th>주소</th><th>배출 회차</th></tr>' + body + "</table></div>")
+
+
+def region_title(name: str, stat: dict) -> str:
+    if not stat["r1"]:
+        return f"{name} 로또 판매점 — 아직 1등이 나오지 않았습니다"
+    return f"{name} 로또 명당 — 1등 배출 판매점"
+
+
+def region_desc(name: str, stat: dict, span: str) -> str:
+    if not stat["r1"]:
+        return (f"{name} 로또 판매점 {stat['shops']}곳. {span} 기준 아직 1등이 나오지 않았고 "
+                f"2등은 {stat['r2']}회 나왔습니다.")
+    return (f"{name}에서 로또 1등이 나온 판매점 {stat['winners']}곳의 이름·주소와 배출 회차. "
+            f"{span} 기준 1등 {stat['r1']}회, 2등 {stat['r2']}회.")
 
 
 CAVEAT = ('<p class="kv">1등이 많이 나온 지역은 그만큼 복권이 많이 팔린 지역입니다. '
@@ -336,8 +354,15 @@ def main() -> int:
                  f'<a href="{base}/regions.html">지역별 로또 명당</a>'
                  + (f' › <a href="{base}/{region_file(parent)}">{E(parent)}</a>' if parent else "")
                  + f' › {E(name)}</p>')
-        head = (f"<h1>{E(name)} 로또 명당 — 1등 배출 판매점</h1>"
-                f'<p class="sub">{span} 기준. 판매점 {stat["shops"]:,}곳 중 {stat["winners"]:,}곳이 1등을 냈습니다.</p>'
+        # 1등이 한 번도 안 나온 지역에까지 '명당' 이라고 쓰면 사실과 다르다.
+        # 없으면 없다고 적고, 대신 2등 배출점을 보여 준다.
+        title_h1 = (f"{E(name)} 로또 명당 — 1등 배출 판매점" if stat["r1"]
+                    else f"{E(name)} 로또 판매점 — 아직 1등이 나오지 않았습니다")
+        sub = (f'{span} 기준. 판매점 {stat["shops"]:,}곳 중 {stat["winners"]:,}곳이 1등을 냈습니다.'
+               if stat["r1"] else
+               f'{span} 기준. 판매점 {stat["shops"]:,}곳에서 아직 1등이 나오지 않았습니다.')
+        head = (f"<h1>{title_h1}</h1>"
+                f'<p class="sub">{sub}</p>'
                 f'<div class="tw"><table>'
                 f'<tr><th>1등 배출</th><td class="n">{stat["r1"]}회</td>'
                 f'<th>2등 배출</th><td class="n">{stat["r2"]}회</td></tr>'
@@ -347,12 +372,18 @@ def main() -> int:
                 f"</table></div>")
         body = crumb + head
         if sub_rows:
-            body += (f"<h2>{E(name)} 안에서 많이 나온 지역</h2>" + rank_table(sub_rows, base)
-                     + '<p class="kv">1등이 아직 나오지 않은 지역은 따로 페이지를 두지 않았습니다.</p>')
+            body += f"<h2>{E(name)} 안에서 많이 나온 지역</h2>" + rank_table(sub_rows, base)
         if winners:
             body += f"<h2>{E(name)} 1등 배출 판매점</h2>" + shop_table(winners, base)
             if len(winners) > 60:
                 body += f'<p class="kv">1등 배출점 {len(winners)}곳 중 많이 낸 60곳만 보여 줍니다.</p>'
+        else:
+            seconds = [x for x in group if x["r2"]]
+            if seconds:
+                body += (f"<h2>{E(name)} 2등 배출 판매점</h2>" + shop_table(seconds, base))
+            else:
+                body += (f'<p class="kv">{E(name)} 판매점 {stat["shops"]:,}곳에서는 아직 '
+                         f'1·2등이 나오지 않았습니다.</p>')
         body += CAVEAT
         body += f'<a class="cta" href="{base}/">지도에서 내 주변 배출점 보기</a>'
         return body
@@ -361,31 +392,24 @@ def main() -> int:
         group, stat = by_sido[sd], sido_stats[sd]
         subs = sorted(((sg, by_sgg[(s2, sg)]) for (s2, sg) in by_sgg if s2 == sd),
                       key=lambda kv: -sum(len(x["r1"]) for x in kv[1]))
-        sub_rows = [(sg, region_file(sd, sg) if tally(g)["r1"] else None, tally(g))
-                    for sg, g in subs[:30]]
+        sub_rows = [(sg, region_file(sd, sg), tally(g)) for sg, g in subs]
         body = region_body(sd, group, stat, sido_rank[sd], len(sido_order), sub_rows)
         fn = region_file(sd)
         open(os.path.join(args.out, fn), "w", encoding="utf-8").write(page(
-            f"{sd} 로또 명당 — 1등 배출 판매점과 지역별 통계",
-            f"{sd}에서 로또 1등이 나온 판매점 {stat['winners']}곳의 이름·주소와 배출 회차. "
-            f"{span} 기준 1등 {stat['r1']}회, 2등 {stat['r2']}회.",
+            region_title(sd, stat), region_desc(sd, stat, span),
             f"{base}/{fn}", body, base))
         written.append(fn)
 
     sgg_pages = 0
     for (sd, sg), group in by_sgg.items():
         stat = tally(group)
-        if not stat["r1"]:                 # 1등이 나온 적 없는 곳은 '명당' 페이지를 만들 게 없다
-            continue
         peers = sorted(((k[1], tally(v)) for k, v in by_sgg.items() if k[0] == sd),
                        key=lambda kv: -kv[1]["r1"])
         rank = next(i + 1 for i, (n2, _) in enumerate(peers) if n2 == sg)
         body = region_body(f"{sd} {sg}", group, stat, rank, len(peers), [], parent=sd)
         fn = region_file(sd, sg)
         open(os.path.join(args.out, fn), "w", encoding="utf-8").write(page(
-            f"{sd} {sg} 로또 명당 — 1등 배출 판매점",
-            f"{sd} {sg}에서 로또 1등이 나온 판매점 {stat['winners']}곳의 이름·주소와 배출 회차. "
-            f"{span} 기준 1등 {stat['r1']}회, 2등 {stat['r2']}회.",
+            region_title(f"{sd} {sg}", stat), region_desc(f"{sd} {sg}", stat, span),
             f"{base}/{fn}", body, base))
         written.append(fn)
         sgg_pages += 1
@@ -403,7 +427,7 @@ def main() -> int:
         f"전국 시·도별 로또 1·2등 배출 횟수와 판매점 수 순위. {span} 기준 1등 {nation['r1']:,}회.",
         f"{base}/regions.html", body, base))
     written.append("regions.html")
-    print(f"  지역 페이지: 시·도 {len(sido_order)}개 + 시·군·구 {sgg_pages}개(1등 배출) + 순위 허브 1개")
+    print(f"  지역 페이지: 시·도 {len(sido_order)}개 + 시·군·구 {sgg_pages}개 + 순위 허브 1개")
 
     # ---- 사이트맵. 크롤러가 이 페이지들을 찾아가는 지도다.
     region_urls = [f for f in written if f.startswith("region-")]
