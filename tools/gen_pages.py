@@ -347,7 +347,8 @@ def main() -> int:
                 f"</table></div>")
         body = crumb + head
         if sub_rows:
-            body += f"<h2>{E(name)} 안에서 많이 나온 지역</h2>" + rank_table(sub_rows, base)
+            body += (f"<h2>{E(name)} 안에서 많이 나온 지역</h2>" + rank_table(sub_rows, base)
+                     + '<p class="kv">1등이 아직 나오지 않은 지역은 따로 페이지를 두지 않았습니다.</p>')
         if winners:
             body += f"<h2>{E(name)} 1등 배출 판매점</h2>" + shop_table(winners, base)
             if len(winners) > 60:
@@ -360,7 +361,7 @@ def main() -> int:
         group, stat = by_sido[sd], sido_stats[sd]
         subs = sorted(((sg, by_sgg[(s2, sg)]) for (s2, sg) in by_sgg if s2 == sd),
                       key=lambda kv: -sum(len(x["r1"]) for x in kv[1]))
-        sub_rows = [(sg, region_file(sd, sg) if tally(g)["winners"] >= 5 else None, tally(g))
+        sub_rows = [(sg, region_file(sd, sg) if tally(g)["r1"] else None, tally(g))
                     for sg, g in subs[:30]]
         body = region_body(sd, group, stat, sido_rank[sd], len(sido_order), sub_rows)
         fn = region_file(sd)
@@ -374,7 +375,7 @@ def main() -> int:
     sgg_pages = 0
     for (sd, sg), group in by_sgg.items():
         stat = tally(group)
-        if stat["winners"] < 5:
+        if not stat["r1"]:                 # 1등이 나온 적 없는 곳은 '명당' 페이지를 만들 게 없다
             continue
         peers = sorted(((k[1], tally(v)) for k, v in by_sgg.items() if k[0] == sd),
                        key=lambda kv: -kv[1]["r1"])
@@ -402,7 +403,7 @@ def main() -> int:
         f"전국 시·도별 로또 1·2등 배출 횟수와 판매점 수 순위. {span} 기준 1등 {nation['r1']:,}회.",
         f"{base}/regions.html", body, base))
     written.append("regions.html")
-    print(f"  지역 페이지: 시·도 {len(sido_order)}개 + 시·군·구 {sgg_pages}개 + 순위 허브 1개")
+    print(f"  지역 페이지: 시·도 {len(sido_order)}개 + 시·군·구 {sgg_pages}개(1등 배출) + 순위 허브 1개")
 
     # ---- 사이트맵. 크롤러가 이 페이지들을 찾아가는 지도다.
     region_urls = [f for f in written if f.startswith("region-")]
