@@ -174,6 +174,72 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
     return f"draw-{no}.html", page(title, desc, f"{base}/draw-{no}.html", body, base)
 
 
+# 동행복권 주소의 시·도 표기가 한 군데 뭉쳐 있다. '전남광주' 는 오타가 아니라
+# 전남과 광주를 묶은 라벨이어서, 뒤에 오는 시·군·구로 갈라야 한다.
+GWANGJU_GU = {"동구", "서구", "남구", "북구", "광산구"}
+
+
+def sido_of(addr: str) -> str:
+    w = addr.split()
+    if not w:
+        return ""
+    if w[0] == "전남광주":
+        return "광주" if len(w) > 1 and w[1] in GWANGJU_GU else "전남"
+    return w[0]
+
+
+def sgg_of(addr: str) -> str:
+    w = addr.split()
+    return w[1] if len(w) > 1 else ""
+
+
+def region_file(sido: str, sgg: str = "") -> str:
+    return f"region-{sido}-{sgg}.html" if sgg else f"region-{sido}.html"
+
+
+def tally(group) -> dict:
+    """한 지역의 배출 실적. r1/r2 는 그 판매점이 1·2등을 낸 회차 목록이다."""
+    return {
+        "shops": len(group),
+        "r1": sum(len(s["r1"]) for s in group),
+        "r2": sum(len(s["r2"]) for s in group),
+        "winners": sum(1 for s in group if s["r1"]),
+    }
+
+
+def rank_table(rows, base, note_col="") -> str:
+    """지역 순위 표. rows = [(이름, 파일명 또는 None, 통계)]"""
+    body = ""
+    for i, (name, fname, t) in enumerate(rows, 1):
+        label = f'<a href="{base}/{fname}">{E(name)}</a>' if fname else E(name)
+        per = t["r1"] / t["shops"] if t["shops"] else 0
+        body += (f'<tr><td class="n">{i}</td><td>{label}</td>'
+                 f'<td class="n">{t["r1"]}회</td><td class="n">{t["r2"]}회</td>'
+                 f'<td class="n">{t["shops"]}곳</td><td class="n">{per:.2f}</td></tr>')
+    return ('<div class="tw"><table class="wide">'
+            '<tr><th class="n">순위</th><th>지역</th><th class="n">1등</th><th class="n">2등</th>'
+            '<th class="n">판매점</th><th class="n">판매점당 1등</th></tr>'
+            + body + "</table></div>")
+
+
+def shop_table(shops, base) -> str:
+    body = ""
+    for s in sorted(shops, key=lambda x: (-len(x["r1"]), -len(x["r2"])))[:60]:
+        eps = ", ".join(str(n) for n in sorted(s["r1"], reverse=True)[:6])
+        body += (f'<tr><td>{E(s["name"])}</td>'
+                 f'<td class="n">{len(s["r1"])}회</td><td class="n">{len(s["r2"])}회</td>'
+                 f'<td class="kv">{E(s["addr"])}</td><td class="kv">{eps}</td></tr>')
+    return ('<div class="tw"><table class="wide">'
+            '<tr><th>판매점</th><th class="n">1등</th><th class="n">2등</th>'
+            '<th>주소</th><th>배출 회차</th></tr>' + body + "</table></div>")
+
+
+CAVEAT = ('<p class="kv">1등이 많이 나온 지역은 그만큼 복권이 많이 팔린 지역입니다. '
+          '실제로 전국 시·도를 놓고 보면 판매점 수와 1등 배출 횟수의 상관계수가 0.997 로, '
+          '거의 그대로 비례합니다. 판매점이 적은 지역은 표본이 작아 \'판매점당 1등\' 이 크게 흔들립니다. '
+          '어느 판매점에서 사든 1등 확률은 1/8,145,060 으로 같습니다.</p>')
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", required=True, help="예: https://lottoracle.com")
@@ -241,11 +307,113 @@ def main() -> int:
         f"{base}/fame.html", body, base))
     written.append("fame.html")
 
+    # ---- 지역별 명당. "수원 로또 명당" 처럼 사람들이 실제로 치는 검색어를 노린다.
+    # 목록만 있으면 밋밋하므로 그 지역의 배출 실적과 전국 순위를 같이 얹는다.
+    by_sido: dict[str, list] = {}
+    by_sgg: dict[tuple[str, str], list] = {}
+    for st in stores:
+        sd = sido_of(st.get("addr", ""))
+        if not sd:
+            continue
+        by_sido.setdefault(sd, []).append(st)
+        sg = sgg_of(st["addr"])
+        if sg:
+            by_sgg.setdefault((sd, sg), []).append(st)
+
+    sido_stats = {k: tally(v) for k, v in by_sido.items()}
+    sido_order = sorted(sido_stats, key=lambda k: -sido_stats[k]["r1"])
+    sido_rank = {k: i + 1 for i, k in enumerate(sido_order)}
+    nation = {
+        "r1": sum(t["r1"] for t in sido_stats.values()),
+        "r2": sum(t["r2"] for t in sido_stats.values()),
+        "shops": sum(t["shops"] for t in sido_stats.values()),
+    }
+    span = f'{min(raw["draws"])}회~{max(raw["draws"])}회'
+
+    def region_body(name, group, stat, rank, total, sub_rows, parent=None):
+        winners = [x for x in group if x["r1"]]
+        crumb = (f'<p class="kv"><a href="{base}/">lottoracle</a> › '
+                 f'<a href="{base}/regions.html">지역별 로또 명당</a>'
+                 + (f' › <a href="{base}/{region_file(parent)}">{E(parent)}</a>' if parent else "")
+                 + f' › {E(name)}</p>')
+        head = (f"<h1>{E(name)} 로또 명당 — 1등 배출 판매점</h1>"
+                f'<p class="sub">{span} 기준. 판매점 {stat["shops"]:,}곳 중 {stat["winners"]:,}곳이 1등을 냈습니다.</p>'
+                f'<div class="tw"><table>'
+                f'<tr><th>1등 배출</th><td class="n">{stat["r1"]}회</td>'
+                f'<th>2등 배출</th><td class="n">{stat["r2"]}회</td></tr>'
+                f'<tr><th>판매점 수</th><td class="n">{stat["shops"]:,}곳</td>'
+                f'<th>{"전국" if parent is None else E(parent)} 순위</th>'
+                f'<td class="n">{rank}위 / {total}곳</td></tr>'
+                f"</table></div>")
+        body = crumb + head
+        if sub_rows:
+            body += f"<h2>{E(name)} 안에서 많이 나온 지역</h2>" + rank_table(sub_rows, base)
+        if winners:
+            body += f"<h2>{E(name)} 1등 배출 판매점</h2>" + shop_table(winners, base)
+            if len(winners) > 60:
+                body += f'<p class="kv">1등 배출점 {len(winners)}곳 중 많이 낸 60곳만 보여 줍니다.</p>'
+        body += CAVEAT
+        body += f'<a class="cta" href="{base}/">지도에서 내 주변 배출점 보기</a>'
+        return body
+
+    for sd in sido_order:
+        group, stat = by_sido[sd], sido_stats[sd]
+        subs = sorted(((sg, by_sgg[(s2, sg)]) for (s2, sg) in by_sgg if s2 == sd),
+                      key=lambda kv: -sum(len(x["r1"]) for x in kv[1]))
+        sub_rows = [(sg, region_file(sd, sg) if tally(g)["winners"] >= 5 else None, tally(g))
+                    for sg, g in subs[:30]]
+        body = region_body(sd, group, stat, sido_rank[sd], len(sido_order), sub_rows)
+        fn = region_file(sd)
+        open(os.path.join(args.out, fn), "w", encoding="utf-8").write(page(
+            f"{sd} 로또 명당 — 1등 배출 판매점과 지역별 통계",
+            f"{sd}에서 로또 1등이 나온 판매점 {stat['winners']}곳의 이름·주소와 배출 회차. "
+            f"{span} 기준 1등 {stat['r1']}회, 2등 {stat['r2']}회.",
+            f"{base}/{fn}", body, base))
+        written.append(fn)
+
+    sgg_pages = 0
+    for (sd, sg), group in by_sgg.items():
+        stat = tally(group)
+        if stat["winners"] < 5:
+            continue
+        peers = sorted(((k[1], tally(v)) for k, v in by_sgg.items() if k[0] == sd),
+                       key=lambda kv: -kv[1]["r1"])
+        rank = next(i + 1 for i, (n2, _) in enumerate(peers) if n2 == sg)
+        body = region_body(f"{sd} {sg}", group, stat, rank, len(peers), [], parent=sd)
+        fn = region_file(sd, sg)
+        open(os.path.join(args.out, fn), "w", encoding="utf-8").write(page(
+            f"{sd} {sg} 로또 명당 — 1등 배출 판매점",
+            f"{sd} {sg}에서 로또 1등이 나온 판매점 {stat['winners']}곳의 이름·주소와 배출 회차. "
+            f"{span} 기준 1등 {stat['r1']}회, 2등 {stat['r2']}회.",
+            f"{base}/{fn}", body, base))
+        written.append(fn)
+        sgg_pages += 1
+
+    # ---- 지역 순위 허브
+    rows = [(sd, region_file(sd), sido_stats[sd]) for sd in sido_order]
+    body = (f'<p class="kv"><a href="{base}/">lottoracle</a> › 지역별 로또 명당</p>'
+            f"<h1>지역별 로또 1등 배출 순위</h1>"
+            f'<p class="sub">{span} 기준. 전국 판매점 {nation["shops"]:,}곳에서 '
+            f'1등 {nation["r1"]:,}회, 2등 {nation["r2"]:,}회가 나왔습니다.</p>'
+            + rank_table(rows, base) + CAVEAT
+            + f'<a class="cta" href="{base}/fame.html">1등을 두 번 이상 배출한 판매점 보기</a>')
+    open(os.path.join(args.out, "regions.html"), "w", encoding="utf-8").write(page(
+        "지역별 로또 명당 — 시·도별 1등 배출 순위",
+        f"전국 시·도별 로또 1·2등 배출 횟수와 판매점 수 순위. {span} 기준 1등 {nation['r1']:,}회.",
+        f"{base}/regions.html", body, base))
+    written.append("regions.html")
+    print(f"  지역 페이지: 시·도 {len(sido_order)}개 + 시·군·구 {sgg_pages}개 + 순위 허브 1개")
+
     # ---- 사이트맵. 크롤러가 이 페이지들을 찾아가는 지도다.
-    urls = ["", "draws.html", "fame.html", "about.html", "privacy.html"] + [f"draw-{n}.html" for n in reversed(nos)]
+    region_urls = [f for f in written if f.startswith("region-")]
+    urls = (["", "draws.html", "fame.html", "regions.html", "about.html", "privacy.html"]
+            + region_urls + [f"draw-{n}.html" for n in reversed(nos)])
     def entry(u: str) -> str:
-        prio = "1.0" if u == "" else "0.8" if u in ("draws.html", "fame.html") else "0.4" if u == "about.html" else "0.3" if u == "privacy.html" else "0.6"
-        freq = "weekly" if u in ("", "draws.html", "fame.html") else "yearly"
+        prio = ("1.0" if u == "" else
+                "0.8" if u in ("draws.html", "fame.html", "regions.html") else
+                "0.7" if u.startswith("region-") else
+                "0.4" if u == "about.html" else "0.3" if u == "privacy.html" else "0.6")
+        freq = "weekly" if u in ("", "draws.html", "fame.html", "regions.html") or u.startswith("region-") else "yearly"
         return f"  <url><loc>{base}/{u}</loc><changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n'
                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

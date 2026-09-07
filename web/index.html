@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lottoracle · 오늘의 운세와 로또 6/45 조합</title>
-<meta name="description" content="오늘의 운세와 로또 6/45 조합 생성기. 통계 필터와 민간속설을 코드로 옮긴 도구이며, 당첨 확률을 바꾸지 않습니다.">
+<title>로또 번호 생성기 · 회차별 당첨번호 · 로또 명당 | lottoracle</title>
+<meta name="description" content="로또 6/45 번호 조합을 만들고, 회차별 당첨번호와 등수별 당첨금을 확인하고, 내 주변 1·2등 배출 판매점을 지도에서 찾습니다. 오늘의 운세도 함께. 당첨 확률은 바뀌지 않습니다.">
 <meta name="theme-color" content="#0f1115">
 <meta name="naver-site-verification" content="ebba29594d06ffc55d3b0b1e40c85d8a42786ad7">
 <link rel="canonical" href="__BASE__/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="lottoracle">
-<meta property="og:title" content="lottoracle · 오늘의 운세와 로또 6/45 조합">
+<meta property="og:title" content="로또 번호 생성기 · 회차별 당첨번호 · 로또 명당 | lottoracle">
 <meta property="og:description" content="오늘의 운세로 시작해 번호를 뽑고, 내 주변 복권방과 1·2등 배출점을 지도에서 봅니다. 당첨 확률은 바뀌지 않습니다.">
 <meta property="og:url" content="__BASE__/">
 <meta property="og:image" content="__BASE__/icon-512.png">
@@ -35,8 +35,10 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
   header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
-  header h1{margin:0;font-size:20px;letter-spacing:.3px}
-  header h1 span{color:var(--accent)}
+  header .brandbox{display:flex;flex-direction:column;gap:1px}
+  header .brand{font-size:20px;letter-spacing:.3px;font-weight:700}
+  header .brand span{color:var(--accent)}
+  header .tagline{margin:0;font-size:11.5px;font-weight:400;color:var(--muted);letter-spacing:0}
   header .meta{color:var(--muted);font-size:13px;flex:1}
   header .status{color:var(--muted);font-size:12px}
   nav{display:flex;gap:2px;padding:8px 24px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;overflow-x:auto}
@@ -254,7 +256,10 @@
 <body>
 <canvas id="confetti"></canvas>
 <header>
-  <h1>lotto<span>racle</span></h1>
+  <div class="brandbox">
+    <div class="brand">lotto<span>racle</span></div>
+    <h1 class="tagline">로또 번호 조합 생성기 · 회차별 당첨번호 · 명당 지도</h1>
+  </div>
   <div class="meta" id="meta">불러오는 중…</div>
   <div class="status" id="refresh-status"></div>
   <div class="status" id="offline-badge" style="display:none;color:var(--warn)">오프라인</div>
@@ -462,17 +467,18 @@
 </main>
 <noscript>
   <div style="max-width:760px;margin:0 auto;padding:20px 24px;line-height:1.7">
-    <h1 style="font-size:20px">lottoracle — 로또 6/45 번호 조합과 오늘의 운세</h1>
+    <h1 style="font-size:20px">로또 번호 조합 생성기 · 회차별 당첨번호 · 명당 지도</h1>
     <p>번호 생성과 지도는 자바스크립트가 필요합니다. 아래 페이지는 그대로 볼 수 있습니다.</p>
     <ul>
       <li><a href="./draws.html">회차별 로또 당첨번호</a> — 등수별 당첨금과 그 회차 1·2등 배출점</li>
       <li><a href="./fame.html">로또 명당</a> — 1등을 두 번 이상 배출한 판매점 목록</li>
+      <li><a href="./regions.html">지역별 로또 명당</a> — 시·도별 1·2등 배출 순위</li>
       <li><a href="./about.html">소개 · 연락처</a></li>
     </ul>
     <p>모든 조합의 1등 확률은 1/8,145,060 으로 같습니다. 이 사이트의 어떤 기능도 확률을 바꾸지 않습니다.</p>
   </div>
 </noscript>
-<footer><span id="foot-tagline"></span> · lottoracle · <a href="./draws.html">회차별 당첨번호</a> · <a href="./fame.html">로또 명당</a> · <a href="./about.html">소개 · 연락처</a> · <a href="#" data-goto="info">설정 · 정보</a> · <a href="./privacy.html">개인정보처리방침</a></footer>
+<footer><span id="foot-tagline"></span> · lottoracle · <a href="./draws.html">회차별 당첨번호</a> · <a href="./fame.html">로또 명당</a> · <a href="./regions.html">지역별 명당</a> · <a href="./about.html">소개 · 연락처</a> · <a href="#" data-goto="info">설정 · 정보</a> · <a href="./privacy.html">개인정보처리방침</a></footer>
 
 <script type="module">
 import { createEngine } from './src/engine.js';
