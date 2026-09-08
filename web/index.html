@@ -112,7 +112,8 @@
   .pil .lab{color:var(--muted);font-size:11.5px}
   .pil .gz{font-size:19px;font-weight:800;margin:3px 0 1px;letter-spacing:1px}
   .pil .hj{color:var(--muted);font-size:12px}
-  .pil .an{color:var(--muted);font-size:11.5px;margin-top:3px}
+  .pil .an{color:var(--muted);font-size:11px;letter-spacing:-.3px;margin-top:3px}
+  .pil .el{color:var(--muted);font-size:11px;letter-spacing:-.3px}
   .elems{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
   .elem{background:var(--panel2);border:1px solid var(--line);border-radius:999px;
     padding:3px 10px;font-size:12.5px}
@@ -121,6 +122,17 @@
   .saju dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:12px 0 0;font-size:12.5px}
   .saju dt{color:var(--muted)}
   .saju dd{margin:0;color:var(--text)}
+  .saju dd .kv{display:block;margin-top:1px}
+  .pil .sub{color:var(--muted);font-size:10px;letter-spacing:-.3px;margin-top:2px;opacity:.8}
+  .saju details{margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}
+  .saju summary{cursor:pointer;font-size:12.5px;color:var(--accent);list-style:none}
+  .saju summary::-webkit-details-marker{display:none}
+  .saju summary::before{content:'▸ '}
+  .saju details[open] summary::before{content:'▾ '}
+  .saju .read{font-size:12.5px;color:var(--muted);line-height:1.7;margin:8px 0 0}
+  .saju .read p{margin:0 0 8px}
+  .saju .read p:last-child{margin-bottom:0}
+  .saju .read b{color:var(--text);font-weight:600}
   /* 한 장 성적 요약 — 맞은 개수만 크게 띄우면 실제보다 잘한 것처럼 읽힌다.
      기대값과 분포상 위치를 늘 같이 보여 준다. */
   .sheet{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
@@ -721,13 +733,15 @@ let FORTUNE = null;
  */
 function sajuBox(sj) {
   if (!sj) return '';
-  const cells = [['년주', sj.year], ['월주', sj.month], ['일주', sj.day]]
-    .concat(sj.hour ? [['시주', sj.hour]] : []);
-  const pil = cells.map(([lab, p]) => `<div class="pil">
+  const cells = [['년주', '태어난 해', sj.year], ['월주', '태어난 달', sj.month],
+    ['일주', '태어난 날', sj.day]].concat(sj.hour ? [['시주', '태어난 시', sj.hour]] : []);
+  const pil = cells.map(([lab, sub, p]) => `<div class="pil">
       <div class="lab">${lab}</div>
       <div class="gz">${esc(p.name)}</div>
       <div class="hj">${esc(p.hanja)}</div>
-      <div class="an">${esc(p.animal)} · ${esc(p.stemElement)}${esc(p.branchElement)}</div>
+      <div class="an">${esc(p.animal)}띠</div>
+      <div class="el">${esc(p.stemElement)}·${esc(p.branchElement)}</div>
+      <div class="sub">${sub}</div>
     </div>`).join('');
   const elems = Object.entries(sj.elements).map(([k, v]) =>
     `<span class="elem${v ? '' : ' zero'}">${esc(k)} <b>${v}</b></span>`).join('');
@@ -756,11 +770,29 @@ function sajuBox(sj) {
     <div class="pillars${sj.hour ? '' : ' three'}">${pil}</div>
     <div class="elems">${elems}</div>
     <dl>
-      <dt>일간</dt><dd>${esc(sj.dayStem)} (${esc(sj.day.stemElement)})</dd>
-      <dt>별자리</dt><dd>${esc(sj.sign)}</dd>
+      <dt>일간</dt><dd>${esc(sj.dayStem)} (${esc(sj.day.stemElement)})
+        <span class="kv">태어난 날의 윗글자 · '나'를 놓는 자리</span></dd>
+      <dt>별자리</dt><dd>${esc(sj.sign)} <span class="kv">태어난 순간의 태양 위치</span></dd>
       <dt>기준 시각</dt><dd>${esc(sj.solarTime)} <span class="kv">서울 평균태양시 · 벽시계에서 ${Math.abs(sj.correctionMinutes)}분 ${sj.correctionMinutes < 0 ? '당김' : '늦춤'}</span></dd>
       ${notes.join('')}
     </dl>
+    <details>
+      <summary>이 글자들이 무슨 뜻인가요</summary>
+      <div class="read">
+        <p><b>네 기둥</b> — 태어난 해·달·날·시를 각각 두 글자로 적은 것입니다.
+          기둥이 넷이고 글자가 여덟이라 <b>사주팔자</b>라고 부릅니다.</p>
+        <p>기둥의 <b>윗글자를 천간</b>이라 하며 갑·을·병·정·무·기·경·신·임·계 열 개,
+          <b>아랫글자를 지지</b>라 하며 자·축·인·묘·진·사·오·미·신·유·술·해 열두 개입니다.
+          지지 열둘은 쥐·소·호랑이처럼 <b>우리가 아는 띠 동물 열둘과 같습니다.</b></p>
+        <p>열 개와 열두 개를 맞물려 돌리면 예순 가지 짝이 나옵니다. 이것이 <b>60갑자</b>이고,
+          예순 해 만에 태어난 해의 이름으로 돌아오는 것을 환갑이라 합니다.</p>
+        <p><b>오행</b>은 여덟 글자를 목·화·토·금·수 다섯 갈래로 나눠 센 것입니다.
+          글자마다 어디에 속하는지가 정해져 있어 세기만 하면 나옵니다.</p>
+        <p><b>일간</b>은 태어난 날의 윗글자입니다. 명리학에서는 이 한 글자를 <b>나 자신</b>으로 놓고
+          나머지 일곱 글자와의 관계를 봅니다. 여덟 글자 중 기준점이 되는 자리입니다.</p>
+        <p>여기까지가 계산입니다. 낱말 풀이는 <a href="./about.html#saju">소개 · 용어 풀이</a>에 더 적어 두었습니다.</p>
+      </div>
+    </details>
     <div class="caution">표준시가 바뀐 시기와 서머타임, 서울 경도를 반영해 계산했습니다.
       팔자를 푸는 방식은 유파마다 달라 여기서는 해석을 넣지 않았습니다.</div>
   </div>`;
