@@ -24,7 +24,7 @@ import math
 from dataclasses import dataclass
 
 from .solartime import (
-    epoch_to_parts, seoul_solar_epoch, sign_of, wall_to_utc,
+    SOLAR_TERMS, epoch_to_parts, seoul_solar_epoch, sign_of, wall_to_utc,
     solar_longitude_at, _days_from_civil, _find_longitude,
 )
 
@@ -120,6 +120,38 @@ def month_pillar(utc_epoch: float, year_stem: int) -> Pillar:
     first = (year_stem % 5) * 2 + 2               # 그 해 인월의 천간
     stem = (first + step) % 10
     return Pillar(stem, branch)
+
+
+# 절(節)은 달을 가르는 열두 마디다. 24절기 중 홀수 번째(입춘·경칩·청명 ...)로,
+# 황경으로는 15도에서 30도마다 하나씩 있다. 중기(춘분·곡우 ...)는 달을 가르지 않는다.
+_DEGREES_PER_DAY = 0.98564736
+
+
+def _jeol_name(longitude: float) -> str:
+    """절 황경 -> 이름. solartime 의 24절기 표를 그대로 쓴다."""
+    return SOLAR_TERMS[int(round(longitude / 15.0)) % 24]
+
+
+def next_jeol(utc_epoch: float) -> tuple[str, float]:
+    """그 순간 다음에 오는 절의 (이름, UTC epoch 초).
+
+    대운이 언제 시작하는지를 이 간격으로 잰다 — 순행이면 다음 절까지,
+    역행이면 지난 절부터의 날수를 세어 3일을 1년으로 친다.
+    """
+    lon = solar_longitude_at(utc_epoch)
+    past = (lon - 15.0) % 30.0                      # 지난 절에서 몇 도 왔나
+    target = (lon - past + 30.0) % 360.0
+    guess = utc_epoch + (30.0 - past) / _DEGREES_PER_DAY * 86400.0
+    return _jeol_name(target), _find_longitude(target, guess)
+
+
+def prev_jeol(utc_epoch: float) -> tuple[str, float]:
+    """그 순간 직전에 지난 절의 (이름, UTC epoch 초)."""
+    lon = solar_longitude_at(utc_epoch)
+    past = (lon - 15.0) % 30.0
+    target = (lon - past) % 360.0
+    guess = utc_epoch - past / _DEGREES_PER_DAY * 86400.0
+    return _jeol_name(target), _find_longitude(target, guess)
 
 
 def day_pillar(solar_epoch: float) -> Pillar:
@@ -228,7 +260,16 @@ BRANCH_MID_HOUR = {
 }
 
 
-def from_profile(profile) -> dict | None:
+def _age_years(birth_date: str, today) -> float | None:
+    """만나이를 소수로. 대운 구간은 해 단위라 이 정도면 충분하다."""
+    if not birth_date or today is None:
+        return None
+    y, mo, d = (int(x) for x in birth_date.split("-"))
+    days = _days_from_civil(today.year, today.month, today.day) - _days_from_civil(y, mo, d)
+    return days / 365.2425
+
+
+def from_profile(profile, today=None) -> dict | None:
     """프로필 -> 화면에 넘길 사주 묶음. 생년월일이 없으면 None.
 
     태어난 시를 모르면 정오로 세우고 시주는 없는 것으로 표시한다 — 모르는 값을
@@ -260,6 +301,13 @@ def from_profile(profile) -> dict | None:
     # 시주를 모르면 세 기둥으로만 센다 — 모르는 글자를 넣고 세면 답이 달라진다.
     from .sipsin import reading
     out["reading"] = reading(pillars, s.day.stem, out["elements"])
+    # 대운은 시간 축이라 '오늘' 이 있어야 지금 어느 칸인지 짚을 수 있다.
+    # 성별을 모르면 방향이 안 정해져서 None 이 온다 — 지어내지 않는다.
+    from datetime import date as _date
+    from .daeun import daeun
+    out["daeun"] = daeun(s.year, s.month, s.day.stem, s.utc_epoch,
+                         getattr(profile, "gender", ""),
+                         _age_years(profile.birth_date, today or _date.today()))
     # 띠(설날 기준)와 사주 년주(입춘 기준)가 갈리는 구간인지
     from .folklore import zodiac_of_birth
     folk = zodiac_of_birth(profile.birth_date, getattr(profile, "lunar", False))

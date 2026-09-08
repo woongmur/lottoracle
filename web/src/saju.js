@@ -18,10 +18,11 @@
  * 하나로 뭉뚱그리면 절 경계가 8시간 넘게 어긋난다.
  */
 import {
-  epochToParts, seoulSolarEpoch, signOf, solarLongitudeAt, daysFromCivil, wallToUtc,
-  findLongitude,
+  SOLAR_TERMS, epochToParts, seoulSolarEpoch, signOf, solarLongitudeAt, daysFromCivil,
+  wallToUtc, findLongitude,
 } from './solartime.js';
 import { reading } from './sipsin.js';
+import { daeun } from './daeun.js';
 
 export const STEMS = '갑을병정무기경신임계';
 export const BRANCHES = '자축인묘진사오미신유술해';
@@ -84,6 +85,38 @@ export function monthPillar(utcEpoch, yearStem) {
   return pillar((first + step) % 10, branch);
 }
 
+// 절(節)은 달을 가르는 열두 마디다. 24절기 중 홀수 번째(입춘·경칩·청명 ...)로,
+// 황경으로는 15도에서 30도마다 하나씩 있다. 중기(춘분·곡우 ...)는 달을 가르지 않는다.
+const DEGREES_PER_DAY = 0.98564736;
+
+/** 절 황경 -> 이름. solartime 의 24절기 표를 그대로 쓴다. */
+function jeolName(longitude) {
+  return SOLAR_TERMS[Math.round(longitude / 15) % 24];
+}
+
+/**
+ * 그 순간 다음에 오는 절의 [이름, UTC epoch 초].
+ *
+ * 대운이 언제 시작하는지를 이 간격으로 잰다 — 순행이면 다음 절까지,
+ * 역행이면 지난 절부터의 날수를 세어 3일을 1년으로 친다.
+ */
+export function nextJeol(utcEpoch) {
+  const lon = solarLongitudeAt(utcEpoch);
+  const past = (((lon - 15) % 30) + 30) % 30;      // 지난 절에서 몇 도 왔나
+  const target = (((lon - past + 30) % 360) + 360) % 360;
+  const guess = utcEpoch + (30 - past) / DEGREES_PER_DAY * 86400;
+  return [jeolName(target), findLongitude(target, guess)];
+}
+
+/** 그 순간 직전에 지난 절의 [이름, UTC epoch 초]. */
+export function prevJeol(utcEpoch) {
+  const lon = solarLongitudeAt(utcEpoch);
+  const past = (((lon - 15) % 30) + 30) % 30;
+  const target = (((lon - past) % 360) + 360) % 360;
+  const guess = utcEpoch - past / DEGREES_PER_DAY * 86400;
+  return [jeolName(target), findLongitude(target, guess)];
+}
+
 /** 60갑자가 하루씩 끊기지 않고 돈다. 서울 태양시의 날짜로 센다. */
 export function dayPillar(solarEpoch) {
   const days = Math.floor(solarEpoch / 86400);
@@ -132,6 +165,8 @@ export function fourPillarsAt(utcEpoch, solarEpoch, correction = 0) {
   const pillars = [year, month, day, hour];
   return {
     year, month, day, hour, pillars,
+    // 대운은 절입까지의 간격으로 시작 나이를 재므로 원래 시각이 필요하다.
+    utcEpoch, solarEpoch,
     eightChars: pillars.map(p => p.name).join(''),
     hanja: pillars.map(p => p.hanja).join(' '),
     dayStem: STEMS[day.stem],
@@ -168,7 +203,16 @@ export const BRANCH_MID_HOUR = {
  * 태어난 시를 모르면 정오로 세우고 시주는 없는 것으로 표시한다 — 모르는 값을
  * 아는 척하지 않는다. 일주도 자정 근처를 피해야 해서 정오가 안전하다.
  */
-export function fromProfile(profile, folkZodiac = '') {
+/** 만나이를 소수로. 대운 구간은 해 단위라 이 정도면 충분하다. */
+function ageYears(birthDate, today) {
+  if (!birthDate || !today) return null;
+  const [y, mo, d] = birthDate.split('-').map(Number);
+  const t = typeof today === 'string' ? today.split('-').map(Number)
+    : [today.getFullYear(), today.getMonth() + 1, today.getDate()];
+  return (daysFromCivil(t[0], t[1], t[2]) - daysFromCivil(y, mo, d)) / 365.2425;
+}
+
+export function fromProfile(profile, folkZodiac = '', today = null) {
   if (!profile || !profile.birthDate) return null;
   const [y, mo, d] = profile.birthDate.split('-').map(Number);
 
@@ -193,6 +237,10 @@ export function fromProfile(profile, folkZodiac = '') {
   // 십신·신살은 여덟 글자를 '나' 중심으로 읽는 층이라 여기서 얹는다.
   // 시주를 모르면 세 기둥으로만 센다 — 모르는 글자를 넣고 세면 답이 달라진다.
   out.reading = reading(pillars, s.day.stem, out.elements);
+  // 대운은 시간 축이라 '오늘' 이 있어야 지금 어느 칸인지 짚을 수 있다.
+  // 성별을 모르면 방향이 안 정해져서 null 이 온다 — 지어내지 않는다.
+  out.daeun = daeun(s.year, s.month, s.day.stem, s.utcEpoch, profile.gender || '',
+    ageYears(profile.birthDate, today || new Date()));
   out.folkZodiac = folkZodiac;
   out.zodiacDiffers = !!folkZodiac && folkZodiac !== s.year.animal;
   return out;

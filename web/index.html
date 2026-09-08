@@ -141,6 +141,22 @@
   .tl-item{font-size:12.5px;line-height:1.7;color:var(--muted);margin:0 0 7px}
   .tl-item:last-child{margin-bottom:0}
   .tl-item b{color:var(--text);font-weight:700;margin-right:4px}
+  .dae{margin:14px 0 0;border-top:1px solid var(--line);padding-top:12px}
+  .dae h4{margin:0 0 10px;font-size:13px;font-weight:700}
+  .dae h4 span{font-weight:400;margin-left:6px}
+  .dae-now{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;margin:0 0 10px}
+  .dae-now p{margin:6px 0 0;font-size:12.5px;line-height:1.7;color:var(--muted)}
+  .dae-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin}
+  .dae-cell{flex:0 0 auto;width:62px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;padding:7px 4px;text-align:center}
+  .dae-cell .age{font-size:10.5px;color:var(--muted);letter-spacing:-.3px}
+  .dae-cell .gz{font-size:15px;font-weight:700;margin:2px 0 3px;letter-spacing:.5px}
+  .dae-cell .g{font-size:10.5px;letter-spacing:-.3px}
+  .dae-cell .g.dim{color:var(--muted)}
+  .dae-cell.now{border-color:var(--gold);background:rgba(245,215,110,.08)}
+  .dae-cell.now .gz{color:var(--gold)}
   .tl-tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);
     border-radius:999px;padding:1px 7px;font-size:10.5px;color:var(--muted);margin-right:5px;
     vertical-align:1px;white-space:nowrap}
@@ -542,6 +558,7 @@ import { fit, calibrate } from './src/model.js';
 import { recommend as generate } from './src/generator.js';
 import { createFolklore } from './src/folklore.js';
 import { createStoreIndex, summarize, recentDraws, distanceMeters } from './src/stores.js';
+import { NO_GENDER as DAEUN_NO_GENDER, BEFORE_FIRST as DAEUN_BEFORE_FIRST } from './src/daeun.js';
 
 const VERSION = '0.4.0';
 // 카카오맵 JavaScript 키. 페이지 소스에 드러나는 것이 정상인 키이며, 등록된 도메인에서만 동작한다.
@@ -704,6 +721,7 @@ document.querySelectorAll('[data-goto]').forEach(a => a.addEventListener('click'
 function onboardingForm(profile) {
   const [y, m, d] = (profile && profile.birthDate ? profile.birthDate : '--').split('-');
   const cur = profile ? profile.birthBranch : '';
+  const g = (profile && profile.gender) || '';
   const branches = ['<option value="">모름</option>'].concat(branchChoices().map(b =>
     `<option value="${b.value}" ${b.value === cur ? 'selected' : ''}>${esc(b.label)}</option>`)).join('');
   return `<div class="fortune">
@@ -718,10 +736,16 @@ function onboardingForm(profile) {
           <input type="text" inputmode="numeric" id="ob-d" maxlength="2" placeholder="21" value="${esc(d || '')}">
         </div></div>
       <div><label>태어난 시 (선택)</label><select id="ob-branch">${branches}</select></div>
+      <div><label>성별 (선택)</label><select id="ob-gender">
+        <option value="" ${g === '' ? 'selected' : ''}>모름</option>
+        <option value="남" ${g === '남' ? 'selected' : ''}>남자</option>
+        <option value="여" ${g === '여' ? 'selected' : ''}>여자</option>
+      </select></div>
     </div>
     <div class="check" style="margin-top:8px"><input type="checkbox" id="ob-lunar" ${profile && profile.lunar ? 'checked' : ''}><span>생년월일이 음력입니다</span></div>
     <p class="kv">태어난 시는 요즘 사주에서 통용되는 30분 보정 기준입니다 (예: 진시 07:30~09:30). 모르면 비워 두세요.
-      띠는 음력 해를 따르므로, 설 전에 태어났다면 음력 여부에 따라 띠가 달라집니다.</p>
+      띠는 음력 해를 따르므로, 설 전에 태어났다면 음력 여부에 따라 띠가 달라집니다.
+      성별은 사주의 <b>대운 방향</b>을 정하는 데만 쓰입니다 — 넣지 않아도 나머지는 다 나옵니다.</p>
     <div id="ob-error"></div>
     <div class="actions"><button class="primary" id="ob-save">오늘의 운세 보기</button><button class="ghost" id="ob-skip">건너뛰고 번호만 뽑기</button></div>
     <div class="tagline">${esc(TAGLINE)}</div>
@@ -794,6 +818,48 @@ function tellBox(t) {
   </div>`;
 }
 
+/** 대운 — 10년마다 바뀌는 큰 흐름. 사주에서 시간이 흐르는 유일한 축이다.
+ *
+ * 성별을 모르면 방향(순행·역행)이 안 정해져 세울 수 없다. 그럴 땐 지어내지 말고
+ * 왜 못 세우는지 적고 프로필로 보낸다.
+ */
+function daeBox(d) {
+  if (!d) {
+    return `<div class="dae">
+      <h4>대운 <span class="kv">10년마다 바뀌는 큰 흐름</span></h4>
+      <div class="tl-item">${esc(DAEUN_NO_GENDER)}</div>
+      <div class="actions" style="margin-top:8px"><button class="ghost" id="dae-edit">프로필에 성별 넣기</button></div>
+    </div>`;
+  }
+  const cells = d.list.map(r => `<div class="dae-cell${r.now ? ' now' : ''}">
+      <div class="age">${r.from}세</div>
+      <div class="gz">${esc(r.name)}</div>
+      <div class="g">${esc(r.stemGod)}</div>
+      <div class="g dim">${esc(r.branchGod)}</div>
+    </div>`).join('');
+
+  let now = '';
+  if (d.current) {
+    now = `<div class="dae-now">
+      <div class="tl-who">지금은 ${esc(d.current.name)} 대운
+        <span>만 ${d.current.from}~${d.current.to}세 · ${esc(d.current.stemGod)}(${esc(d.current.word)})</span></div>
+      <p>${esc(d.currentText)}</p>
+    </div>`;
+  } else if (d.beforeFirst) {
+    now = `<div class="dae-now"><p>${esc(DAEUN_BEFORE_FIRST)}
+      첫 대운은 만 ${d.list[0].from}세부터입니다.</p></div>`;
+  }
+
+  return `<div class="dae">
+    <h4>대운 <span class="kv">10년마다 바뀌는 큰 흐름</span></h4>
+    ${now}
+    <div class="dae-strip">${cells}</div>
+    <div class="tl-k" style="margin-top:8px">${esc(d.reason)} ·
+      대운수 ${d.start.number} (${d.forward ? '다음' : '지난'} ${esc(d.start.jeol)}까지
+      ${d.start.days}일 &divide; 3)</div>
+  </div>`;
+}
+
 function sajuBox(sj) {
   if (!sj) return '';
   const cells = [['년주', '태어난 해', sj.year], ['월주', '태어난 달', sj.month],
@@ -837,6 +903,7 @@ function sajuBox(sj) {
     <div class="pillars${sj.hour ? '' : ' three'}">${pil}</div>
     <div class="elems">${elems}</div>
     ${tellBox(sj.reading)}
+    ${daeBox(sj.daeun)}
     <dl>
       <dt>별자리</dt><dd>${esc(sj.sign)} <span class="kv">태어난 순간의 태양 위치</span></dd>
       <dt>기준 시각</dt><dd>${esc(sj.solarTime)} <span class="kv">서울 평균태양시 · 벽시계에서 ${Math.abs(sj.correctionMinutes)}분 ${sj.correctionMinutes < 0 ? '당김' : '늦춤'}</span></dd>
@@ -861,6 +928,9 @@ function sajuBox(sj) {
           오행과 음양만으로 정해집니다. 기둥 카드에 글자마다 붙여 두었습니다.</p>
         <p><b>신살</b>은 특정 글자 짝에 붙은 별명입니다. 천을귀인·문창귀인처럼 예부터
           좋게 보던 자리만 넣었습니다.</p>
+        <p>여기까지가 태어난 순간에 고정된 것입니다. <b>대운</b>은 거기서 시간이 흐르는 축으로,
+          태어난 달에서 60갑자를 열 해마다 한 칸씩 옮긴 것입니다. 어느 쪽으로 옮길지가
+          성별로 갈려서, 대운만은 성별을 알아야 세울 수 있습니다.</p>
         <p>여기까지가 계산입니다. 낱말 풀이는 <a href="./about.html#saju">소개 · 용어 풀이</a>에 더 적어 두었습니다.</p>
       </div>
     </details>
@@ -904,6 +974,15 @@ function renderFortune(r) {
     goto('recommend'); $('#run-recommend').click();
   });
   $('#f-edit').addEventListener('click', () => showOnboarding(r.profile));
+  // 성별이 없어 대운을 못 세운 경우 — 프로필로 바로 보낸다.
+  const daeEdit = $('#dae-edit');
+  if (daeEdit) daeEdit.addEventListener('click', () => showOnboarding(r.profile));
+  // 지금 대운은 표 가운데쯤에 있다. 가로 스크롤을 그쪽으로 밀어 둔다.
+  // scrollIntoView 를 쓰면 페이지 전체가 같이 튀어서 안쪽 스크롤만 손댄다.
+  const strip = $('.dae-strip'), nowCell = $('.dae-cell.now');
+  if (strip && nowCell) {
+    strip.scrollLeft = nowCell.offsetLeft - strip.clientWidth / 2 + nowCell.offsetWidth / 2;
+  }
   renderZodiac(r.zodiacTable, f.zodiac);
 }
 function showOnboarding(profile) {
@@ -914,7 +993,7 @@ function showOnboarding(profile) {
     showErr('#ob-error', null);
     if (!obBirth()) return showErr('#ob-error', '생년월일을 입력하세요.');
     try {
-      ENGINE.saveProfile({ name: $('#ob-name').value, birthDate: obBirth(), birthBranch: $('#ob-branch').value, lunar: $('#ob-lunar').checked });
+      ENGINE.saveProfile({ name: $('#ob-name').value, birthDate: obBirth(), birthBranch: $('#ob-branch').value, lunar: $('#ob-lunar').checked, gender: $('#ob-gender').value });
       renderFortune(ENGINE.fortunePayload());
     } catch (e) { showErr('#ob-error', e); }
   });

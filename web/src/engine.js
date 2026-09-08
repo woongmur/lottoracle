@@ -246,7 +246,7 @@ export function createEngine(initialDraws = [], storage = null) {
       storage?.saveProfile({
         name: profile.name, birthDate: profile.birthDate,
         birthBranch: profile.birthBranch, birthHour: profile.birthHour,
-        lunar: profile.lunar,
+        lunar: profile.lunar, gender: profile.gender,
       });
       return profile;
     },
@@ -261,7 +261,7 @@ export function createEngine(initialDraws = [], storage = null) {
         fortune: dailyFortune(p, today),
         recommendInputs: p.isEmpty ? null : recommendInputs(p, today),
         zodiacTable: zodiacTable(today, p.zodiac),
-        saju: sajuFromProfile(p, p.zodiac),
+        saju: sajuFromProfile(p, p.zodiac, today),
         personalNumbers: p.isEmpty ? [] : personalNumbers(p),
         nextDrawNo: prev ? prev.no + 1 : null,
         nextDrawDate: prev ? drawDateOf(prev.no + 1) : null,
