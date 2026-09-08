@@ -102,6 +102,25 @@
   .card .balls{margin:6px 0 10px}
   .note{color:#c9cfdb;font-size:13.5px;margin:6px 0}
   .kv{color:var(--muted);font-size:12.5px;margin:3px 0}
+  /* 사주팔자 — 계산해서 나온 값만 적는다. 해석은 넣지 않는다. */
+  .saju{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+  .saju h3{margin:0 0 4px;font-size:15px}
+  .pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 6px}
+  .pillars.three{grid-template-columns:repeat(3,1fr)}
+  .pil{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 6px;text-align:center}
+  .pil .lab{color:var(--muted);font-size:11.5px}
+  .pil .gz{font-size:19px;font-weight:800;margin:3px 0 1px;letter-spacing:1px}
+  .pil .hj{color:var(--muted);font-size:12px}
+  .pil .an{color:var(--muted);font-size:11.5px;margin-top:3px}
+  .elems{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+  .elem{background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+    padding:3px 10px;font-size:12.5px}
+  .elem b{color:var(--text)}
+  .elem.zero{opacity:.45}
+  .saju dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:12px 0 0;font-size:12.5px}
+  .saju dt{color:var(--muted)}
+  .saju dd{margin:0;color:var(--text)}
   /* 한 장 성적 요약 — 맞은 개수만 크게 띄우면 실제보다 잘한 것처럼 읽힌다.
      기대값과 분포상 위치를 늘 같이 보여 준다. */
   .sheet{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
@@ -694,6 +713,59 @@ function renderZodiac(list, mine) {
   $('#zodiac-table').innerHTML = list.map(z => `<div class="z ${z.zodiac === mine ? 'me' : ''}"><b>${z.zodiac}띠</b><span class="dots">${dots(z.grade)}</span><div class="kv">${esc(z.label)} · ${esc(z.short)}</div><div style="margin-top:6px">${balls(z.numbers, z.colors, null, null, null, true)}</div></div>`).join('');
 }
 let FORTUNE = null;
+/** 사주팔자 — 계산으로 나오는 값만 적는다.
+ *
+ * 팔자·오행·별자리는 만세력과 대조하면 맞다/틀리다를 말할 수 있는 계산이다.
+ * 해석("이 사주는 이런 성격")은 유파마다 달라 검증이 안 되므로 넣지 않는다.
+ * 그 구분이 흐려지면 이 화면이 운세와 같은 것이 돼 버린다.
+ */
+function sajuBox(sj) {
+  if (!sj) return '';
+  const cells = [['년주', sj.year], ['월주', sj.month], ['일주', sj.day]]
+    .concat(sj.hour ? [['시주', sj.hour]] : []);
+  const pil = cells.map(([lab, p]) => `<div class="pil">
+      <div class="lab">${lab}</div>
+      <div class="gz">${esc(p.name)}</div>
+      <div class="hj">${esc(p.hanja)}</div>
+      <div class="an">${esc(p.animal)} · ${esc(p.stemElement)}${esc(p.branchElement)}</div>
+    </div>`).join('');
+  const elems = Object.entries(sj.elements).map(([k, v]) =>
+    `<span class="elem${v ? '' : ' zero'}">${esc(k)} <b>${v}</b></span>`).join('');
+
+  const notes = [];
+  if (sj.zodiacDiffers) {
+    notes.push(`<dt>띠와 다른 이유</dt><dd>띠는 설날부터, 사주 년주는 입춘부터 새 해로 봅니다.
+      그 사이에 태어나면 갈립니다 — 띠로는 ${esc(sj.folkZodiac)}, 사주로는 ${esc(sj.year.animal)}입니다.
+      둘 다 맞고 기준이 다를 뿐입니다.</dd>`);
+  }
+  if (!sj.hourKnown) {
+    notes.push('<dt>시주</dt><dd>태어난 시를 모르면 세울 수 없습니다. 프로필에 넣으면 함께 보여 드립니다.</dd>');
+  } else if (!sj.exactTime) {
+    notes.push('<dt>시주</dt><dd>고르신 시각대의 한가운데로 셌습니다. 경계에 가깝게 태어났다면 달라질 수 있습니다.</dd>');
+  }
+  if (sj.lateNight) {
+    notes.push('<dt>야자시</dt><dd>밤 11시 이후는 유파에 따라 다음 날로 보기도 합니다. 여기서는 시주만 다음 날 자시로 봤습니다.</dd>');
+  }
+  if (sj.hourKnown && sj.hourEdgeMinutes <= 20) {
+    notes.push(`<dt>경계</dt><dd>시주가 바뀌기 ${sj.hourEdgeMinutes}분 전입니다. 태어난 시각이 조금만 달라도 시주가 바뀝니다.</dd>`);
+  }
+
+  return `<div class="saju">
+    <h3>사주팔자</h3>
+    <p class="kv">태어난 순간을 네 기둥 여덟 글자로 옮긴 것입니다. 여기까지는 계산이라 만세력과 대조할 수 있습니다.</p>
+    <div class="pillars${sj.hour ? '' : ' three'}">${pil}</div>
+    <div class="elems">${elems}</div>
+    <dl>
+      <dt>일간</dt><dd>${esc(sj.dayStem)} (${esc(sj.day.stemElement)})</dd>
+      <dt>별자리</dt><dd>${esc(sj.sign)}</dd>
+      <dt>기준 시각</dt><dd>${esc(sj.solarTime)} <span class="kv">서울 평균태양시 · 벽시계에서 ${Math.abs(sj.correctionMinutes)}분 ${sj.correctionMinutes < 0 ? '당김' : '늦춤'}</span></dd>
+      ${notes.join('')}
+    </dl>
+    <div class="caution">표준시가 바뀐 시기와 서머타임, 서울 경도를 반영해 계산했습니다.
+      팔자를 푸는 방식은 유파마다 달라 여기서는 해석을 넣지 않았습니다.</div>
+  </div>`;
+}
+
 function renderFortune(r) {
   FORTUNE = r;
   const f = r.fortune;
@@ -717,7 +789,8 @@ function renderFortune(r) {
     <div class="caution">오늘의 기운은 생년월일과 날짜로 뽑은 것이라 실제와 다를 수 있습니다.
       좋게 나왔다고 무리하지 마시고, 아쉽게 나왔다고 마음 쓰지 마세요.</div>
     <div class="tagline">${esc(f.tagline)}</div>
-  </div>`;
+  </div>
+  ${sajuBox(r.saju)}`;
   $('#f-recommend').addEventListener('click', () => {
     const i = r.recommendInputs;
     $('#birthday').value = i.birthday; $('#zodiac').value = i.zodiac; $('#lucky').value = i.lucky.join(' ');

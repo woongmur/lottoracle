@@ -1,0 +1,674 @@
+{
+ "animals": [
+  "쥐",
+  "소",
+  "호랑이",
+  "토끼",
+  "용",
+  "뱀",
+  "말",
+  "양",
+  "원숭이",
+  "닭",
+  "개",
+  "돼지"
+ ],
+ "branches": "자축인묘진사오미신유술해",
+ "cases": [
+  {
+   "correctionMinutes": -32.1,
+   "day": {
+    "animal": "개",
+    "branch": "술",
+    "branchElement": "토",
+    "hanja": "丙戌",
+    "name": "병술",
+    "stem": "병",
+    "stemElement": "화",
+    "yin": false
+   },
+   "dayStem": "병",
+   "eightChars": "경오신사병술경인",
+   "elements": {
+    "금": 3,
+    "목": 1,
+    "수": 0,
+    "토": 1,
+    "화": 3
+   },
+   "hanja": "庚午 辛巳 丙戌 庚寅",
+   "hour": {
+    "animal": "호랑이",
+    "branch": "인",
+    "branchElement": "목",
+    "hanja": "庚寅",
+    "name": "경인",
+    "stem": "경",
+    "stemElement": "금",
+    "yin": false
+   },
+   "hourEdgeMinutes": 63.0,
+   "in": [
+    1990,
+    5,
+    21,
+    4,
+    30
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "辛巳",
+    "name": "신사",
+    "stem": "신",
+    "stemElement": "금",
+    "yin": true
+   },
+   "sign": "황소자리",
+   "solarTime": "1990-05-21 03:57",
+   "year": {
+    "animal": "말",
+    "branch": "오",
+    "branchElement": "화",
+    "hanja": "庚午",
+    "name": "경오",
+    "stem": "경",
+    "stemElement": "금",
+    "yin": false
+   }
+  },
+  {
+   "correctionMinutes": -32.1,
+   "day": {
+    "animal": "닭",
+    "branch": "유",
+    "branchElement": "금",
+    "hanja": "丁酉",
+    "name": "정유",
+    "stem": "정",
+    "stemElement": "화",
+    "yin": true
+   },
+   "dayStem": "정",
+   "eightChars": "기사정축정유을사",
+   "elements": {
+    "금": 1,
+    "목": 1,
+    "수": 0,
+    "토": 2,
+    "화": 4
+   },
+   "hanja": "己巳 丁丑 丁酉 乙巳",
+   "hour": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "乙巳",
+    "name": "을사",
+    "stem": "을",
+    "stemElement": "목",
+    "yin": true
+   },
+   "hourEdgeMinutes": 93.0,
+   "in": [
+    1990,
+    2,
+    1,
+    10,
+    0
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "소",
+    "branch": "축",
+    "branchElement": "토",
+    "hanja": "丁丑",
+    "name": "정축",
+    "stem": "정",
+    "stemElement": "화",
+    "yin": true
+   },
+   "sign": "물병자리",
+   "solarTime": "1990-02-01 09:27",
+   "year": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "己巳",
+    "name": "기사",
+    "stem": "기",
+    "stemElement": "토",
+    "yin": true
+   }
+  },
+  {
+   "correctionMinutes": -32.1,
+   "day": {
+    "animal": "토끼",
+    "branch": "묘",
+    "branchElement": "목",
+    "hanja": "己卯",
+    "name": "기묘",
+    "stem": "기",
+    "stemElement": "토",
+    "yin": true
+   },
+   "dayStem": "기",
+   "eightChars": "정축계축기묘갑술",
+   "elements": {
+    "금": 0,
+    "목": 2,
+    "수": 1,
+    "토": 4,
+    "화": 1
+   },
+   "hanja": "丁丑 癸丑 己卯 甲戌",
+   "hour": {
+    "animal": "개",
+    "branch": "술",
+    "branchElement": "토",
+    "hanja": "甲戌",
+    "name": "갑술",
+    "stem": "갑",
+    "stemElement": "목",
+    "yin": false
+   },
+   "hourEdgeMinutes": 33.0,
+   "in": [
+    1998,
+    2,
+    1,
+    21,
+    0
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "소",
+    "branch": "축",
+    "branchElement": "토",
+    "hanja": "癸丑",
+    "name": "계축",
+    "stem": "계",
+    "stemElement": "수",
+    "yin": true
+   },
+   "sign": "물병자리",
+   "solarTime": "1998-02-01 20:27",
+   "year": {
+    "animal": "소",
+    "branch": "축",
+    "branchElement": "토",
+    "hanja": "丁丑",
+    "name": "정축",
+    "stem": "정",
+    "stemElement": "화",
+    "yin": true
+   }
+  },
+  {
+   "correctionMinutes": -32.1,
+   "day": {
+    "animal": "쥐",
+    "branch": "자",
+    "branchElement": "수",
+    "hanja": "戊子",
+    "name": "무자",
+    "stem": "무",
+    "stemElement": "토",
+    "yin": false
+   },
+   "dayStem": "무",
+   "eightChars": "무인갑인무자임술",
+   "elements": {
+    "금": 0,
+    "목": 3,
+    "수": 2,
+    "토": 3,
+    "화": 0
+   },
+   "hanja": "戊寅 甲寅 戊子 壬戌",
+   "hour": {
+    "animal": "개",
+    "branch": "술",
+    "branchElement": "토",
+    "hanja": "壬戌",
+    "name": "임술",
+    "stem": "임",
+    "stemElement": "수",
+    "yin": false
+   },
+   "hourEdgeMinutes": 33.0,
+   "in": [
+    1998,
+    2,
+    10,
+    21,
+    0
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "호랑이",
+    "branch": "인",
+    "branchElement": "목",
+    "hanja": "甲寅",
+    "name": "갑인",
+    "stem": "갑",
+    "stemElement": "목",
+    "yin": false
+   },
+   "sign": "물병자리",
+   "solarTime": "1998-02-10 20:27",
+   "year": {
+    "animal": "호랑이",
+    "branch": "인",
+    "branchElement": "목",
+    "hanja": "戊寅",
+    "name": "무인",
+    "stem": "무",
+    "stemElement": "토",
+    "yin": false
+   }
+  },
+  {
+   "correctionMinutes": -62.1,
+   "day": {
+    "animal": "닭",
+    "branch": "유",
+    "branchElement": "금",
+    "hanja": "己酉",
+    "name": "기유",
+    "stem": "기",
+    "stemElement": "토",
+    "yin": true
+   },
+   "dayStem": "기",
+   "eightChars": "무술정사기유기사",
+   "elements": {
+    "금": 1,
+    "목": 0,
+    "수": 0,
+    "토": 4,
+    "화": 3
+   },
+   "hanja": "戊戌 丁巳 己酉 己巳",
+   "hour": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "己巳",
+    "name": "기사",
+    "stem": "기",
+    "stemElement": "토",
+    "yin": true
+   },
+   "hourEdgeMinutes": 3.0,
+   "in": [
+    1958,
+    6,
+    1,
+    12,
+    0
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "丁巳",
+    "name": "정사",
+    "stem": "정",
+    "stemElement": "화",
+    "yin": true
+   },
+   "sign": "쌍둥이자리",
+   "solarTime": "1958-06-01 10:57",
+   "year": {
+    "animal": "개",
+    "branch": "술",
+    "branchElement": "토",
+    "hanja": "戊戌",
+    "name": "무술",
+    "stem": "무",
+    "stemElement": "토",
+    "yin": false
+   }
+  },
+  {
+   "correctionMinutes": -92.1,
+   "day": {
+    "animal": "돼지",
+    "branch": "해",
+    "branchElement": "수",
+    "hanja": "辛亥",
+    "name": "신해",
+    "stem": "신",
+    "stemElement": "금",
+    "yin": true
+   },
+   "dayStem": "신",
+   "eightChars": "정묘병오신해계사",
+   "elements": {
+    "금": 1,
+    "목": 1,
+    "수": 2,
+    "토": 0,
+    "화": 4
+   },
+   "hanja": "丁卯 丙午 辛亥 癸巳",
+   "hour": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "癸巳",
+    "name": "계사",
+    "stem": "계",
+    "stemElement": "수",
+    "yin": true
+   },
+   "hourEdgeMinutes": 33.0,
+   "in": [
+    1987,
+    7,
+    1,
+    12,
+    0
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "말",
+    "branch": "오",
+    "branchElement": "화",
+    "hanja": "丙午",
+    "name": "병오",
+    "stem": "병",
+    "stemElement": "화",
+    "yin": false
+   },
+   "sign": "게자리",
+   "solarTime": "1987-07-01 10:27",
+   "year": {
+    "animal": "토끼",
+    "branch": "묘",
+    "branchElement": "목",
+    "hanja": "丁卯",
+    "name": "정묘",
+    "stem": "정",
+    "stemElement": "화",
+    "yin": true
+   }
+  },
+  {
+   "correctionMinutes": 0.0,
+   "day": {
+    "animal": "양",
+    "branch": "미",
+    "branchElement": "토",
+    "hanja": "辛未",
+    "name": "신미",
+    "stem": "신",
+    "stemElement": "금",
+    "yin": true
+   },
+   "dayStem": "신",
+   "eightChars": "을사신사신미갑오",
+   "elements": {
+    "금": 2,
+    "목": 2,
+    "수": 0,
+    "토": 1,
+    "화": 3
+   },
+   "hanja": "乙巳 辛巳 辛未 甲午",
+   "hour": {
+    "animal": "말",
+    "branch": "오",
+    "branchElement": "화",
+    "hanja": "甲午",
+    "name": "갑오",
+    "stem": "갑",
+    "stemElement": "목",
+    "yin": false
+   },
+   "hourEdgeMinutes": 60.0,
+   "in": [
+    1905,
+    6,
+    1,
+    12,
+    0
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "辛巳",
+    "name": "신사",
+    "stem": "신",
+    "stemElement": "금",
+    "yin": true
+   },
+   "sign": "쌍둥이자리",
+   "solarTime": "1905-06-01 12:00",
+   "year": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "乙巳",
+    "name": "을사",
+    "stem": "을",
+    "stemElement": "목",
+    "yin": true
+   }
+  },
+  {
+   "correctionMinutes": -32.1,
+   "day": {
+    "animal": "토끼",
+    "branch": "묘",
+    "branchElement": "목",
+    "hanja": "己卯",
+    "name": "기묘",
+    "stem": "기",
+    "stemElement": "토",
+    "yin": true
+   },
+   "dayStem": "기",
+   "eightChars": "을사기축기묘을해",
+   "elements": {
+    "금": 0,
+    "목": 3,
+    "수": 1,
+    "토": 3,
+    "화": 1
+   },
+   "hanja": "乙巳 己丑 己卯 乙亥",
+   "hour": {
+    "animal": "돼지",
+    "branch": "해",
+    "branchElement": "수",
+    "hanja": "乙亥",
+    "name": "을해",
+    "stem": "을",
+    "stemElement": "목",
+    "yin": true
+   },
+   "hourEdgeMinutes": 3.0,
+   "in": [
+    2026,
+    1,
+    5,
+    23,
+    30
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "소",
+    "branch": "축",
+    "branchElement": "토",
+    "hanja": "己丑",
+    "name": "기축",
+    "stem": "기",
+    "stemElement": "토",
+    "yin": true
+   },
+   "sign": "염소자리",
+   "solarTime": "2026-01-05 22:57",
+   "year": {
+    "animal": "뱀",
+    "branch": "사",
+    "branchElement": "화",
+    "hanja": "乙巳",
+    "name": "을사",
+    "stem": "을",
+    "stemElement": "목",
+    "yin": true
+   }
+  },
+  {
+   "correctionMinutes": -32.1,
+   "day": {
+    "animal": "양",
+    "branch": "미",
+    "branchElement": "토",
+    "hanja": "癸未",
+    "name": "계미",
+    "stem": "계",
+    "stemElement": "수",
+    "yin": true
+   },
+   "dayStem": "계",
+   "eightChars": "병오병신계미갑자",
+   "elements": {
+    "금": 1,
+    "목": 1,
+    "수": 2,
+    "토": 1,
+    "화": 3
+   },
+   "hanja": "丙午 丙申 癸未 甲子",
+   "hour": {
+    "animal": "쥐",
+    "branch": "자",
+    "branchElement": "수",
+    "hanja": "甲子",
+    "name": "갑자",
+    "stem": "갑",
+    "stemElement": "목",
+    "yin": false
+   },
+   "hourEdgeMinutes": 83.0,
+   "in": [
+    2026,
+    9,
+    7,
+    0,
+    10
+   ],
+   "lateNight": true,
+   "month": {
+    "animal": "원숭이",
+    "branch": "신",
+    "branchElement": "금",
+    "hanja": "丙申",
+    "name": "병신",
+    "stem": "병",
+    "stemElement": "화",
+    "yin": false
+   },
+   "sign": "처녀자리",
+   "solarTime": "2026-09-06 23:37",
+   "year": {
+    "animal": "말",
+    "branch": "오",
+    "branchElement": "화",
+    "hanja": "丙午",
+    "name": "병오",
+    "stem": "병",
+    "stemElement": "화",
+    "yin": false
+   }
+  },
+  {
+   "correctionMinutes": -32.1,
+   "day": {
+    "animal": "말",
+    "branch": "오",
+    "branchElement": "화",
+    "hanja": "戊午",
+    "name": "무오",
+    "stem": "무",
+    "stemElement": "토",
+    "yin": false
+   },
+   "dayStem": "무",
+   "eightChars": "기묘병자무오무오",
+   "elements": {
+    "금": 0,
+    "목": 1,
+    "수": 1,
+    "토": 3,
+    "화": 3
+   },
+   "hanja": "己卯 丙子 戊午 戊午",
+   "hour": {
+    "animal": "말",
+    "branch": "오",
+    "branchElement": "화",
+    "hanja": "戊午",
+    "name": "무오",
+    "stem": "무",
+    "stemElement": "토",
+    "yin": false
+   },
+   "hourEdgeMinutes": 93.0,
+   "in": [
+    2000,
+    1,
+    1,
+    12,
+    0
+   ],
+   "lateNight": false,
+   "month": {
+    "animal": "쥐",
+    "branch": "자",
+    "branchElement": "수",
+    "hanja": "丙子",
+    "name": "병자",
+    "stem": "병",
+    "stemElement": "화",
+    "yin": false
+   },
+   "sign": "염소자리",
+   "solarTime": "2000-01-01 11:27",
+   "year": {
+    "animal": "토끼",
+    "branch": "묘",
+    "branchElement": "목",
+    "hanja": "己卯",
+    "name": "기묘",
+    "stem": "기",
+    "stemElement": "토",
+    "yin": true
+   }
+  }
+ ],
+ "elements": [
+  "목",
+  "화",
+  "토",
+  "금",
+  "수"
+ ],
+ "lichun": {
+  "1900": -2206029983.419,
+  "1990": 634097662.956,
+  "1998": 886553770.918,
+  "2026": 1770148954.153,
+  "2050": 2527515872.857
+ },
+ "stems": "갑을병정무기경신임계"
+}
