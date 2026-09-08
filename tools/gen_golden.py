@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, stats, strategies
+from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, solartime, stats, strategies
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "web", "test", "golden")
@@ -281,6 +281,50 @@ def main() -> int:
     dump("explain.json", {
         "zoneLabels": list(explain.ZONE_LABELS),
         "cases": [note_case(s) for s in SAMPLES] + [note_case([11, 13, 22, 32, 33, 36], step=2)],
+    })
+
+    # ---- 시각 보정 · 태양황경 (사주/별자리 토대)
+    # 표준시가 바뀐 해와 서머타임 구간을 일부러 섞는다. 여기가 틀리면 시주가 통째로 어긋난다.
+    wall_cases = [
+        (1905, 6, 1, 12, 0),    # 1908 이전: 서울 지방시라 보정 0
+        (1910, 6, 1, 12, 0),    # 동경 127.5도
+        (1930, 6, 1, 12, 0),    # 동경 135도
+        (1948, 7, 1, 12, 0),    # 서머타임
+        (1954, 6, 1, 12, 0),    # 동경 127.5도로 되돌아간 해
+        (1958, 6, 1, 12, 0),    # 127.5도 + 서머타임
+        (1961, 8, 10, 0, 45),   # 전환 당일
+        (1987, 7, 1, 12, 0),    # 135도 + 서머타임
+        (1988, 10, 9, 2, 30),   # 서머타임 해제 직후
+        (1990, 5, 21, 4, 30),
+        (2026, 9, 7, 23, 59),
+    ]
+    dump("solartime.json", {
+        "seoulLongitude": solartime.SEOUL_LONGITUDE,
+        "terms": list(solartime.SOLAR_TERMS),
+        "signs": list(solartime.ZODIAC_SIGNS),
+        "wall": [
+            {
+                "in": list(c),
+                "utc": solartime.wall_to_utc(*c),
+                "offset": solartime.utc_offset_at(solartime.wall_to_utc(*c)),
+                "correctionMinutes": round(solartime.correction_minutes(*c), 9),
+                "solarParts": list(solartime.epoch_to_parts(solartime.seoul_solar_epoch(*c))),
+            }
+            for c in wall_cases
+        ],
+        "longitude": [
+            {
+                "epoch": e,
+                "value": round(solartime.solar_longitude_at(e), 9),
+                "sign": solartime.sign_of(solartime.solar_longitude_at(e)),
+                "termIndex": solartime.term_index(solartime.solar_longitude_at(e)),
+            }
+            for e in (-2208988800.0, -1000000000.0, 0.0, 631152000.0, 1757203200.0, 2524608000.0)
+        ],
+        "termTimes": {
+            str(y): [[n, round(t, 3)] for n, t in solartime.solar_term_times(y)]
+            for y in (1900, 1954, 1987, 2000, 2026, 2050)
+        },
     })
 
     print("완료")
