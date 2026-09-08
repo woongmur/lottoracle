@@ -124,6 +124,26 @@
   .saju dd{margin:0;color:var(--text)}
   .saju dd .kv{display:block;margin-top:1px}
   .pil .sub{color:var(--muted);font-size:10px;letter-spacing:-.3px;margin-top:2px;opacity:.8}
+  .pil .sip{font-size:11px;letter-spacing:-.3px;margin-top:2px}
+  .pil .sip:first-of-type{margin-top:5px}
+  .pil .sip i{color:var(--muted);font-style:normal;margin-right:2px}
+  .pil .sip.self{color:var(--gold);font-weight:700}
+  .tell{margin:14px 0 0;border-top:1px solid var(--line);padding-top:12px}
+  .tell h4{margin:0 0 10px;font-size:13px;font-weight:700}
+  .tl-me{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;margin:0 0 12px}
+  .tl-who{font-size:14px;font-weight:700}
+  .tl-who span{display:block;color:var(--muted);font-weight:400;font-size:11.5px;margin-top:2px}
+  .tl-me p{margin:6px 0 0;font-size:12.5px;line-height:1.7;color:var(--text)}
+  .tl-row{margin:0 0 12px}
+  .tl-row:last-child{margin-bottom:0}
+  .tl-k{font-size:11.5px;color:var(--muted);margin:0 0 5px}
+  .tl-item{font-size:12.5px;line-height:1.7;color:var(--muted);margin:0 0 7px}
+  .tl-item:last-child{margin-bottom:0}
+  .tl-item b{color:var(--text);font-weight:700;margin-right:4px}
+  .tl-tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);
+    border-radius:999px;padding:1px 7px;font-size:10.5px;color:var(--muted);margin-right:5px;
+    vertical-align:1px;white-space:nowrap}
   .saju details{margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}
   .saju summary{cursor:pointer;font-size:12.5px;color:var(--accent);list-style:none}
   .saju summary::-webkit-details-marker{display:none}
@@ -725,20 +745,67 @@ function renderZodiac(list, mine) {
   $('#zodiac-table').innerHTML = list.map(z => `<div class="z ${z.zodiac === mine ? 'me' : ''}"><b>${z.zodiac}띠</b><span class="dots">${dots(z.grade)}</span><div class="kv">${esc(z.label)} · ${esc(z.short)}</div><div style="margin-top:6px">${balls(z.numbers, z.colors, null, null, null, true)}</div></div>`).join('');
 }
 let FORTUNE = null;
-/** 사주팔자 — 계산으로 나오는 값만 적는다.
+/** 사주팔자 — 표에서 나오는 값만 적는다.
  *
- * 팔자·오행·별자리는 만세력과 대조하면 맞다/틀리다를 말할 수 있는 계산이다.
- * 해석("이 사주는 이런 성격")은 유파마다 달라 검증이 안 되므로 넣지 않는다.
- * 그 구분이 흐려지면 이 화면이 운세와 같은 것이 돼 버린다.
+ * 팔자·오행·별자리는 만세력과, 십신·신살은 명리 교재와 대조하면 맞다/틀리다를
+ * 말할 수 있다. 여기 나오는 문장도 지어낸 것이 아니라 십신·신살 이름마다 하나씩
+ * 붙여 둔 고정 설명이고, 어느 것을 꺼낼지만 sipsin.js 의 계산이 정한다.
+ *
+ * 대신 유파가 갈리는 지점은 화면에 적어 둔다. 어느 쪽을 골랐는지 안 밝히면
+ * 다른 만세력과 답이 다를 때 이 화면이 틀린 것처럼 보인다.
  */
+/** 팔자 풀이 — 십신·신살·강약을 말로 옮긴 자리.
+ *
+ * 문장은 sipsin.js 가 이름마다 하나씩 들고 있는 고정 설명이다. 여기서는
+ * 무엇을 어떤 차례로 보여 줄지만 정한다. 개인 운세를 지어내지 않는다.
+ */
+function tellBox(t) {
+  if (!t) return '';
+  const rows = [];
+  const item = (head, tag, text) =>
+    `<div class="tl-item"><b>${head}</b>${tag ? `<span class="tl-tag">${tag}</span>` : ''} ${text}</div>`;
+
+  if (t.strong.length) {
+    rows.push(['여덟 글자 중 두드러지는 것', t.strong.map(g =>
+      item(`${esc(g.name)} ${g.count}개`, esc(g.word), esc(g.text))).join('')]);
+  }
+  if (t.manyGroups.length || t.noneGroups.length) {
+    rows.push(['기운이 쏠린 쪽', [
+      ...t.manyGroups.map(g => item(`${esc(g.name)} ${g.count}개`, '많음', esc(g.text))),
+      ...t.noneGroups.map(g => item(esc(g.name), '없음', esc(g.text))),
+    ].join('')]);
+  }
+  rows.push(['기운의 세기', item(esc(t.strength.label),
+    `돕는 ${t.strength.support} : 쓰는 ${t.strength.other}`, esc(t.strength.text))]);
+  if (t.sinsal.length) {
+    rows.push(['사주에 든 자리(신살)', t.sinsal.map(x =>
+      item(esc(x.name), esc(x.at.join('·')), esc(x.text))).join('')]);
+  }
+  rows.push(['오행', `<div class="tl-item">${esc(t.elementsNote)}</div>`]);
+
+  return `<div class="tell">
+    <h4>풀이</h4>
+    <div class="tl-me">
+      <div class="tl-who">${esc(t.dayStem.char)}${esc(t.dayStem.element)} — ${esc(t.dayStem.image)}
+        <span>일간, 여덟 글자에서 '나' 를 가리키는 자리</span></div>
+      <p>${esc(t.dayStem.nature)}</p>
+    </div>
+    ${rows.map(([k, body]) => `<div class="tl-row"><div class="tl-k">${k}</div>${body}</div>`).join('')}
+  </div>`;
+}
+
 function sajuBox(sj) {
   if (!sj) return '';
   const cells = [['년주', '태어난 해', sj.year], ['월주', '태어난 달', sj.month],
     ['일주', '태어난 날', sj.day]].concat(sj.hour ? [['시주', '태어난 시', sj.hour]] : []);
-  const pil = cells.map(([lab, sub, p]) => `<div class="pil">
+  // 십신은 글자마다 따로 붙는다. 어느 글자의 이름인지 헷갈리지 않게 글자를 앞에 적는다.
+  const gods = (sj.reading && sj.reading.table) || [];
+  const pil = cells.map(([lab, sub, p], i) => `<div class="pil">
       <div class="lab">${lab}</div>
       <div class="gz">${esc(p.name)}</div>
       <div class="hj">${esc(p.hanja)}</div>
+      ${gods[i] ? `<div class="sip${gods[i].isSelf ? ' self' : ''}"><i>${esc(gods[i].stemChar)}</i> ${esc(gods[i].stem)}</div>
+      <div class="sip"><i>${esc(gods[i].branchChar)}</i> ${esc(gods[i].branch)}</div>` : ''}
       <div class="an">${esc(p.animal)}띠</div>
       <div class="el">${esc(p.stemElement)}·${esc(p.branchElement)}</div>
       <div class="sub">${sub}</div>
@@ -769,9 +836,8 @@ function sajuBox(sj) {
     <p class="kv">태어난 순간을 네 기둥 여덟 글자로 옮긴 것입니다. 여기까지는 계산이라 만세력과 대조할 수 있습니다.</p>
     <div class="pillars${sj.hour ? '' : ' three'}">${pil}</div>
     <div class="elems">${elems}</div>
+    ${tellBox(sj.reading)}
     <dl>
-      <dt>일간</dt><dd>${esc(sj.dayStem)} (${esc(sj.day.stemElement)})
-        <span class="kv">태어난 날의 윗글자 · '나'를 놓는 자리</span></dd>
       <dt>별자리</dt><dd>${esc(sj.sign)} <span class="kv">태어난 순간의 태양 위치</span></dd>
       <dt>기준 시각</dt><dd>${esc(sj.solarTime)} <span class="kv">서울 평균태양시 · 벽시계에서 ${Math.abs(sj.correctionMinutes)}분 ${sj.correctionMinutes < 0 ? '당김' : '늦춤'}</span></dd>
       ${notes.join('')}
@@ -790,11 +856,19 @@ function sajuBox(sj) {
           글자마다 어디에 속하는지가 정해져 있어 세기만 하면 나옵니다.</p>
         <p><b>일간</b>은 태어난 날의 윗글자입니다. 명리학에서는 이 한 글자를 <b>나 자신</b>으로 놓고
           나머지 일곱 글자와의 관계를 봅니다. 여덟 글자 중 기준점이 되는 자리입니다.</p>
+        <p>그 관계에 붙은 이름이 <b>십신</b>입니다. 나와 같으면 비견·겁재, 내가 내놓으면 식신·상관,
+          내가 다루면 편재·정재, 나를 누르면 편관·정관, 나를 도우면 편인·정인 — 열 가지뿐이고
+          오행과 음양만으로 정해집니다. 기둥 카드에 글자마다 붙여 두었습니다.</p>
+        <p><b>신살</b>은 특정 글자 짝에 붙은 별명입니다. 천을귀인·문창귀인처럼 예부터
+          좋게 보던 자리만 넣었습니다.</p>
         <p>여기까지가 계산입니다. 낱말 풀이는 <a href="./about.html#saju">소개 · 용어 풀이</a>에 더 적어 두었습니다.</p>
       </div>
     </details>
     <div class="caution">표준시가 바뀐 시기와 서머타임, 서울 경도를 반영해 계산했습니다.
-      팔자를 푸는 방식은 유파마다 달라 여기서는 해석을 넣지 않았습니다.</div>
+      풀이는 명리학에서 널리 쓰이는 표를 그대로 따른 것이라 유파에 따라 다를 수 있습니다.
+      여기서는 지지의 십신을 지장간 본기로 보고(亥는 양수), 신강·신약은 글자 수로 세되
+      월지를 두 몫으로 쳤습니다. 신살은 기운을 북돋우는 것만 넣었습니다.
+      사람의 앞일을 말하는 자리가 아니라 글자를 읽어 주는 자리입니다.</div>
   </div>`;
 }
 

@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, saju, solartime, stats, strategies
+from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, saju, sipsin, solartime, stats, strategies
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "web", "test", "golden")
@@ -348,6 +348,50 @@ def main() -> int:
         "animals": list(saju.BRANCH_ANIMALS),
         "lichun": {str(y): round(saju.lichun_epoch(y), 3) for y in (1900, 1990, 1998, 2026, 2050)},
         "cases": [{"in": list(c), **saju.four_pillars(*c).to_dict()} for c in saju_cases],
+    })
+
+    # ---- 십신·신살·강약
+    # 십신 표는 통째로 낸다 — 10x10, 10x12 면 다 적어도 얼마 안 되고,
+    # 한 칸이라도 어긋나면 화면 글자가 통째로 달라지는 값이라 전수로 대조한다.
+    def digest(pillars) -> dict:
+        r = sipsin.reading(pillars, pillars[2].stem, saju.elements_count(pillars))
+        return {
+            "table": [{k: t[k] for k in ("pillar", "stemChar", "branchChar", "stem", "branch")}
+                      for t in r["table"]],
+            "counts": r["counts"],
+            "groups": r["groups"],
+            "strength": r["strength"],
+            "sinsal": [{"name": x["name"], "at": x["at"]} for x in r["sinsal"]],
+            "strong": [x["name"] for x in r["strong"]],
+            "manyGroups": [x["name"] for x in r["manyGroups"]],
+            "noneGroups": [x["name"] for x in r["noneGroups"]],
+            "elementsNote": r["elementsNote"],
+        }
+
+    dump("sipsin.json", {
+        "tenGods": list(sipsin.TEN_GODS),
+        "branchMainQi": list(sipsin.BRANCH_MAIN_QI),
+        "supporting": list(sipsin.SUPPORTING),
+        "godGroup": sipsin.GOD_GROUP,
+        "stemMatrix": [[sipsin.ten_god(d, t) for t in range(10)] for d in range(10)],
+        "branchMatrix": [[sipsin.ten_god_of_branch(d, b) for b in range(12)] for d in range(10)],
+        "nobleman": {str(k): list(v) for k, v in sipsin.NOBLEMAN.items()},
+        "scholar": {str(k): v for k, v in sipsin.SCHOLAR.items()},
+        # 문구는 두 언어에 같은 글자로 있어야 한다. 어긋나면 화면만 조용히 달라진다.
+        "texts": {
+            "dayStem": {k: list(v) for k, v in sipsin.DAY_STEM_TEXT.items()},
+            "tenGod": {k: list(v) for k, v in sipsin.TEN_GOD_TEXT.items()},
+            "sinsal": {k: list(v) for k, v in sipsin.SINSAL_TEXT.items()},
+            "groupMany": sipsin.GROUP_MANY_TEXT,
+            "groupNone": sipsin.GROUP_NONE_TEXT,
+            "strength": sipsin.STRENGTH_TEXT,
+            "elementsFull": sipsin.ELEMENTS_FULL_TEXT,
+        },
+        "cases": [{"in": list(c), **digest(saju.four_pillars(*c).pillars)}
+                  for c in saju_cases],
+        # 태어난 시를 모르는 사람 — 세 기둥으로만 센다.
+        "threePillarCases": [{"in": list(c), **digest(saju.four_pillars(*c).pillars[:3])}
+                             for c in saju_cases[:4]],
     })
 
     print("완료")
