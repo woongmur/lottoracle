@@ -3,7 +3,8 @@
  * 파이썬 lottoracle/saju.py 와 같은 값을 내야 한다 (골든 데이터로 대조).
  *
  * 여기 있는 건 전부 답이 있는 계산이다. 만세력과 대조하면 맞다/틀리다를 말할 수
- * 있다. 해석(이 사주는 이런 성격이다)은 유파마다 달라 검증이 안 되므로 넣지 않는다.
+ * 있다. 이 글자들을 '나' 중심으로 읽는 층(십신·신살·강약)은 sipsin.js 에 있다 —
+ * 그쪽도 표에서 나오는 값이지만 유파가 갈리는 지점이 있어 따로 뒀다.
  *
  * 기준
  *   년주  입춘부터 새 해. 설날이 아니다 — 앱이 보여 주는 띠(설날 기준)와 어긋나는
@@ -20,6 +21,7 @@ import {
   epochToParts, seoulSolarEpoch, signOf, solarLongitudeAt, daysFromCivil, wallToUtc,
   findLongitude,
 } from './solartime.js';
+import { reading } from './sipsin.js';
 
 export const STEMS = '갑을병정무기경신임계';
 export const BRANCHES = '자축인묘진사오미신유술해';
@@ -29,9 +31,9 @@ export const BRANCH_ANIMALS = ['쥐', '소', '호랑이', '토끼', '용', '뱀'
   '말', '양', '원숭이', '닭', '개', '돼지'];
 
 export const ELEMENTS = ['목', '화', '토', '금', '수'];
-const STEM_ELEMENT = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];          // 갑을=목 병정=화 ...
+export const STEM_ELEMENT = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];   // 갑을=목 병정=화 ...
 const BRANCH_ELEMENT = [4, 2, 0, 0, 2, 1, 1, 2, 3, 3, 2, 4];  // 자=수 축=토 인=목 ...
-const STEM_YIN = [false, true, false, true, false, true, false, true, false, true];
+export const STEM_YIN = [false, true, false, true, false, true, false, true, false, true];
 
 // 2000-01-01 이 60갑자 54번(무오)이다.
 const DAY_ANCHOR_DAYS = daysFromCivil(2000, 1, 1);
@@ -181,11 +183,16 @@ export function fromProfile(profile, folkZodiac = '') {
   const out = { ...s };
   out.hourKnown = known;
   out.exactTime = profile.birthHour !== null && profile.birthHour !== undefined;
+  let pillars = s.pillars;
   if (!known) {
     out.hour = null;
     out.eightChars = out.eightChars.slice(0, 6);
-    out.elements = elementsCount([s.year, s.month, s.day]);
+    pillars = [s.year, s.month, s.day];
+    out.elements = elementsCount(pillars);
   }
+  // 십신·신살은 여덟 글자를 '나' 중심으로 읽는 층이라 여기서 얹는다.
+  // 시주를 모르면 세 기둥으로만 센다 — 모르는 글자를 넣고 세면 답이 달라진다.
+  out.reading = reading(pillars, s.day.stem, out.elements);
   out.folkZodiac = folkZodiac;
   out.zodiacDiffers = !!folkZodiac && folkZodiac !== s.year.animal;
   return out;

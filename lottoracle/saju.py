@@ -1,7 +1,8 @@
 """사주팔자 — 태어난 순간을 네 기둥 여덟 글자로.
 
 여기 있는 건 전부 답이 있는 계산이다. 만세력과 대조하면 맞다/틀리다를 말할 수
-있다. 해석(이 사주는 이런 성격이다)은 유파마다 달라 검증이 안 되므로 넣지 않는다.
+있다. 이 글자들을 '나' 중심으로 읽는 층(십신·신살·강약)은 sipsin.py 에 있다 —
+그쪽도 표에서 나오는 값이지만 유파가 갈리는 지점이 있어 따로 뒀다.
 
 기준
   년주  입춘부터 새 해. 설날이 아니다 — 그래서 앱이 보여 주는 띠(설날 기준)와
@@ -249,10 +250,16 @@ def from_profile(profile) -> dict | None:
     out = s.to_dict()
     out["hourKnown"] = known
     out["exactTime"] = profile.birth_hour is not None
+    pillars = s.pillars
     if not known:
         out["hour"] = None
         out["eightChars"] = out["eightChars"][:6]
-        out["elements"] = elements_count([s.year, s.month, s.day])
+        pillars = [s.year, s.month, s.day]
+        out["elements"] = elements_count(pillars)
+    # 십신·신살은 여덟 글자를 '나' 중심으로 읽는 층이라 여기서 얹는다.
+    # 시주를 모르면 세 기둥으로만 센다 — 모르는 글자를 넣고 세면 답이 달라진다.
+    from .sipsin import reading
+    out["reading"] = reading(pillars, s.day.stem, out["elements"])
     # 띠(설날 기준)와 사주 년주(입춘 기준)가 갈리는 구간인지
     from .folklore import zodiac_of_birth
     folk = zodiac_of_birth(profile.birth_date, getattr(profile, "lunar", False))
