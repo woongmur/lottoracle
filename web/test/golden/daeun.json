@@ -1,0 +1,2284 @@
+{
+ "cases": [
+  {
+   "beforeFirst": false,
+   "current": "갑신",
+   "forward": true,
+   "gender": "남",
+   "in": [
+    1990,
+    5,
+    21,
+    4,
+    30
+   ],
+   "list": [
+    {
+     "branchGod": "겁재",
+     "from": 5,
+     "hanja": "壬午",
+     "index": 1,
+     "name": "임오",
+     "now": false,
+     "stemGod": "편관",
+     "to": 15
+    },
+    {
+     "branchGod": "상관",
+     "from": 15,
+     "hanja": "癸未",
+     "index": 2,
+     "name": "계미",
+     "now": false,
+     "stemGod": "정관",
+     "to": 25
+    },
+    {
+     "branchGod": "편재",
+     "from": 25,
+     "hanja": "甲申",
+     "index": 3,
+     "name": "갑신",
+     "now": true,
+     "stemGod": "편인",
+     "to": 35
+    },
+    {
+     "branchGod": "정재",
+     "from": 35,
+     "hanja": "乙酉",
+     "index": 4,
+     "name": "을유",
+     "now": false,
+     "stemGod": "정인",
+     "to": 45
+    },
+    {
+     "branchGod": "식신",
+     "from": 45,
+     "hanja": "丙戌",
+     "index": 5,
+     "name": "병술",
+     "now": false,
+     "stemGod": "비견",
+     "to": 55
+    },
+    {
+     "branchGod": "편관",
+     "from": 55,
+     "hanja": "丁亥",
+     "index": 6,
+     "name": "정해",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 65
+    },
+    {
+     "branchGod": "정관",
+     "from": 65,
+     "hanja": "戊子",
+     "index": 7,
+     "name": "무자",
+     "now": false,
+     "stemGod": "식신",
+     "to": 75
+    },
+    {
+     "branchGod": "상관",
+     "from": 75,
+     "hanja": "己丑",
+     "index": 8,
+     "name": "기축",
+     "now": false,
+     "stemGod": "상관",
+     "to": 85
+    }
+   ],
+   "reason": "년간이 양(경)이고 남자라 순행입니다",
+   "start": {
+    "days": 16.14,
+    "jeol": "망종",
+    "months": 5,
+    "number": 5,
+    "years": 5.379
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "무인",
+   "forward": false,
+   "gender": "여",
+   "in": [
+    1990,
+    5,
+    21,
+    4,
+    30
+   ],
+   "list": [
+    {
+     "branchGod": "식신",
+     "from": 5,
+     "hanja": "庚辰",
+     "index": 1,
+     "name": "경진",
+     "now": false,
+     "stemGod": "편재",
+     "to": 15
+    },
+    {
+     "branchGod": "정인",
+     "from": 15,
+     "hanja": "己卯",
+     "index": 2,
+     "name": "기묘",
+     "now": false,
+     "stemGod": "상관",
+     "to": 25
+    },
+    {
+     "branchGod": "편인",
+     "from": 25,
+     "hanja": "戊寅",
+     "index": 3,
+     "name": "무인",
+     "now": true,
+     "stemGod": "식신",
+     "to": 35
+    },
+    {
+     "branchGod": "상관",
+     "from": 35,
+     "hanja": "丁丑",
+     "index": 4,
+     "name": "정축",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 45
+    },
+    {
+     "branchGod": "정관",
+     "from": 45,
+     "hanja": "丙子",
+     "index": 5,
+     "name": "병자",
+     "now": false,
+     "stemGod": "비견",
+     "to": 55
+    },
+    {
+     "branchGod": "편관",
+     "from": 55,
+     "hanja": "乙亥",
+     "index": 6,
+     "name": "을해",
+     "now": false,
+     "stemGod": "정인",
+     "to": 65
+    },
+    {
+     "branchGod": "식신",
+     "from": 65,
+     "hanja": "甲戌",
+     "index": 7,
+     "name": "갑술",
+     "now": false,
+     "stemGod": "편인",
+     "to": 75
+    },
+    {
+     "branchGod": "정재",
+     "from": 75,
+     "hanja": "癸酉",
+     "index": 8,
+     "name": "계유",
+     "now": false,
+     "stemGod": "정관",
+     "to": 85
+    }
+   ],
+   "reason": "년간이 양(경)이고 여자라 역행입니다",
+   "start": {
+    "days": 15.04,
+    "jeol": "입하",
+    "months": 0,
+    "number": 5,
+    "years": 5.013
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "갑술",
+   "forward": false,
+   "gender": "남",
+   "in": [
+    1990,
+    2,
+    1,
+    10,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "편관",
+     "from": 9,
+     "hanja": "丙子",
+     "index": 1,
+     "name": "병자",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 19
+    },
+    {
+     "branchGod": "정관",
+     "from": 19,
+     "hanja": "乙亥",
+     "index": 2,
+     "name": "을해",
+     "now": false,
+     "stemGod": "편인",
+     "to": 29
+    },
+    {
+     "branchGod": "상관",
+     "from": 29,
+     "hanja": "甲戌",
+     "index": 3,
+     "name": "갑술",
+     "now": true,
+     "stemGod": "정인",
+     "to": 39
+    },
+    {
+     "branchGod": "편재",
+     "from": 39,
+     "hanja": "癸酉",
+     "index": 4,
+     "name": "계유",
+     "now": false,
+     "stemGod": "편관",
+     "to": 49
+    },
+    {
+     "branchGod": "정재",
+     "from": 49,
+     "hanja": "壬申",
+     "index": 5,
+     "name": "임신",
+     "now": false,
+     "stemGod": "정관",
+     "to": 59
+    },
+    {
+     "branchGod": "식신",
+     "from": 59,
+     "hanja": "辛未",
+     "index": 6,
+     "name": "신미",
+     "now": false,
+     "stemGod": "편재",
+     "to": 69
+    },
+    {
+     "branchGod": "비견",
+     "from": 69,
+     "hanja": "庚午",
+     "index": 7,
+     "name": "경오",
+     "now": false,
+     "stemGod": "정재",
+     "to": 79
+    },
+    {
+     "branchGod": "겁재",
+     "from": 79,
+     "hanja": "己巳",
+     "index": 8,
+     "name": "기사",
+     "now": false,
+     "stemGod": "식신",
+     "to": 89
+    }
+   ],
+   "reason": "년간이 음(기)이고 남자라 역행입니다",
+   "start": {
+    "days": 26.44,
+    "jeol": "소한",
+    "months": 10,
+    "number": 9,
+    "years": 8.812
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "경진",
+   "forward": true,
+   "gender": "여",
+   "in": [
+    1990,
+    2,
+    1,
+    10,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "정인",
+     "from": 1,
+     "hanja": "戊寅",
+     "index": 1,
+     "name": "무인",
+     "now": false,
+     "stemGod": "상관",
+     "to": 11
+    },
+    {
+     "branchGod": "편인",
+     "from": 11,
+     "hanja": "己卯",
+     "index": 2,
+     "name": "기묘",
+     "now": false,
+     "stemGod": "식신",
+     "to": 21
+    },
+    {
+     "branchGod": "상관",
+     "from": 21,
+     "hanja": "庚辰",
+     "index": 3,
+     "name": "경진",
+     "now": true,
+     "stemGod": "정재",
+     "to": 31
+    },
+    {
+     "branchGod": "겁재",
+     "from": 31,
+     "hanja": "辛巳",
+     "index": 4,
+     "name": "신사",
+     "now": false,
+     "stemGod": "편재",
+     "to": 41
+    },
+    {
+     "branchGod": "비견",
+     "from": 41,
+     "hanja": "壬午",
+     "index": 5,
+     "name": "임오",
+     "now": false,
+     "stemGod": "정관",
+     "to": 51
+    },
+    {
+     "branchGod": "식신",
+     "from": 51,
+     "hanja": "癸未",
+     "index": 6,
+     "name": "계미",
+     "now": false,
+     "stemGod": "편관",
+     "to": 61
+    },
+    {
+     "branchGod": "정재",
+     "from": 61,
+     "hanja": "甲申",
+     "index": 7,
+     "name": "갑신",
+     "now": false,
+     "stemGod": "정인",
+     "to": 71
+    },
+    {
+     "branchGod": "편재",
+     "from": 71,
+     "hanja": "乙酉",
+     "index": 8,
+     "name": "을유",
+     "now": false,
+     "stemGod": "편인",
+     "to": 81
+    }
+   ],
+   "reason": "년간이 음(기)이고 여자라 순행입니다",
+   "start": {
+    "days": 3.05,
+    "jeol": "입춘",
+    "months": 0,
+    "number": 1,
+    "years": 1.017
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "경술",
+   "forward": false,
+   "gender": "남",
+   "in": [
+    1998,
+    2,
+    1,
+    21,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "편재",
+     "from": 9,
+     "hanja": "壬子",
+     "index": 1,
+     "name": "임자",
+     "now": false,
+     "stemGod": "정재",
+     "to": 19
+    },
+    {
+     "branchGod": "정재",
+     "from": 19,
+     "hanja": "辛亥",
+     "index": 2,
+     "name": "신해",
+     "now": false,
+     "stemGod": "식신",
+     "to": 29
+    },
+    {
+     "branchGod": "겁재",
+     "from": 29,
+     "hanja": "庚戌",
+     "index": 3,
+     "name": "경술",
+     "now": true,
+     "stemGod": "상관",
+     "to": 39
+    },
+    {
+     "branchGod": "식신",
+     "from": 39,
+     "hanja": "己酉",
+     "index": 4,
+     "name": "기유",
+     "now": false,
+     "stemGod": "비견",
+     "to": 49
+    },
+    {
+     "branchGod": "상관",
+     "from": 49,
+     "hanja": "戊申",
+     "index": 5,
+     "name": "무신",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 59
+    },
+    {
+     "branchGod": "비견",
+     "from": 59,
+     "hanja": "丁未",
+     "index": 6,
+     "name": "정미",
+     "now": false,
+     "stemGod": "편인",
+     "to": 69
+    },
+    {
+     "branchGod": "편인",
+     "from": 69,
+     "hanja": "丙午",
+     "index": 7,
+     "name": "병오",
+     "now": false,
+     "stemGod": "정인",
+     "to": 79
+    },
+    {
+     "branchGod": "정인",
+     "from": 79,
+     "hanja": "乙巳",
+     "index": 8,
+     "name": "을사",
+     "now": false,
+     "stemGod": "편관",
+     "to": 89
+    }
+   ],
+   "reason": "년간이 음(정)이고 남자라 역행입니다",
+   "start": {
+    "days": 26.95,
+    "jeol": "소한",
+    "months": 12,
+    "number": 9,
+    "years": 8.982
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "병진",
+   "forward": true,
+   "gender": "여",
+   "in": [
+    1998,
+    2,
+    1,
+    21,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "정관",
+     "from": 1,
+     "hanja": "甲寅",
+     "index": 1,
+     "name": "갑인",
+     "now": false,
+     "stemGod": "정관",
+     "to": 11
+    },
+    {
+     "branchGod": "편관",
+     "from": 11,
+     "hanja": "乙卯",
+     "index": 2,
+     "name": "을묘",
+     "now": false,
+     "stemGod": "편관",
+     "to": 21
+    },
+    {
+     "branchGod": "겁재",
+     "from": 21,
+     "hanja": "丙辰",
+     "index": 3,
+     "name": "병진",
+     "now": true,
+     "stemGod": "정인",
+     "to": 31
+    },
+    {
+     "branchGod": "정인",
+     "from": 31,
+     "hanja": "丁巳",
+     "index": 4,
+     "name": "정사",
+     "now": false,
+     "stemGod": "편인",
+     "to": 41
+    },
+    {
+     "branchGod": "편인",
+     "from": 41,
+     "hanja": "戊午",
+     "index": 5,
+     "name": "무오",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 51
+    },
+    {
+     "branchGod": "비견",
+     "from": 51,
+     "hanja": "己未",
+     "index": 6,
+     "name": "기미",
+     "now": false,
+     "stemGod": "비견",
+     "to": 61
+    },
+    {
+     "branchGod": "상관",
+     "from": 61,
+     "hanja": "庚申",
+     "index": 7,
+     "name": "경신",
+     "now": false,
+     "stemGod": "상관",
+     "to": 71
+    },
+    {
+     "branchGod": "식신",
+     "from": 71,
+     "hanja": "辛酉",
+     "index": 8,
+     "name": "신유",
+     "now": false,
+     "stemGod": "식신",
+     "to": 81
+    }
+   ],
+   "reason": "년간이 음(정)이고 여자라 순행입니다",
+   "start": {
+    "days": 2.54,
+    "jeol": "입춘",
+    "months": 10,
+    "number": 1,
+    "years": 0.846
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "정사",
+   "forward": true,
+   "gender": "남",
+   "in": [
+    1998,
+    2,
+    10,
+    21,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "정관",
+     "from": 8,
+     "hanja": "乙卯",
+     "index": 1,
+     "name": "을묘",
+     "now": false,
+     "stemGod": "정관",
+     "to": 18
+    },
+    {
+     "branchGod": "비견",
+     "from": 18,
+     "hanja": "丙辰",
+     "index": 2,
+     "name": "병진",
+     "now": false,
+     "stemGod": "편인",
+     "to": 28
+    },
+    {
+     "branchGod": "편인",
+     "from": 28,
+     "hanja": "丁巳",
+     "index": 3,
+     "name": "정사",
+     "now": true,
+     "stemGod": "정인",
+     "to": 38
+    },
+    {
+     "branchGod": "정인",
+     "from": 38,
+     "hanja": "戊午",
+     "index": 4,
+     "name": "무오",
+     "now": false,
+     "stemGod": "비견",
+     "to": 48
+    },
+    {
+     "branchGod": "겁재",
+     "from": 48,
+     "hanja": "己未",
+     "index": 5,
+     "name": "기미",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 58
+    },
+    {
+     "branchGod": "식신",
+     "from": 58,
+     "hanja": "庚申",
+     "index": 6,
+     "name": "경신",
+     "now": false,
+     "stemGod": "식신",
+     "to": 68
+    },
+    {
+     "branchGod": "상관",
+     "from": 68,
+     "hanja": "辛酉",
+     "index": 7,
+     "name": "신유",
+     "now": false,
+     "stemGod": "상관",
+     "to": 78
+    },
+    {
+     "branchGod": "비견",
+     "from": 78,
+     "hanja": "壬戌",
+     "index": 8,
+     "name": "임술",
+     "now": false,
+     "stemGod": "편재",
+     "to": 88
+    }
+   ],
+   "reason": "년간이 양(무)이고 남자라 순행입니다",
+   "start": {
+    "days": 23.29,
+    "jeol": "경칩",
+    "months": 9,
+    "number": 8,
+    "years": 7.763
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "신해",
+   "forward": false,
+   "gender": "여",
+   "in": [
+    1998,
+    2,
+    10,
+    21,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "겁재",
+     "from": 2,
+     "hanja": "癸丑",
+     "index": 1,
+     "name": "계축",
+     "now": false,
+     "stemGod": "정재",
+     "to": 12
+    },
+    {
+     "branchGod": "정재",
+     "from": 12,
+     "hanja": "壬子",
+     "index": 2,
+     "name": "임자",
+     "now": false,
+     "stemGod": "편재",
+     "to": 22
+    },
+    {
+     "branchGod": "편재",
+     "from": 22,
+     "hanja": "辛亥",
+     "index": 3,
+     "name": "신해",
+     "now": true,
+     "stemGod": "상관",
+     "to": 32
+    },
+    {
+     "branchGod": "비견",
+     "from": 32,
+     "hanja": "庚戌",
+     "index": 4,
+     "name": "경술",
+     "now": false,
+     "stemGod": "식신",
+     "to": 42
+    },
+    {
+     "branchGod": "상관",
+     "from": 42,
+     "hanja": "己酉",
+     "index": 5,
+     "name": "기유",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 52
+    },
+    {
+     "branchGod": "식신",
+     "from": 52,
+     "hanja": "戊申",
+     "index": 6,
+     "name": "무신",
+     "now": false,
+     "stemGod": "비견",
+     "to": 62
+    },
+    {
+     "branchGod": "겁재",
+     "from": 62,
+     "hanja": "丁未",
+     "index": 7,
+     "name": "정미",
+     "now": false,
+     "stemGod": "정인",
+     "to": 72
+    },
+    {
+     "branchGod": "정인",
+     "from": 72,
+     "hanja": "丙午",
+     "index": 8,
+     "name": "병오",
+     "now": false,
+     "stemGod": "편인",
+     "to": 82
+    }
+   ],
+   "reason": "년간이 양(무)이고 여자라 역행입니다",
+   "start": {
+    "days": 6.46,
+    "jeol": "입춘",
+    "months": 2,
+    "number": 2,
+    "years": 2.154
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "경신",
+   "forward": true,
+   "gender": "남",
+   "in": [
+    1958,
+    6,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "편인",
+     "from": 2,
+     "hanja": "戊午",
+     "index": 1,
+     "name": "무오",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 12
+    },
+    {
+     "branchGod": "비견",
+     "from": 12,
+     "hanja": "己未",
+     "index": 2,
+     "name": "기미",
+     "now": false,
+     "stemGod": "비견",
+     "to": 22
+    },
+    {
+     "branchGod": "상관",
+     "from": 22,
+     "hanja": "庚申",
+     "index": 3,
+     "name": "경신",
+     "now": true,
+     "stemGod": "상관",
+     "to": 32
+    },
+    {
+     "branchGod": "식신",
+     "from": 32,
+     "hanja": "辛酉",
+     "index": 4,
+     "name": "신유",
+     "now": false,
+     "stemGod": "식신",
+     "to": 42
+    },
+    {
+     "branchGod": "겁재",
+     "from": 42,
+     "hanja": "壬戌",
+     "index": 5,
+     "name": "임술",
+     "now": false,
+     "stemGod": "정재",
+     "to": 52
+    },
+    {
+     "branchGod": "정재",
+     "from": 52,
+     "hanja": "癸亥",
+     "index": 6,
+     "name": "계해",
+     "now": false,
+     "stemGod": "편재",
+     "to": 62
+    },
+    {
+     "branchGod": "편재",
+     "from": 62,
+     "hanja": "甲子",
+     "index": 7,
+     "name": "갑자",
+     "now": false,
+     "stemGod": "정관",
+     "to": 72
+    },
+    {
+     "branchGod": "비견",
+     "from": 72,
+     "hanja": "乙丑",
+     "index": 8,
+     "name": "을축",
+     "now": false,
+     "stemGod": "편관",
+     "to": 82
+    }
+   ],
+   "reason": "년간이 양(무)이고 남자라 순행입니다",
+   "start": {
+    "days": 5.11,
+    "jeol": "망종",
+    "months": 8,
+    "number": 2,
+    "years": 1.705
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "갑인",
+   "forward": false,
+   "gender": "여",
+   "in": [
+    1958,
+    6,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "겁재",
+     "from": 9,
+     "hanja": "丙辰",
+     "index": 1,
+     "name": "병진",
+     "now": false,
+     "stemGod": "정인",
+     "to": 19
+    },
+    {
+     "branchGod": "편관",
+     "from": 19,
+     "hanja": "乙卯",
+     "index": 2,
+     "name": "을묘",
+     "now": false,
+     "stemGod": "편관",
+     "to": 29
+    },
+    {
+     "branchGod": "정관",
+     "from": 29,
+     "hanja": "甲寅",
+     "index": 3,
+     "name": "갑인",
+     "now": true,
+     "stemGod": "정관",
+     "to": 39
+    },
+    {
+     "branchGod": "비견",
+     "from": 39,
+     "hanja": "癸丑",
+     "index": 4,
+     "name": "계축",
+     "now": false,
+     "stemGod": "편재",
+     "to": 49
+    },
+    {
+     "branchGod": "편재",
+     "from": 49,
+     "hanja": "壬子",
+     "index": 5,
+     "name": "임자",
+     "now": false,
+     "stemGod": "정재",
+     "to": 59
+    },
+    {
+     "branchGod": "정재",
+     "from": 59,
+     "hanja": "辛亥",
+     "index": 6,
+     "name": "신해",
+     "now": false,
+     "stemGod": "식신",
+     "to": 69
+    },
+    {
+     "branchGod": "겁재",
+     "from": 69,
+     "hanja": "庚戌",
+     "index": 7,
+     "name": "경술",
+     "now": false,
+     "stemGod": "상관",
+     "to": 79
+    },
+    {
+     "branchGod": "식신",
+     "from": 79,
+     "hanja": "己酉",
+     "index": 8,
+     "name": "기유",
+     "now": false,
+     "stemGod": "비견",
+     "to": 89
+    }
+   ],
+   "reason": "년간이 양(무)이고 여자라 역행입니다",
+   "start": {
+    "days": 26.07,
+    "jeol": "입하",
+    "months": 8,
+    "number": 9,
+    "years": 8.69
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "계묘",
+   "forward": false,
+   "gender": "남",
+   "in": [
+    1987,
+    7,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "정관",
+     "from": 8,
+     "hanja": "乙巳",
+     "index": 1,
+     "name": "을사",
+     "now": false,
+     "stemGod": "편재",
+     "to": 18
+    },
+    {
+     "branchGod": "정인",
+     "from": 18,
+     "hanja": "甲辰",
+     "index": 2,
+     "name": "갑진",
+     "now": false,
+     "stemGod": "정재",
+     "to": 28
+    },
+    {
+     "branchGod": "편재",
+     "from": 28,
+     "hanja": "癸卯",
+     "index": 3,
+     "name": "계묘",
+     "now": true,
+     "stemGod": "식신",
+     "to": 38
+    },
+    {
+     "branchGod": "정재",
+     "from": 38,
+     "hanja": "壬寅",
+     "index": 4,
+     "name": "임인",
+     "now": false,
+     "stemGod": "상관",
+     "to": 48
+    },
+    {
+     "branchGod": "편인",
+     "from": 48,
+     "hanja": "辛丑",
+     "index": 5,
+     "name": "신축",
+     "now": false,
+     "stemGod": "비견",
+     "to": 58
+    },
+    {
+     "branchGod": "식신",
+     "from": 58,
+     "hanja": "庚子",
+     "index": 6,
+     "name": "경자",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 68
+    },
+    {
+     "branchGod": "상관",
+     "from": 68,
+     "hanja": "己亥",
+     "index": 7,
+     "name": "기해",
+     "now": false,
+     "stemGod": "편인",
+     "to": 78
+    },
+    {
+     "branchGod": "정인",
+     "from": 78,
+     "hanja": "戊戌",
+     "index": 8,
+     "name": "무술",
+     "now": false,
+     "stemGod": "정인",
+     "to": 88
+    }
+   ],
+   "reason": "년간이 음(정)이고 남자라 역행입니다",
+   "start": {
+    "days": 24.86,
+    "jeol": "망종",
+    "months": 3,
+    "number": 8,
+    "years": 8.286
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "기유",
+   "forward": true,
+   "gender": "여",
+   "in": [
+    1987,
+    7,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "편인",
+     "from": 2,
+     "hanja": "丁未",
+     "index": 1,
+     "name": "정미",
+     "now": false,
+     "stemGod": "편관",
+     "to": 12
+    },
+    {
+     "branchGod": "겁재",
+     "from": 12,
+     "hanja": "戊申",
+     "index": 2,
+     "name": "무신",
+     "now": false,
+     "stemGod": "정인",
+     "to": 22
+    },
+    {
+     "branchGod": "비견",
+     "from": 22,
+     "hanja": "己酉",
+     "index": 3,
+     "name": "기유",
+     "now": true,
+     "stemGod": "편인",
+     "to": 32
+    },
+    {
+     "branchGod": "정인",
+     "from": 32,
+     "hanja": "庚戌",
+     "index": 4,
+     "name": "경술",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 42
+    },
+    {
+     "branchGod": "상관",
+     "from": 42,
+     "hanja": "辛亥",
+     "index": 5,
+     "name": "신해",
+     "now": false,
+     "stemGod": "비견",
+     "to": 52
+    },
+    {
+     "branchGod": "식신",
+     "from": 52,
+     "hanja": "壬子",
+     "index": 6,
+     "name": "임자",
+     "now": false,
+     "stemGod": "상관",
+     "to": 62
+    },
+    {
+     "branchGod": "편인",
+     "from": 62,
+     "hanja": "癸丑",
+     "index": 7,
+     "name": "계축",
+     "now": false,
+     "stemGod": "식신",
+     "to": 72
+    },
+    {
+     "branchGod": "정재",
+     "from": 72,
+     "hanja": "甲寅",
+     "index": 8,
+     "name": "갑인",
+     "now": false,
+     "stemGod": "정재",
+     "to": 82
+    }
+   ],
+   "reason": "년간이 음(정)이고 여자라 순행입니다",
+   "start": {
+    "days": 6.57,
+    "jeol": "소서",
+    "months": 2,
+    "number": 2,
+    "years": 2.19
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "무인",
+   "forward": false,
+   "gender": "남",
+   "in": [
+    1905,
+    6,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "정인",
+     "from": 9,
+     "hanja": "庚辰",
+     "index": 1,
+     "name": "경진",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 19
+    },
+    {
+     "branchGod": "편재",
+     "from": 19,
+     "hanja": "己卯",
+     "index": 2,
+     "name": "기묘",
+     "now": false,
+     "stemGod": "편인",
+     "to": 29
+    },
+    {
+     "branchGod": "정재",
+     "from": 29,
+     "hanja": "戊寅",
+     "index": 3,
+     "name": "무인",
+     "now": true,
+     "stemGod": "정인",
+     "to": 39
+    },
+    {
+     "branchGod": "편인",
+     "from": 39,
+     "hanja": "丁丑",
+     "index": 4,
+     "name": "정축",
+     "now": false,
+     "stemGod": "편관",
+     "to": 49
+    },
+    {
+     "branchGod": "식신",
+     "from": 49,
+     "hanja": "丙子",
+     "index": 5,
+     "name": "병자",
+     "now": false,
+     "stemGod": "정관",
+     "to": 59
+    },
+    {
+     "branchGod": "상관",
+     "from": 59,
+     "hanja": "乙亥",
+     "index": 6,
+     "name": "을해",
+     "now": false,
+     "stemGod": "편재",
+     "to": 69
+    },
+    {
+     "branchGod": "정인",
+     "from": 69,
+     "hanja": "甲戌",
+     "index": 7,
+     "name": "갑술",
+     "now": false,
+     "stemGod": "정재",
+     "to": 79
+    },
+    {
+     "branchGod": "비견",
+     "from": 79,
+     "hanja": "癸酉",
+     "index": 8,
+     "name": "계유",
+     "now": false,
+     "stemGod": "식신",
+     "to": 89
+    }
+   ],
+   "reason": "년간이 음(을)이고 남자라 역행입니다",
+   "start": {
+    "days": 25.93,
+    "jeol": "입하",
+    "months": 8,
+    "number": 9,
+    "years": 8.644
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "갑신",
+   "forward": true,
+   "gender": "여",
+   "in": [
+    1905,
+    6,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "편관",
+     "from": 2,
+     "hanja": "壬午",
+     "index": 1,
+     "name": "임오",
+     "now": false,
+     "stemGod": "상관",
+     "to": 12
+    },
+    {
+     "branchGod": "편인",
+     "from": 12,
+     "hanja": "癸未",
+     "index": 2,
+     "name": "계미",
+     "now": false,
+     "stemGod": "식신",
+     "to": 22
+    },
+    {
+     "branchGod": "겁재",
+     "from": 22,
+     "hanja": "甲申",
+     "index": 3,
+     "name": "갑신",
+     "now": true,
+     "stemGod": "정재",
+     "to": 32
+    },
+    {
+     "branchGod": "비견",
+     "from": 32,
+     "hanja": "乙酉",
+     "index": 4,
+     "name": "을유",
+     "now": false,
+     "stemGod": "편재",
+     "to": 42
+    },
+    {
+     "branchGod": "정인",
+     "from": 42,
+     "hanja": "丙戌",
+     "index": 5,
+     "name": "병술",
+     "now": false,
+     "stemGod": "정관",
+     "to": 52
+    },
+    {
+     "branchGod": "상관",
+     "from": 52,
+     "hanja": "丁亥",
+     "index": 6,
+     "name": "정해",
+     "now": false,
+     "stemGod": "편관",
+     "to": 62
+    },
+    {
+     "branchGod": "식신",
+     "from": 62,
+     "hanja": "戊子",
+     "index": 7,
+     "name": "무자",
+     "now": false,
+     "stemGod": "정인",
+     "to": 72
+    },
+    {
+     "branchGod": "편인",
+     "from": 72,
+     "hanja": "己丑",
+     "index": 8,
+     "name": "기축",
+     "now": false,
+     "stemGod": "편인",
+     "to": 82
+    }
+   ],
+   "reason": "년간이 음(을)이고 여자라 순행입니다",
+   "start": {
+    "days": 5.26,
+    "jeol": "망종",
+    "months": 9,
+    "number": 2,
+    "years": 1.754
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "을유",
+   "forward": false,
+   "gender": "남",
+   "in": [
+    2026,
+    1,
+    5,
+    23,
+    30
+   ],
+   "list": [
+    {
+     "branchGod": "편재",
+     "from": 0,
+     "hanja": "戊子",
+     "index": 1,
+     "name": "무자",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 10
+    },
+    {
+     "branchGod": "정재",
+     "from": 10,
+     "hanja": "丁亥",
+     "index": 2,
+     "name": "정해",
+     "now": false,
+     "stemGod": "편인",
+     "to": 20
+    },
+    {
+     "branchGod": "겁재",
+     "from": 20,
+     "hanja": "丙戌",
+     "index": 3,
+     "name": "병술",
+     "now": false,
+     "stemGod": "정인",
+     "to": 30
+    },
+    {
+     "branchGod": "식신",
+     "from": 30,
+     "hanja": "乙酉",
+     "index": 4,
+     "name": "을유",
+     "now": true,
+     "stemGod": "편관",
+     "to": 40
+    },
+    {
+     "branchGod": "상관",
+     "from": 40,
+     "hanja": "甲申",
+     "index": 5,
+     "name": "갑신",
+     "now": false,
+     "stemGod": "정관",
+     "to": 50
+    },
+    {
+     "branchGod": "비견",
+     "from": 50,
+     "hanja": "癸未",
+     "index": 6,
+     "name": "계미",
+     "now": false,
+     "stemGod": "편재",
+     "to": 60
+    },
+    {
+     "branchGod": "편인",
+     "from": 60,
+     "hanja": "壬午",
+     "index": 7,
+     "name": "임오",
+     "now": false,
+     "stemGod": "정재",
+     "to": 70
+    },
+    {
+     "branchGod": "정인",
+     "from": 70,
+     "hanja": "辛巳",
+     "index": 8,
+     "name": "신사",
+     "now": false,
+     "stemGod": "식신",
+     "to": 80
+    }
+   ],
+   "reason": "년간이 음(을)이고 남자라 역행입니다",
+   "start": {
+    "days": 0.25,
+    "jeol": "소한",
+    "months": 1,
+    "number": 0,
+    "years": 0.085
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "임진",
+   "forward": true,
+   "gender": "여",
+   "in": [
+    2026,
+    1,
+    5,
+    23,
+    30
+   ],
+   "list": [
+    {
+     "branchGod": "정관",
+     "from": 10,
+     "hanja": "庚寅",
+     "index": 1,
+     "name": "경인",
+     "now": false,
+     "stemGod": "상관",
+     "to": 20
+    },
+    {
+     "branchGod": "편관",
+     "from": 20,
+     "hanja": "辛卯",
+     "index": 2,
+     "name": "신묘",
+     "now": false,
+     "stemGod": "식신",
+     "to": 30
+    },
+    {
+     "branchGod": "겁재",
+     "from": 30,
+     "hanja": "壬辰",
+     "index": 3,
+     "name": "임진",
+     "now": true,
+     "stemGod": "정재",
+     "to": 40
+    },
+    {
+     "branchGod": "정인",
+     "from": 40,
+     "hanja": "癸巳",
+     "index": 4,
+     "name": "계사",
+     "now": false,
+     "stemGod": "편재",
+     "to": 50
+    },
+    {
+     "branchGod": "편인",
+     "from": 50,
+     "hanja": "甲午",
+     "index": 5,
+     "name": "갑오",
+     "now": false,
+     "stemGod": "정관",
+     "to": 60
+    },
+    {
+     "branchGod": "비견",
+     "from": 60,
+     "hanja": "乙未",
+     "index": 6,
+     "name": "을미",
+     "now": false,
+     "stemGod": "편관",
+     "to": 70
+    },
+    {
+     "branchGod": "상관",
+     "from": 70,
+     "hanja": "丙申",
+     "index": 7,
+     "name": "병신",
+     "now": false,
+     "stemGod": "정인",
+     "to": 80
+    },
+    {
+     "branchGod": "식신",
+     "from": 80,
+     "hanja": "丁酉",
+     "index": 8,
+     "name": "정유",
+     "now": false,
+     "stemGod": "편인",
+     "to": 90
+    }
+   ],
+   "reason": "년간이 음(을)이고 여자라 순행입니다",
+   "start": {
+    "days": 29.23,
+    "jeol": "입춘",
+    "months": 9,
+    "number": 10,
+    "years": 9.744
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "경자",
+   "forward": true,
+   "gender": "남",
+   "in": [
+    2026,
+    9,
+    7,
+    0,
+    10
+   ],
+   "list": [
+    {
+     "branchGod": "편인",
+     "from": 0,
+     "hanja": "丁酉",
+     "index": 1,
+     "name": "정유",
+     "now": false,
+     "stemGod": "편재",
+     "to": 10
+    },
+    {
+     "branchGod": "정관",
+     "from": 10,
+     "hanja": "戊戌",
+     "index": 2,
+     "name": "무술",
+     "now": false,
+     "stemGod": "정관",
+     "to": 20
+    },
+    {
+     "branchGod": "겁재",
+     "from": 20,
+     "hanja": "己亥",
+     "index": 3,
+     "name": "기해",
+     "now": false,
+     "stemGod": "편관",
+     "to": 30
+    },
+    {
+     "branchGod": "비견",
+     "from": 30,
+     "hanja": "庚子",
+     "index": 4,
+     "name": "경자",
+     "now": true,
+     "stemGod": "정인",
+     "to": 40
+    },
+    {
+     "branchGod": "편관",
+     "from": 40,
+     "hanja": "辛丑",
+     "index": 5,
+     "name": "신축",
+     "now": false,
+     "stemGod": "편인",
+     "to": 50
+    },
+    {
+     "branchGod": "상관",
+     "from": 50,
+     "hanja": "壬寅",
+     "index": 6,
+     "name": "임인",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 60
+    },
+    {
+     "branchGod": "식신",
+     "from": 60,
+     "hanja": "癸卯",
+     "index": 7,
+     "name": "계묘",
+     "now": false,
+     "stemGod": "비견",
+     "to": 70
+    },
+    {
+     "branchGod": "정관",
+     "from": 70,
+     "hanja": "甲辰",
+     "index": 8,
+     "name": "갑진",
+     "now": false,
+     "stemGod": "상관",
+     "to": 80
+    }
+   ],
+   "reason": "년간이 양(병)이고 남자라 순행입니다",
+   "start": {
+    "days": 0.98,
+    "jeol": "백로",
+    "months": 4,
+    "number": 0,
+    "years": 0.327
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "계사",
+   "forward": false,
+   "gender": "여",
+   "in": [
+    2026,
+    9,
+    7,
+    0,
+    10
+   ],
+   "list": [
+    {
+     "branchGod": "편관",
+     "from": 10,
+     "hanja": "乙未",
+     "index": 1,
+     "name": "을미",
+     "now": false,
+     "stemGod": "식신",
+     "to": 20
+    },
+    {
+     "branchGod": "편재",
+     "from": 20,
+     "hanja": "甲午",
+     "index": 2,
+     "name": "갑오",
+     "now": false,
+     "stemGod": "상관",
+     "to": 30
+    },
+    {
+     "branchGod": "정재",
+     "from": 30,
+     "hanja": "癸巳",
+     "index": 3,
+     "name": "계사",
+     "now": true,
+     "stemGod": "비견",
+     "to": 40
+    },
+    {
+     "branchGod": "정관",
+     "from": 40,
+     "hanja": "壬辰",
+     "index": 4,
+     "name": "임진",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 50
+    },
+    {
+     "branchGod": "식신",
+     "from": 50,
+     "hanja": "辛卯",
+     "index": 5,
+     "name": "신묘",
+     "now": false,
+     "stemGod": "편인",
+     "to": 60
+    },
+    {
+     "branchGod": "상관",
+     "from": 60,
+     "hanja": "庚寅",
+     "index": 6,
+     "name": "경인",
+     "now": false,
+     "stemGod": "정인",
+     "to": 70
+    },
+    {
+     "branchGod": "편관",
+     "from": 70,
+     "hanja": "己丑",
+     "index": 7,
+     "name": "기축",
+     "now": false,
+     "stemGod": "편관",
+     "to": 80
+    },
+    {
+     "branchGod": "비견",
+     "from": 80,
+     "hanja": "戊子",
+     "index": 8,
+     "name": "무자",
+     "now": false,
+     "stemGod": "정관",
+     "to": 90
+    }
+   ],
+   "reason": "년간이 양(병)이고 여자라 역행입니다",
+   "start": {
+    "days": 30.14,
+    "jeol": "입추",
+    "months": 1,
+    "number": 10,
+    "years": 10.048
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "계유",
+   "forward": false,
+   "gender": "남",
+   "in": [
+    2000,
+    1,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "편재",
+     "from": 8,
+     "hanja": "乙亥",
+     "index": 1,
+     "name": "을해",
+     "now": false,
+     "stemGod": "정관",
+     "to": 18
+    },
+    {
+     "branchGod": "비견",
+     "from": 18,
+     "hanja": "甲戌",
+     "index": 2,
+     "name": "갑술",
+     "now": false,
+     "stemGod": "편관",
+     "to": 28
+    },
+    {
+     "branchGod": "상관",
+     "from": 28,
+     "hanja": "癸酉",
+     "index": 3,
+     "name": "계유",
+     "now": true,
+     "stemGod": "정재",
+     "to": 38
+    },
+    {
+     "branchGod": "식신",
+     "from": 38,
+     "hanja": "壬申",
+     "index": 4,
+     "name": "임신",
+     "now": false,
+     "stemGod": "편재",
+     "to": 48
+    },
+    {
+     "branchGod": "겁재",
+     "from": 48,
+     "hanja": "辛未",
+     "index": 5,
+     "name": "신미",
+     "now": false,
+     "stemGod": "상관",
+     "to": 58
+    },
+    {
+     "branchGod": "정인",
+     "from": 58,
+     "hanja": "庚午",
+     "index": 6,
+     "name": "경오",
+     "now": false,
+     "stemGod": "식신",
+     "to": 68
+    },
+    {
+     "branchGod": "편인",
+     "from": 68,
+     "hanja": "己巳",
+     "index": 7,
+     "name": "기사",
+     "now": false,
+     "stemGod": "겁재",
+     "to": 78
+    },
+    {
+     "branchGod": "비견",
+     "from": 78,
+     "hanja": "戊辰",
+     "index": 8,
+     "name": "무진",
+     "now": false,
+     "stemGod": "비견",
+     "to": 88
+    }
+   ],
+   "reason": "년간이 음(기)이고 남자라 역행입니다",
+   "start": {
+    "days": 24.55,
+    "jeol": "대설",
+    "months": 2,
+    "number": 8,
+    "years": 8.184
+   }
+  },
+  {
+   "beforeFirst": false,
+   "current": "기묘",
+   "forward": true,
+   "gender": "여",
+   "in": [
+    2000,
+    1,
+    1,
+    12,
+    0
+   ],
+   "list": [
+    {
+     "branchGod": "겁재",
+     "from": 2,
+     "hanja": "丁丑",
+     "index": 1,
+     "name": "정축",
+     "now": false,
+     "stemGod": "정인",
+     "to": 12
+    },
+    {
+     "branchGod": "편관",
+     "from": 12,
+     "hanja": "戊寅",
+     "index": 2,
+     "name": "무인",
+     "now": false,
+     "stemGod": "비견",
+     "to": 22
+    },
+    {
+     "branchGod": "정관",
+     "from": 22,
+     "hanja": "己卯",
+     "index": 3,
+     "name": "기묘",
+     "now": true,
+     "stemGod": "겁재",
+     "to": 32
+    },
+    {
+     "branchGod": "비견",
+     "from": 32,
+     "hanja": "庚辰",
+     "index": 4,
+     "name": "경진",
+     "now": false,
+     "stemGod": "식신",
+     "to": 42
+    },
+    {
+     "branchGod": "편인",
+     "from": 42,
+     "hanja": "辛巳",
+     "index": 5,
+     "name": "신사",
+     "now": false,
+     "stemGod": "상관",
+     "to": 52
+    },
+    {
+     "branchGod": "정인",
+     "from": 52,
+     "hanja": "壬午",
+     "index": 6,
+     "name": "임오",
+     "now": false,
+     "stemGod": "편재",
+     "to": 62
+    },
+    {
+     "branchGod": "겁재",
+     "from": 62,
+     "hanja": "癸未",
+     "index": 7,
+     "name": "계미",
+     "now": false,
+     "stemGod": "정재",
+     "to": 72
+    },
+    {
+     "branchGod": "식신",
+     "from": 72,
+     "hanja": "甲申",
+     "index": 8,
+     "name": "갑신",
+     "now": false,
+     "stemGod": "편관",
+     "to": 82
+    }
+   ],
+   "reason": "년간이 음(기)이고 여자라 순행입니다",
+   "start": {
+    "days": 4.92,
+    "jeol": "소한",
+    "months": 8,
+    "number": 2,
+    "years": 1.639
+   }
+  }
+ ],
+ "count": 8,
+ "direction": [
+  [
+   true,
+   false
+  ],
+  [
+   false,
+   true
+  ],
+  [
+   true,
+   false
+  ],
+  [
+   false,
+   true
+  ],
+  [
+   true,
+   false
+  ],
+  [
+   false,
+   true
+  ],
+  [
+   true,
+   false
+  ],
+  [
+   false,
+   true
+  ],
+  [
+   true,
+   false
+  ],
+  [
+   false,
+   true
+  ]
+ ],
+ "jeol": [
+  {
+   "in": [
+    1990,
+    5,
+    21,
+    4,
+    30
+   ],
+   "next": [
+    "망종",
+    644625951.513
+   ],
+   "prev": [
+    "입하",
+    641932443.383
+   ]
+  },
+  {
+   "in": [
+    1990,
+    2,
+    1,
+    10,
+    0
+   ],
+   "next": [
+    "입춘",
+    634097662.967
+   ],
+   "prev": [
+    "소한",
+    631549983.142
+   ]
+  },
+  {
+   "in": [
+    1998,
+    2,
+    1,
+    21,
+    0
+   ],
+   "next": [
+    "입춘",
+    886553770.84
+   ],
+   "prev": [
+    "소한",
+    884006247.248
+   ]
+  },
+  {
+   "in": [
+    1998,
+    2,
+    10,
+    21,
+    0
+   ],
+   "next": [
+    "경칩",
+    889124218.42
+   ],
+   "prev": [
+    "입춘",
+    886553770.824
+   ]
+  },
+  {
+   "in": [
+    1958,
+    6,
+    1,
+    12,
+    0
+   ],
+   "next": [
+    "망종",
+    -365193911.254
+   ],
+   "prev": [
+    "입하",
+    -367888213.034
+   ]
+  },
+  {
+   "in": [
+    1987,
+    7,
+    1,
+    12,
+    0
+   ],
+   "next": [
+    "소서",
+    552670915.012
+   ],
+   "prev": [
+    "망종",
+    549955361.64
+   ]
+  },
+  {
+   "in": [
+    1905,
+    6,
+    1,
+    12,
+    0
+   ],
+   "next": [
+    "망종",
+    -2037708550.118
+   ],
+   "prev": [
+    "입하",
+    -2040403708.737
+   ]
+  },
+  {
+   "in": [
+    2026,
+    1,
+    5,
+    23,
+    30
+   ],
+   "next": [
+    "입춘",
+    1770148954.198
+   ],
+   "prev": [
+    "소한",
+    1767601393.811
+   ]
+  },
+  {
+   "in": [
+    2026,
+    9,
+    7,
+    0,
+    10
+   ],
+   "next": [
+    "백로",
+    1788792286.363
+   ],
+   "prev": [
+    "입추",
+    1786103072.715
+   ]
+  },
+  {
+   "in": [
+    2000,
+    1,
+    1,
+    12,
+    0
+   ],
+   "next": [
+    "소한",
+    947120425.324
+   ],
+   "prev": [
+    "대설",
+    944574431.347
+   ]
+  }
+ ],
+ "texts": {
+  "beforeFirst": "첫 대운에 들기 전까지는 태어난 달(월주)의 기운이 그대로 이어진다고 봅니다.",
+  "intro": "대운은 10년마다 바뀌는 큰 흐름입니다. 태어난 달(월주)에서 60갑자를 한 칸씩 옮겨 가며 정하고, 어느 쪽으로 옮길지는 년간의 음양과 성별로 갈립니다.",
+  "noGender": "대운은 방향이 성별로 갈려서 성별을 알아야 세울 수 있습니다. 프로필에 넣으면 함께 보여 드립니다. 지금 보이는 여덟 글자와 십신은 성별과 무관하니 그대로입니다."
+ }
+}

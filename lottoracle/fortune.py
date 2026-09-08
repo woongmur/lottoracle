@@ -130,6 +130,19 @@ def normalize_branch(text: str | None) -> str:
     raise ValueError(f"태어난 시는 자·축·인·묘·진·사·오·미·신·유·술·해 중 하나여야 합니다: {text}")
 
 
+# 성별은 대운 방향(순행·역행)에만 쓴다. 팔자 여덟 글자와 십신은 성별과 무관하다.
+_GENDER_ALIASES = {
+    "남": "남", "남자": "남", "m": "남", "male": "남",
+    "여": "여", "여자": "여", "f": "여", "female": "여",
+}
+
+
+def normalize_gender(text: str) -> str:
+    """'남'/'여' 로 맞춘다. 비었거나 모르는 값이면 빈 문자열 — 모르는 채로 둔다."""
+    key = str(text or "").strip().lower()
+    return _GENDER_ALIASES.get(key, "")
+
+
 def branch_choices() -> list[dict[str, str]]:
     """GUI 선택지: [{value:'자', label:'자시 (23:30~01:30) · 쥐'}, ...]"""
     return [{"value": b, "label": f"{b}시 ({BRANCH_RANGE[b]}) · {BRANCH_ANIMAL[b]}"} for b in HOUR_BRANCHES]
@@ -145,6 +158,7 @@ class Profile:
     birth_branch: str = ""        # 태어난 시의 12지지 한 글자 ('진'), 모르면 빈 문자열
     birth_hour: int | None = None  # (하위 호환) 0~23. birth_branch 가 비어 있으면 여기서 유도
     lunar: bool = False           # 생년월일을 음력으로 적었는가 (기본은 양력)
+    gender: str = ""              # '남' / '여' / '' (모름). 대운 방향에만 쓴다
 
     def __post_init__(self) -> None:
         self.lunar = bool(self.lunar)
@@ -171,6 +185,7 @@ class Profile:
         self.birth_branch = normalize_branch(self.birth_branch)
         if not self.birth_branch and self.birth_hour is not None:
             self.birth_branch = branch_of_time(self.birth_hour)
+        self.gender = normalize_gender(self.gender)
 
     @property
     def is_empty(self) -> bool:
@@ -210,6 +225,7 @@ class Profile:
             "hour_label": self.hour_label,
             "zodiac": self.zodiac,
             "lunar": self.lunar,
+            "gender": self.gender,
         }
 
     @classmethod

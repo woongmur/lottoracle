@@ -114,6 +114,17 @@ export const isoDate = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2
  * 운세와 추천 입력을 함께 채우는 사용자 프로필. 이 기기에만 저장된다.
  * 입력이 잘못되면 예외를 던진다.
  */
+// 성별은 대운 방향(순행·역행)에만 쓴다. 팔자 여덟 글자와 십신은 성별과 무관하다.
+const GENDER_ALIASES = {
+  남: '남', 남자: '남', m: '남', male: '남',
+  여: '여', 여자: '여', f: '여', female: '여',
+};
+
+/** '남'/'여' 로 맞춘다. 비었거나 모르는 값이면 빈 문자열 — 모르는 채로 둔다. */
+export function normalizeGender(text) {
+  return GENDER_ALIASES[String(text ?? '').trim().toLowerCase()] || '';
+}
+
 export function createProfile(opts = {}) {
   const name = String(opts.name ?? '').trim().slice(0, 20);
   let birthDate = String(opts.birthDate ?? '').trim();
@@ -142,11 +153,12 @@ export function createProfile(opts = {}) {
   if (!birthBranch && birthHour !== null) birthBranch = branchOfTime(birthHour);
 
   const lunar = !!opts.lunar;
+  const gender = normalizeGender(opts.gender);
   const year = birthDate ? Number(birthDate.slice(0, 4)) : null;
   const zodiac = year ? zodiacOfBirth(birthDate, lunar) : '';
   const hourAnimal = birthBranch ? BRANCH_ANIMAL[birthBranch] : '';
   return {
-    name, birthDate, birthBranch, birthHour, zodiac, hourAnimal, lunar,
+    name, birthDate, birthBranch, birthHour, zodiac, hourAnimal, lunar, gender,
     hourLabel: birthBranch ? `${birthBranch}시(${hourAnimal})` : '',
     isEmpty: !birthDate,
   };

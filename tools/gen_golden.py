@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, saju, sipsin, solartime, stats, strategies
+from lottoracle import daeun, data, explain, filters, folklore, fortune, generator, metrics, model, saju, sipsin, solartime, stats, strategies
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "web", "test", "golden")
@@ -392,6 +392,38 @@ def main() -> int:
         # 태어난 시를 모르는 사람 — 세 기둥으로만 센다.
         "threePillarCases": [{"in": list(c), **digest(saju.four_pillars(*c).pillars[:3])}
                              for c in saju_cases[:4]],
+    })
+
+    # ---- 대운
+    # 절입 시각이 초 단위로 어긋나면 대운수가 하루 차이로 갈린다. 시각도 함께 낸다.
+    def daeun_case(args, gender):
+        sj = saju.four_pillars(*args)
+        d = daeun.daeun(sj.year, sj.month, sj.day.stem, sj.utc_epoch, gender, age=30.0)
+        return {
+            "in": list(args), "gender": gender,
+            "forward": d["forward"], "reason": d["reason"], "start": d["start"],
+            "list": [{k: r[k] for k in ("index", "from", "to", "name", "hanja",
+                                        "stemGod", "branchGod", "now")} for r in d["list"]],
+            "current": d["current"]["name"] if d["current"] else None,
+            "beforeFirst": d["beforeFirst"],
+        }
+
+    dump("daeun.json", {
+        # 년간 10 × 성별 2. 방향이 뒤집히면 대운이 통째로 달라진다.
+        "direction": [[daeun.is_forward(st, True), daeun.is_forward(st, False)]
+                      for st in range(10)],
+        "jeol": [
+            {"in": list(c),
+             "next": [saju.next_jeol(saju.four_pillars(*c).utc_epoch)[0],
+                      round(saju.next_jeol(saju.four_pillars(*c).utc_epoch)[1], 3)],
+             "prev": [saju.prev_jeol(saju.four_pillars(*c).utc_epoch)[0],
+                      round(saju.prev_jeol(saju.four_pillars(*c).utc_epoch)[1], 3)]}
+            for c in saju_cases
+        ],
+        "texts": {"intro": daeun.INTRO, "beforeFirst": daeun.BEFORE_FIRST,
+                  "noGender": daeun.NO_GENDER},
+        "count": daeun.COUNT,
+        "cases": [daeun_case(c, g) for c in saju_cases for g in ("남", "여")],
     })
 
     print("완료")
