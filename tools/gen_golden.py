@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, solartime, stats, strategies
+from lottoracle import data, explain, filters, folklore, fortune, generator, metrics, model, saju, solartime, stats, strategies
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "web", "test", "golden")
@@ -325,6 +325,29 @@ def main() -> int:
             str(y): [[n, round(t, 3)] for n, t in solartime.solar_term_times(y)]
             for y in (1900, 1954, 1987, 2000, 2026, 2050)
         },
+    })
+
+    # ---- 사주팔자
+    # 표준시가 바뀐 해, 서머타임, 입춘·절 경계, 야자시를 일부러 섞는다.
+    saju_cases = [
+        (1990, 5, 21, 4, 30),
+        (1990, 2, 1, 10, 0),     # 설날 뒤 · 입춘 앞 — 띠와 년주가 갈리는 구간
+        (1998, 2, 1, 21, 0),     # 입춘 앞
+        (1998, 2, 10, 21, 0),    # 입춘 뒤
+        (1958, 6, 1, 12, 0),     # 동경 127.5도 + 서머타임
+        (1987, 7, 1, 12, 0),     # 동경 135도 + 서머타임
+        (1905, 6, 1, 12, 0),     # 서울 지방시
+        (2026, 1, 5, 23, 30),    # 야자시
+        (2026, 9, 7, 0, 10),     # 자시 후반
+        (2000, 1, 1, 12, 0),     # 일주 기준일
+    ]
+    dump("saju.json", {
+        "stems": saju.STEMS,
+        "branches": saju.BRANCHES,
+        "elements": list(saju.ELEMENTS),
+        "animals": list(saju.BRANCH_ANIMALS),
+        "lichun": {str(y): round(saju.lichun_epoch(y), 3) for y in (1900, 1990, 1998, 2026, 2050)},
+        "cases": [{"in": list(c), **saju.four_pillars(*c).to_dict()} for c in saju_cases],
     })
 
     print("완료")

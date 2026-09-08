@@ -163,7 +163,7 @@ export function solarLongitudeAt(epoch) {
  * 절기 간격은 14.7~15.7일로 변해서(궤도가 타원) 고정 폭 구간 + 이분법은 근을
  * 놓친다. 남은 각도만큼 시간을 밀어 근처까지 간 뒤 이분법으로 다듬는다.
  */
-function findLongitude(target, guess) {
+export function findLongitude(target, guess) {
   const diff = e => (((solarLongitudeAt(e) - target + 180) % 360) + 360) % 360 - 180;
 
   let e = guess;

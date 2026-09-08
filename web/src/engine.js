@@ -11,6 +11,7 @@ import { calibrate, fit, referenceScores } from './model.js';
 import { parse as parseQr } from './qr.js';
 import { recommend } from './generator.js';
 import { sheetSummary } from './sheet.js';
+import { fromProfile as sajuFromProfile } from './saju.js';
 import { build as buildStats, cold, hot, meanFrequency, profileStats } from './stats.js';
 import { DEFAULT_STRATEGIES, byKey } from './strategies.js';
 import {
@@ -260,6 +261,7 @@ export function createEngine(initialDraws = [], storage = null) {
         fortune: dailyFortune(p, today),
         recommendInputs: p.isEmpty ? null : recommendInputs(p, today),
         zodiacTable: zodiacTable(today, p.zodiac),
+        saju: sajuFromProfile(p, p.zodiac),
         personalNumbers: p.isEmpty ? [] : personalNumbers(p),
         nextDrawNo: prev ? prev.no + 1 : null,
         nextDrawDate: prev ? drawDateOf(prev.no + 1) : null,
