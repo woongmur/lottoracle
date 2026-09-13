@@ -46,13 +46,37 @@ class ParseTest(unittest.TestCase):
             with self.assertRaises(ValueError, msg=why):
                 qr.parse(bad)
 
+    def test_real_ticket_has_a_serial_tail(self):
+        """실제 용지는 게임 뒤에 발행번호가 붙는다. 이걸 거부해서 멀쩡한 용지가 다 튕겼다."""
+        v = ("1241q081115242843q071019263644q031322272841"
+             "q051114174244q0305082729421162056865")
+        t = qr.parse("https://m.dhlottery.co.kr/?v=" + v)
+        self.assertEqual(t.draw_no, 1241)
+        self.assertEqual(len(t.lines), 5)
+        self.assertEqual(t.lines[0], (8, 11, 15, 24, 28, 43))
+        self.assertEqual(t.lines[4], (3, 5, 8, 27, 29, 42))
+        self.assertEqual(t.serial, "1162056865")
+
+    def test_no_tail_means_no_serial(self):
+        self.assertEqual(qr.parse("1239m111322323336").serial, "")
+
+    def test_broken_middle_is_not_silently_skipped(self):
+        """가운데가 깨지면 뒤 게임을 조용히 버리지 말고 거부해야 한다.
+
+        한 줄을 말없이 빼면 당첨된 줄이 사라져도 화면에는 아무 표시가 없다.
+        """
+        with self.assertRaises(ValueError) as cm:
+            qr.parse("1241q081115242843XY071019263644")
+        self.assertIn("XY", str(cm.exception), "무엇이 남았는지 알려 줘야 한다")
+
     def test_unknown_marker_is_kept_as_unclear(self):
         self.assertEqual(qr.parse("1239x010203040506").kinds, ("확인불가",))
 
     def test_to_dict(self):
         self.assertEqual(
             qr.parse("1239m111322323336").to_dict(),
-            {"draw_no": 1239, "lines": [[11, 13, 22, 32, 33, 36]], "kinds": ["수동"]},
+            {"draw_no": 1239, "lines": [[11, 13, 22, 32, 33, 36]],
+             "kinds": ["수동"], "serial": ""},
         )
 
 

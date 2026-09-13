@@ -416,7 +416,7 @@
         <h3>당첨 확인</h3>
         <p class="kv">번호를 넣고 채점하면 등수를 판정합니다. 당첨이면 축하 연출이 나옵니다.</p>
         <label>기준 회차 (비우면 최신)</label><input type="number" id="grade-draw" placeholder="예: 1239">
-        <label>조합 (한 줄에 6개, 최대 10줄)</label>
+        <label>조합 (한 줄에 6개, 최대 20줄)</label>
         <div id="grade-lines"></div>
         <div class="row wrap" style="margin-top:8px">
           <button class="ghost" id="grade-add">줄 추가</button>
@@ -424,6 +424,7 @@
           <button class="ghost" id="grade-from-picks">내 번호 가져오기</button>
           <button class="ghost" id="grade-qr">QR 스캔</button>
         </div>
+        <div id="grade-hint" class="softbox" style="display:none;margin:8px 0 0"></div>
         <div id="qr-box" hidden>
           <div class="qr-view"><video id="qr-video" playsinline muted></video><div class="qr-frame"></div></div>
           <div class="row" style="margin-top:8px">
@@ -1176,8 +1177,17 @@ function loadStats() {
 }
 
 // ---- 당첨 확인
+// 한 회차에 다섯 줄짜리를 네 번 저장한 사람도 한 번에 채점할 수 있어야 한다.
+const MAX_GRADE_LINES = 20;
+
+function setGradeHint(text) {
+  const el = $('#grade-hint');
+  el.style.display = text ? '' : 'none';
+  el.textContent = text || '';
+}
+
 function addGradeLine(vals) {
-  const box = $('#grade-lines'); if (box.children.length >= 10) return;
+  const box = $('#grade-lines'); if (box.children.length >= MAX_GRADE_LINES) return;
   const d = el('div', 'gradeline');
   d.innerHTML = Array.from({length:6}, (_, i) => `<input type="number" min="1" max="45" value="${vals ? vals[i] : ''}">`).join('') + `<button class="ghost" title="삭제">✕</button>`;
   d.querySelector('button').addEventListener('click', () => d.remove());
@@ -1331,7 +1341,8 @@ function renderQr(r) {
   const t = r.ticket;
   $('#grade-draw').value = t.drawNo;
   $('#grade-lines').innerHTML = '';
-  t.lines.slice(0, 10).forEach(addGradeLine);
+  t.lines.slice(0, MAX_GRADE_LINES).forEach(addGradeLine);
+  setGradeHint(`${t.drawNo}회 용지에서 ${t.lines.length}게임을 읽었습니다.`);
 
   const head = `<div class="card"><div class="head"><div class="title">${t.drawNo}회 용지</div>
       <div class="kv">${esc(r.drawDate || '')}</div></div>` +
@@ -1370,13 +1381,30 @@ $('#qr-stop').addEventListener('click', stopQr);
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopQr(); });
 window.addEventListener('pagehide', stopQr);
 
-$('#grade-from-rec').addEventListener('click', () => { if (!LAST) return alert('먼저 추천을 실행하세요.'); $('#grade-lines').innerHTML=''; LAST.lines.forEach(L => addGradeLine(L.numbers)); });
+$('#grade-from-rec').addEventListener('click', () => {
+  if (!LAST) return alert('먼저 추천을 실행하세요.');
+  $('#grade-lines').innerHTML = ''; LAST.lines.forEach(L => addGradeLine(L.numbers));
+  setGradeHint('');
+});
+// 한 회차에 여러 번 저장했으면 그 회차 것을 전부 불러온다. 최근 한 건만 채점하면
+// '그 회차에 산 것 전부' 를 본 게 아닌데, 화면에는 그렇게 보인다.
 $('#grade-from-picks').addEventListener('click', () => {
   const picks = ENGINE.picksPayload();
   if (!picks.length) return alert('저장한 번호가 없습니다.');
-  const p = picks[0];
-  $('#grade-lines').innerHTML = ''; p.lines.slice(0, 10).forEach(addGradeLine);
-  $('#grade-draw').value = p.targetDraw;
+  // 기준 회차를 적어 뒀으면 그 회차, 아니면 가장 최근에 저장한 회차.
+  const asked = Number($('#grade-draw').value);
+  const target = picks.some(p => p.targetDraw === asked) ? asked : picks[0].targetDraw;
+  const mine = picks.filter(p => p.targetDraw === target);
+  const lines = mine.flatMap(p => p.lines);
+
+  $('#grade-lines').innerHTML = '';
+  lines.slice(0, MAX_GRADE_LINES).forEach(addGradeLine);
+  $('#grade-draw').value = target;
+
+  const shown = Math.min(lines.length, MAX_GRADE_LINES);
+  const over = lines.length - shown;
+  setGradeHint(`${target}회에 저장한 ${mine.length}건 · ${shown}줄을 불러왔습니다.`
+    + (over > 0 ? ` 한 번에 ${MAX_GRADE_LINES}줄까지라 ${over}줄은 빠졌습니다 — 내 번호 탭에서 건별로 보실 수 있습니다.` : ''));
 });
 $('#run-grade').addEventListener('click', () => {
   showErr('#grade-error', null);

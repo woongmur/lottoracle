@@ -45,6 +45,24 @@ test('잘못된 입력을 모두 거절한다', () => {
   }
 });
 
+test('실제 용지의 발행번호 꼬리를 받아들인다', () => {
+  // 게임 뒤에 붙는 숫자를 거부해서 멀쩡한 용지가 전부 튕겼다.
+  const v = '1241q081115242843q071019263644q031322272841'
+    + 'q051114174244q0305082729421162056865';
+  const t = qr.parse('https://m.dhlottery.co.kr/?v=' + v);
+  assert.equal(t.drawNo, 1241);
+  assert.equal(t.lines.length, 5);
+  assert.deepEqual(t.lines[0], [8, 11, 15, 24, 28, 43]);
+  assert.deepEqual(t.lines[4], [3, 5, 8, 27, 29, 42]);
+  assert.equal(t.serial, '1162056865');
+  assert.equal(qr.parse('1239m111322323336').serial, '');
+});
+
+test('가운데가 깨지면 뒤 게임을 조용히 버리지 않는다', () => {
+  // 한 줄을 말없이 빼면 당첨된 줄이 사라져도 화면에는 아무 표시가 없다.
+  assert.throws(() => qr.parse('1241q081115242843XY071019263644'), /XY/);
+});
+
 test('모르는 구분자는 확인불가로 남긴다', () => {
   assert.deepEqual(qr.parse('1239x010203040506').kinds, ['확인불가']);
 });
