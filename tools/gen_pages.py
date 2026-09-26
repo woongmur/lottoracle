@@ -16,6 +16,7 @@ import html
 import json
 import os
 import sys
+from urllib.parse import quote
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -72,7 +73,18 @@ footer{margin-top:34px;padding-top:14px;border-top:1px solid #232833;color:#8b95
 """
 
 
+def encode_url(url: str) -> str:
+    """주소의 한글을 퍼센트 인코딩한다.
+
+    region-경기.html 처럼 한글이 그대로 든 주소는 사이트맵 규약 밖이다(RFC 3986).
+    브라우저는 알아서 인코딩해 주지만 크롤러가 너그러울 거라고 기대할 이유는 없다.
+    사이트맵·canonical·og:url 이 전부 같은 글자로 같은 주소를 가리키게 한다.
+    """
+    return quote(url, safe=":/")
+
+
 def page(title: str, desc: str, canonical: str, body: str, base: str) -> str:
+    canonical = encode_url(canonical)
     return f"""<!doctype html>
 <html lang="ko">
 <head>
@@ -433,13 +445,31 @@ def main() -> int:
     region_urls = [f for f in written if f.startswith("region-")]
     urls = (["", "draws.html", "fame.html", "regions.html", "about.html", "privacy.html"]
             + region_urls + [f"draw-{n}.html" for n in reversed(nos)])
+    # lastmod 는 구글이 실제로 읽는 유일한 신호다(changefreq·priority 는 무시한다).
+    # 대신 '확인해 보니 맞더라' 가 쌓여야 믿어 주므로, 확실한 곳에만 적는다.
+    #   회차 페이지     그 회차 추첨일 — 이후로 내용이 안 바뀐다
+    #   목록·명당·지역  최신 회차 추첨일 — 매주 회차와 배출점이 함께 갱신된다
+    #   소개·개인정보   날짜를 모른다 — 모르면 안 적는다
+    date_of = {d["no"]: d.get("draw_date") or draw_date_of(d["no"]) for d in targets}
+    latest = date_of[nos[-1]]
+
+    def lastmod(u: str) -> str | None:
+        if u.startswith("draw-"):
+            return date_of[int(u[len("draw-"):-len(".html")])]
+        if u in ("about.html", "privacy.html"):
+            return None
+        return latest
+
     def entry(u: str) -> str:
         prio = ("1.0" if u == "" else
                 "0.8" if u in ("draws.html", "fame.html", "regions.html") else
                 "0.7" if u.startswith("region-") else
                 "0.4" if u == "about.html" else "0.3" if u == "privacy.html" else "0.6")
         freq = "weekly" if u in ("", "draws.html", "fame.html", "regions.html") or u.startswith("region-") else "yearly"
-        return f"  <url><loc>{base}/{u}</loc><changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
+        mod = lastmod(u)
+        mod = f"<lastmod>{mod}</lastmod>" if mod else ""
+        return (f"  <url><loc>{encode_url(f'{base}/{u}')}</loc>{mod}"
+                f"<changefreq>{freq}</changefreq><priority>{prio}</priority></url>")
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n'
                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                + "\n".join(entry(u) for u in urls) + "\n</urlset>\n")
