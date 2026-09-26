@@ -91,3 +91,46 @@ class Sitemap(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StaticPages(unittest.TestCase):
+    """web/public 의 손으로 쓴 페이지. 생성기가 아니라 배포 단계에서 그대로 복사된다."""
+
+    PUBLIC = os.path.join(ROOT, "web", "public")
+
+    def test_정적_페이지마다_자기_자신을_가리키는_canonical(self):
+        """privacy.html 에 canonical 이 없어서 '표준이 없는 중복 페이지' 로 분류됐다.
+
+        GitHub Pages 는 /privacy 와 /privacy.html 을 같은 내용으로 내준다.
+        어느 쪽이 진짜인지 적지 않으면 구글은 둘을 중복으로 본다.
+        """
+        for name in sorted(os.listdir(self.PUBLIC)):
+            if not name.endswith(".html"):
+                continue
+            head = open(os.path.join(self.PUBLIC, name), encoding="utf-8").read(4000)
+            m = re.search(r'<link rel="canonical" href="([^"]+)"', head)
+            self.assertIsNotNone(m, f"{name} 에 canonical 이 없다")
+            self.assertEqual(m.group(1), f"{BASE}/{name}", name)
+
+    def test_개인정보처리방침이_저장하는_항목을_빠짐없이_적는다(self):
+        """성별을 받기 시작하고도 방침에는 안 적었다. 열흘 동안 아무도 몰랐다.
+
+        앱이 저장하는 프로필 항목이 늘면 이 테스트가 떨어진다. 방침에 적고
+        아래 표에 이름을 더해야 통과한다.
+        """
+        engine = open(os.path.join(ROOT, "web", "src", "engine.js"), encoding="utf-8").read()
+        block = re.search(r"storage\?\.saveProfile\(\{(.*?)\}\);", engine, re.S).group(1)
+        stored = set(re.findall(r"(\w+):", block))
+
+        # 저장 항목 -> 방침 표에 적힌 이름. None 은 개인정보가 아닌 설정값.
+        label = {"name": "이름", "birthDate": "생년월일", "birthBranch": "태어난 시",
+                 "birthHour": "태어난 시", "gender": "성별", "lunar": None}
+        unknown = stored - set(label)
+        self.assertEqual(unknown, set(),
+                         f"새로 저장하는 항목 {unknown} — privacy.html 표에 적고 이 테스트의 label 에 더할 것")
+
+        policy = open(os.path.join(self.PUBLIC, "privacy.html"), encoding="utf-8").read()
+        table = re.search(r"<table>(.*?)</table>", policy, re.S).group(1)
+        for key in sorted(stored):
+            if label[key]:
+                self.assertIn(label[key], table, f"{key} 를 저장하는데 방침 표에 '{label[key]}' 가 없다")
