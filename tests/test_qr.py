@@ -95,9 +95,11 @@ class EngineQrTest(unittest.TestCase):
         self.assertEqual(len(r["colors"][0]), 6)
 
     def test_future_draw_is_pending(self):
-        r = self.engine.qr_payload("1250m010203040506")
+        # '미래' 는 박아 두면 언젠가 과거가 된다(1250회는 11월에 추첨). 최신 + 1 로 잡는다.
+        latest = self.engine.previous.no
+        r = self.engine.qr_payload(f"{latest + 1}m010203040506")
         self.assertEqual(r["status"], "pending")
-        self.assertEqual(r["latest_draw"], 1239)
+        self.assertEqual(r["latest_draw"], latest)
         self.assertNotIn("results", r)
 
     def test_missing_old_draw(self):

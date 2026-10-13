@@ -177,10 +177,11 @@ class EnginePicksTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             eng = Engine.load()
             eng.store = UserStore(os.path.join(tmp, "data"))
-            eng.store.add_pick([[11, 13, 22, 32, 36, 45]], 1239)   # 1239회 3등
-            eng.store.add_pick([[1, 2, 3, 4, 5, 6]], 1240)          # 미추첨
+            nxt = eng.previous.no + 1                               # 아직 추첨 전인 회차
+            eng.store.add_pick([[11, 13, 22, 32, 36, 45]], 1239)   # 1239회 3등 (지난 사실)
+            eng.store.add_pick([[1, 2, 3, 4, 5, 6]], nxt)           # 미추첨
             picks = eng.picks_payload()
-            self.assertEqual(picks[0]["target_draw"], 1240)
+            self.assertEqual(picks[0]["target_draw"], nxt)
             self.assertIsNone(picks[0]["results"])
             self.assertEqual(picks[1]["best_rank"], 3)
             self.assertEqual(picks[1]["results"][0]["hit"], [11, 13, 22, 32, 36])
@@ -188,12 +189,13 @@ class EnginePicksTest(unittest.TestCase):
     def test_refresh_uses_cache_path(self):
         eng = Engine.load()
         eng.store = UserStore(tempfile.mkdtemp())
-        fake = list(eng.draws) + [Draw(no=1240, numbers=(1, 2, 3, 4, 5, 6), bonus=7, draw_date="2026-09-05")]
+        last = eng.previous.no
+        fake = list(eng.draws) + [Draw(no=last + 1, numbers=(1, 2, 3, 4, 5, 6), bonus=7, draw_date="2099-01-03")]
         with mock.patch("lottoracle.engine.data.update_cache", return_value=fake) as m:
             r = eng.refresh()
         m.assert_called_once()
-        self.assertEqual((r["before"], r["after"], r["added"]), (1239, 1240, 1))
-        self.assertEqual(eng.previous.no, 1240)
+        self.assertEqual((r["before"], r["after"], r["added"]), (last, last + 1, 1))
+        self.assertEqual(eng.previous.no, last + 1)
 
 
 class WebNewApiTest(unittest.TestCase):
@@ -268,7 +270,8 @@ class WebNewApiTest(unittest.TestCase):
         self.assertEqual(r["picks"][0]["best_rank"], 3)
         pid = r["saved"]["id"]
         status, r = self._req("/api/picks", {"lines": [[1, 2, 3, 4, 5, 6]]})  # target 생략 → 다음 회차
-        self.assertEqual(r["saved"]["target_draw"], 1240)
+        latest = max(d.no for d in Engine.load().draws)
+        self.assertEqual(r["saved"]["target_draw"], latest + 1)
         status, r = self._req("/api/picks/delete", {"id": pid})
         self.assertTrue(r["ok"])
         self.assertEqual(len(r["picks"]), 1)

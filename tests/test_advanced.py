@@ -1,6 +1,11 @@
 """고도화 모듈 테스트: xlsx 입력, 보정/전형성 모델, 채점/백테스트, 엔진, 웹 API.
 
-실데이터(data/draws.json, 1~1239회차)를 그대로 쓴다.
+실데이터(data/draws.json)를 그대로 쓴다.
+
+'지난 회차의 사실'(1239회 당첨번호 등)은 숫자로 박아도 영원히 맞는다. 하지만
+'오늘 기준'(최신 회차, 다음 회차)은 매주 바뀐다. 그건 반드시 데이터에서 읽는다.
+1239 를 최신으로 박아 둔 탓에 주간 갱신이 새 회차를 받는 순간 테스트가
+떨어졌고, 갱신 작업이 9월 5일부터 한 번도 커밋하지 못했다.
 """
 
 from __future__ import annotations
@@ -18,7 +23,8 @@ from lottoracle.engine import Engine, Options, draw_date_of
 from lottoracle.web import make_server
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-XLSX = os.path.join(ROOT, "data", "source", "lotto_1-1239.xlsx")
+XLSX = os.path.join(ROOT, "data", "source", "lotto_1-1239.xlsx")   # 고정된 과거 원본
+LATEST = max(d.no for d in data.load_draws())                          # 매주 바뀐다
 
 
 class XlsxTest(unittest.TestCase):
@@ -35,9 +41,12 @@ class XlsxTest(unittest.TestCase):
         self.assertEqual(draws[-1].first_prize, 2_214_789_375)
 
     def test_cache_matches_xlsx(self):
+        """xlsx 가 다루는 회차는 전부 같아야 하고, 그 뒤로 새 회차가 붙을 수 있다."""
         cached = data.load_draws()
         fresh = data.load_xlsx(XLSX)
-        self.assertEqual([d.numbers for d in cached], [d.numbers for d in fresh])
+        self.assertGreaterEqual(len(cached), len(fresh))
+        self.assertEqual([d.numbers for d in cached[:len(fresh)]], [d.numbers for d in fresh])
+        self.assertEqual([d.no for d in cached], list(range(1, len(cached) + 1)), "회차가 빠짐없이 이어진다")
 
     def test_merge_prefers_incoming(self):
         a = [Draw(no=1, numbers=(1, 2, 3, 4, 5, 6), bonus=7)]
@@ -130,7 +139,7 @@ class EngineTest(unittest.TestCase):
     def test_recommend_payload(self):
         p = self.engine.recommend_payload(Options(seed=11, lines=3))
         self.assertEqual(len(p["lines"]), 3)
-        self.assertEqual(p["next_draw_no"], 1240)
+        self.assertEqual(p["next_draw_no"], self.engine.previous.no + 1)
         for ln in p["lines"]:
             self.assertEqual(len(ln["numbers"]), 6)
             self.assertNotIn(ln["bonus"], ln["numbers"])
@@ -147,9 +156,10 @@ class EngineTest(unittest.TestCase):
 
     def test_stats_payload(self):
         s = self.engine.stats_payload()
-        self.assertEqual(s["draws_used"], 1239)
+        n = len(self.engine.draws)
+        self.assertEqual(s["draws_used"], n)
         self.assertEqual(len(s["frequency"]), 45)
-        self.assertEqual(sum(f["count"] for f in s["frequency"]), 1239 * 6)
+        self.assertEqual(sum(f["count"] for f in s["frequency"]), n * 6)
 
     def test_grade_payload_screenshot_combos(self):
         p = self.engine.grade_payload([(11, 13, 22, 32, 36, 45), (2, 13, 20, 33, 36, 42)], 1239)
@@ -196,7 +206,7 @@ class WebTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn(b"lotto", body)
         status, body = self._get("/api/meta")
-        self.assertEqual(json.loads(body)["previous"]["no"], 1239)
+        self.assertEqual(json.loads(body)["previous"]["no"], LATEST)
 
     def test_recommend_and_grade(self):
         status, body = self._post("/api/recommend", {"seed": 3, "lines": 2})
