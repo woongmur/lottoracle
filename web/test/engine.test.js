@@ -6,7 +6,18 @@ import { createEngine, parseOptions } from '../src/engine.js';
 import { createStorage } from '../src/storage.js';
 
 const draws = JSON.parse(readFileSync(new URL('../data/draws.json', import.meta.url)));
-const WIN = [11, 13, 22, 32, 33, 36];
+const WIN = [11, 13, 22, 32, 33, 36];   // 1239회 당첨번호 — 지난 회차의 사실이라 영원히 맞다
+
+// '오늘 기준'(최신·다음 회차)은 매주 바뀌므로 데이터에서 읽는다. 1239 를 최신으로 박아 둔
+// 탓에 주간 갱신이 새 회차를 받는 순간 테스트가 떨어져, 9월 5일부터 한 번도 커밋하지 못했다.
+const LATEST = Math.max(...draws.map(d => d.no));
+const NEXT = LATEST + 1;
+const LATEST_DATE = draws.find(d => d.no === LATEST).draw_date;
+const plusDays = (iso, n) => {
+  const t = new Date(`${iso}T00:00:00Z`);
+  t.setUTCDate(t.getUTCDate() + n);
+  return t.toISOString().slice(0, 10);
+};
 
 const memStorage = () => {
   const map = new Map();
@@ -44,9 +55,9 @@ test('범위 밖 번호는 거절한다', () => {
 test('추천 결과에 화면이 필요한 값이 모두 있다', () => {
   const r = freshEngine().recommendPayload({ seed: 7 });
   assert.equal(r.lines.length, 5);
-  assert.equal(r.previous.no, 1239);
-  assert.equal(r.nextDrawNo, 1240);
-  assert.equal(r.nextDrawDate, '2026-09-05');
+  assert.equal(r.previous.no, LATEST);
+  assert.equal(r.nextDrawNo, NEXT);
+  assert.equal(r.nextDrawDate, plusDays(LATEST_DATE, 7), '추첨은 매주 토요일');
   assert.equal(r.drawsUsed, draws.length);
   for (const L of r.lines) {
     assert.equal(L.numbers.length, 6);
@@ -80,7 +91,7 @@ test('통계 페이로드가 화면 규격에 맞는다', () => {
   const s = freshEngine().statsPayload(30, 0.8);
   assert.equal(s.drawsUsed, draws.length);
   assert.equal(s.firstNo, 1);
-  assert.equal(s.lastNo, 1239);
+  assert.equal(s.lastNo, LATEST);
   assert.equal(s.frequency.length, 45);
   assert.equal(s.hot.length, 10);
   assert.equal(s.cold.length, 10);
@@ -92,7 +103,7 @@ test('통계 페이로드가 화면 규격에 맞는다', () => {
 test('회차 목록은 최신순이고 당첨금을 담는다', () => {
   const rows = freshEngine().drawsPayload(5);
   assert.equal(rows.length, 5);
-  assert.equal(rows[0].no, 1239);
+  assert.equal(rows[0].no, LATEST);
   assert.ok(rows[0].no > rows[1].no, '최신순');
   assert.equal(rows[0].hasPrizes, true);
   assert.equal(rows[0].prizes.length, 5);
@@ -117,9 +128,10 @@ test('QR 채점과 미추첨 구분', () => {
   const eng = freshEngine();
   assert.equal(eng.qrPayload('1239m111322323336').status, 'graded');
   assert.equal(eng.qrPayload('1239m111322323336').bestRank, 1);
-  const pending = eng.qrPayload('1250m010203040506');
+  // '미래' 를 박아 두면 언젠가 과거가 된다(1250회는 11월에 추첨). 다음 회차로 잡는다.
+  const pending = eng.qrPayload(`${NEXT}m010203040506`);
   assert.equal(pending.status, 'pending');
-  assert.equal(pending.latestDraw, 1239);
+  assert.equal(pending.latestDraw, LATEST);
 });
 
 test('프로필 저장·운세·삭제가 이어진다', () => {
@@ -133,7 +145,7 @@ test('프로필 저장·운세·삭제가 이어진다', () => {
   assert.equal(f.zodiacTable.length, 11, '내 띠는 표에서 뺀다');
   assert.equal(f.recommendInputs.birthday, '1990-05-21');
   assert.deepEqual(f.recommendInputs.lucky, f.fortune.numbers);
-  assert.equal(f.nextDrawNo, 1240);
+  assert.equal(f.nextDrawNo, NEXT);
   eng.clearProfile();
   assert.equal(eng.fortunePayload(null, '2026-09-03').hasProfile, false);
 });
@@ -145,9 +157,9 @@ test('생년월일 없이 저장하면 거절한다', () => {
 test('내 번호가 추첨 후 자동 채점된다', () => {
   const eng = freshEngine();
   eng.addPick([WIN], 1239, '테스트');
-  eng.addPick([[1, 2, 3, 4, 5, 6]], 1240);
+  eng.addPick([[1, 2, 3, 4, 5, 6]], NEXT);
   const picks = eng.picksPayload();
-  assert.equal(picks[0].targetDraw, 1240, '목표 회차 내림차순');
+  assert.equal(picks[0].targetDraw, NEXT, '목표 회차 내림차순');
   assert.equal(picks[0].results, null, '추첨 전이면 채점하지 않는다');
   assert.equal(picks[1].bestRank, 1);
   assert.equal(picks[1].totalPrize, 2214789375);
@@ -157,7 +169,7 @@ test('내 번호가 추첨 후 자동 채점된다', () => {
 
 test('저장 시 목표 회차를 생략하면 다음 회차로 잡는다', () => {
   const eng = freshEngine();
-  assert.equal(eng.addPick([WIN]).targetDraw, 1240);
+  assert.equal(eng.addPick([WIN]).targetDraw, NEXT);
 });
 
 test('데이터가 없어도 죽지 않는다', () => {
@@ -176,7 +188,7 @@ test('갱신 실패는 예외 대신 결과로 알린다', async () => {
   const r = await eng.refresh({ fetchImpl: async () => { throw new Error('네트워크 없음'); } });
   assert.equal(r.ok, false);
   assert.match(r.error, /네트워크 없음/);
-  assert.equal(r.after, 1239, '기존 데이터는 그대로');
+  assert.equal(r.after, LATEST, '기존 데이터는 그대로');
 });
 
 test('갱신 성공 시 새 회차가 붙는다', async () => {
@@ -185,7 +197,7 @@ test('갱신 성공 시 새 회차가 붙는다', async () => {
     ok: true,
     json: async () => {
       const m = /srchLtEpsd=(\d+)/.exec(url);
-      const no = m ? Number(m[1]) : 1240;
+      const no = m ? Number(m[1]) : NEXT;   // 회차 없이 부르면 '최신' 을 준다
       return { data: { list: [{
         ltEpsd: no, tm1WnNo: 1, tm2WnNo: 2, tm3WnNo: 3, tm4WnNo: 4, tm5WnNo: 5, tm6WnNo: 6,
         bnsWnNo: 7, ltRflYmd: '20260905', rnk1WnNope: 1, rnk1WnAmt: 100, rnk1SumWnAmt: 100,
@@ -195,7 +207,7 @@ test('갱신 성공 시 새 회차가 붙는다', async () => {
   const r = await eng.refresh({ fetchImpl: fake });
   assert.equal(r.ok, true);
   assert.equal(r.added, 1);
-  assert.equal(r.after, 1240);
-  assert.equal(eng.previous.no, 1240);
-  assert.equal(eng.recommendPayload({ seed: 1 }).nextDrawNo, 1241, '캐시가 갱신된다');
+  assert.equal(r.after, NEXT);
+  assert.equal(eng.previous.no, NEXT);
+  assert.equal(eng.recommendPayload({ seed: 1 }).nextDrawNo, NEXT + 1, '캐시가 갱신된다');
 });
