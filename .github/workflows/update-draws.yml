@@ -15,6 +15,12 @@ on:
 
 permissions:
   contents: write
+  issues: write      # 실패하면 이슈로 알린다
+
+# 일본 로또 갱신(update-jp)과 같은 브랜치에 푸시한다. 겹치지 않게 줄 세운다.
+concurrency:
+  group: data-update
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -75,3 +81,22 @@ jobs:
           git diff --cached --quiet && { echo "바뀐 것이 없습니다."; exit 0; }
           git commit -m "data: ${{ steps.fetch.outputs.after }}회차까지 갱신 (회차·배출점·당첨현황)"
           git push
+
+      # 9월 초부터 6주 동안 이 워크플로가 실패하는 줄 아무도 몰랐다. Actions 탭을
+      # 열어 봐야만 보이는 실패는 없는 것과 같아서, 저장소 이슈로 띄운다.
+      - name: 실패 알림
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="로또 회차 자동 갱신 실패"
+          n=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$n" ]; then
+            gh issue comment "$n" --body "다시 실패했습니다: $RUN_URL"
+          else
+            gh issue create --title "$title" --body "$(printf '%s\n\n%s\n\n%s' \
+              "주간 회차 갱신이 실패했습니다. 고칠 때까지 사이트의 회차·배출점 데이터가 멈춰 있습니다." \
+              "로그: $RUN_URL" \
+              "동행복권 응답이 바뀌었거나, 테스트가 실패한 경우입니다. 고친 뒤 이 이슈를 닫아 주세요.")"
+          fi
