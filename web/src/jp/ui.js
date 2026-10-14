@@ -28,6 +28,11 @@ export function createJpUi(ctx) {
   let last = null;                 // 마지막 추천 결과 (저장용)
   let statsFor = null;
 
+  // 서비스 워커 캐시에 예전 storage.js 가 남아 있으면 일본 번호 함수가 없다.
+  // 그대로 부르면 'is not a function' 이 뜨므로, 새로고침하면 된다고 알려 준다.
+  const STALE = '앱 파일이 아직 이전 버전입니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.';
+  const storageReady = () => typeof storage.addJpPick === 'function' && typeof storage.listJpPicks === 'function';
+
   async function engineOf(key) {
     if (engines.has(key)) return engines.get(key);
     if (!loading.has(key)) {
@@ -201,6 +206,7 @@ export function createJpUi(ctx) {
 
   function savePicks() {
     if (!last || !last.next) return;
+    if (!storageReady()) { $('#jp-save-msg').textContent = STALE; return; }
     const btn = $('#jp-save');
     btn.disabled = true;
     try {
@@ -217,6 +223,7 @@ export function createJpUi(ctx) {
   async function loadPicks() {
     showErr('#jp-picks-error', null);
     const body = $('#jp-picks-body');
+    if (!storageReady()) { showErr('#jp-picks-error', STALE); body.innerHTML = ''; return; }
     // 저장 순서의 역순(같은 초에 둘을 저장해도 나중 것이 위로), 그다음 저장 시각.
     const picks = storage.listJpPicks().reverse()
       .sort((a, b) => String(b.savedAt).localeCompare(a.savedAt));
