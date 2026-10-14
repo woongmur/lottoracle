@@ -1,0 +1,1154 @@
+{
+ "loto6": {
+  "base": {
+   "acMin": 6,
+   "carryoverRange": [
+    0,
+    2
+   ],
+   "endSumRange": [
+    17,
+    35
+   ],
+   "forbidAllSameParity": true,
+   "lowRange": [
+    2,
+    4
+   ],
+   "maxConsecutivePairs": 1,
+   "maxPerZone": 3,
+   "maxRun": 2,
+   "maxSameEnding": 2,
+   "minZones": 3,
+   "mult3Range": [
+    0,
+    4
+   ],
+   "oddRange": [
+    2,
+    4
+   ],
+   "spreadMin": 20,
+   "sumRange": [
+    95,
+    170
+   ]
+  },
+  "cases": [
+   {
+    "numbers": [
+     4,
+     6,
+     8,
+     11,
+     24,
+     27
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 80 (허용 95~170)",
+      "이월수 6개"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     2,
+     8,
+     10,
+     13,
+     27,
+     30
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 90 (허용 95~170)"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 21 (허용 95~170)",
+      "고저 6:0",
+      "AC값 0 (최소 6)",
+      "6연속수",
+      "연속쌍 5개",
+      "한 구간에 6개 집중",
+      "분포 구간 1개",
+      "번호 폭 5"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     38,
+     39,
+     40,
+     41,
+     42,
+     43
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 243 (허용 95~170)",
+      "고저 0:6",
+      "AC값 0 (최소 6)",
+      "6연속수",
+      "연속쌍 5개",
+      "한 구간에 4개 집중",
+      "분포 구간 2개",
+      "번호 폭 5"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 36 (허용 95~170)",
+      "홀짝 6:0",
+      "고저 6:0",
+      "AC값 0 (최소 6)",
+      "한 구간에 5개 집중",
+      "분포 구간 2개",
+      "번호 폭 10",
+      "전부 홀수 또는 전부 짝수"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     2,
+     4,
+     6,
+     8,
+     10,
+     12
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 42 (허용 95~170)",
+      "홀짝 0:6",
+      "고저 6:0",
+      "AC값 0 (최소 6)",
+      "한 구간에 4개 집중",
+      "분포 구간 2개",
+      "번호 폭 10",
+      "이월수 3개",
+      "전부 홀수 또는 전부 짝수"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     4,
+     13,
+     23
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 46 (허용 95~170)",
+      "고저 5:1",
+      "4연속수",
+      "연속쌍 3개",
+      "한 구간에 4개 집중",
+      "끝수합 16",
+      "같은 끝수 3개"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     5,
+     11,
+     17,
+     22,
+     26,
+     33
+    ],
+    "verdict": {
+     "ok": true,
+     "violations": []
+    }
+   },
+   {
+    "numbers": [
+     7,
+     14,
+     21,
+     28,
+     35,
+     42
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "AC값 0 (최소 6)"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     41,
+     42,
+     43
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "AC값 2 (최소 6)",
+      "3연속수",
+      "연속쌍 4개",
+      "분포 구간 2개",
+      "끝수합 12"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     39,
+     20,
+     8,
+     5,
+     3,
+     1
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 76 (허용 95~170)",
+      "고저 5:1",
+      "한 구간에 4개 집중"
+     ]
+    }
+   }
+  ],
+  "relaxed": {
+   "1": {
+    "acMin": 5,
+    "carryoverRange": [
+     0,
+     3
+    ],
+    "endSumRange": [
+     12,
+     40
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     1,
+     5
+    ],
+    "maxConsecutivePairs": 2,
+    "maxPerZone": 4,
+    "maxRun": 3,
+    "maxSameEnding": 3,
+    "minZones": 2,
+    "mult3Range": [
+     0,
+     5
+    ],
+    "oddRange": [
+     1,
+     5
+    ],
+    "spreadMin": 14,
+    "sumRange": [
+     83,
+     182
+    ]
+   },
+   "2": {
+    "acMin": 4,
+    "carryoverRange": [
+     0,
+     4
+    ],
+    "endSumRange": [
+     7,
+     45
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     6
+    ],
+    "maxConsecutivePairs": 3,
+    "maxPerZone": 5,
+    "maxRun": 4,
+    "maxSameEnding": 4,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     6
+    ],
+    "oddRange": [
+     0,
+     6
+    ],
+    "spreadMin": 8,
+    "sumRange": [
+     71,
+     194
+    ]
+   },
+   "3": {
+    "acMin": 3,
+    "carryoverRange": [
+     0,
+     5
+    ],
+    "endSumRange": [
+     2,
+     50
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     6
+    ],
+    "maxConsecutivePairs": 4,
+    "maxPerZone": 6,
+    "maxRun": 5,
+    "maxSameEnding": 5,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     6
+    ],
+    "oddRange": [
+     0,
+     6
+    ],
+    "spreadMin": 2,
+    "sumRange": [
+     59,
+     206
+    ]
+   },
+   "6": {
+    "acMin": 0,
+    "carryoverRange": [
+     0,
+     6
+    ],
+    "endSumRange": [
+     0,
+     54
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     6
+    ],
+    "maxConsecutivePairs": 5,
+    "maxPerZone": 6,
+    "maxRun": 6,
+    "maxSameEnding": 6,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     6
+    ],
+    "oddRange": [
+     0,
+     6
+    ],
+    "spreadMin": 0,
+    "sumRange": [
+     23,
+     242
+    ]
+   }
+  }
+ },
+ "loto7": {
+  "base": {
+   "acMin": 8,
+   "carryoverRange": [
+    0,
+    3
+   ],
+   "endSumRange": [
+    23,
+    39
+   ],
+   "forbidAllSameParity": true,
+   "lowRange": [
+    2,
+    5
+   ],
+   "maxConsecutivePairs": 2,
+   "maxPerZone": 4,
+   "maxRun": 3,
+   "maxSameEnding": 2,
+   "minZones": 3,
+   "mult3Range": [
+    0,
+    4
+   ],
+   "oddRange": [
+    2,
+    5
+   ],
+   "spreadMin": 20,
+   "sumRange": [
+    101,
+    167
+   ]
+  },
+  "cases": [
+   {
+    "numbers": [
+     10,
+     13,
+     21,
+     24,
+     28,
+     29,
+     34
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "이월수 7개"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     7,
+     10,
+     12,
+     17,
+     23,
+     28,
+     34
+    ],
+    "verdict": {
+     "ok": true,
+     "violations": []
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 28 (허용 101~167)",
+      "고저 7:0",
+      "AC값 0 (최소 8)",
+      "7연속수",
+      "연속쌍 6개",
+      "한 구간에 7개 집중",
+      "분포 구간 1개",
+      "번호 폭 6"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     31,
+     32,
+     33,
+     34,
+     35,
+     36,
+     37
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 238 (허용 101~167)",
+      "고저 0:7",
+      "AC값 0 (최소 8)",
+      "7연속수",
+      "연속쌍 6개",
+      "한 구간에 7개 집중",
+      "분포 구간 1개",
+      "번호 폭 6"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11,
+     13
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 49 (허용 101~167)",
+      "홀짝 7:0",
+      "고저 7:0",
+      "AC값 0 (최소 8)",
+      "한 구간에 5개 집중",
+      "분포 구간 2개",
+      "번호 폭 12",
+      "전부 홀수 또는 전부 짝수"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     2,
+     4,
+     6,
+     8,
+     10,
+     12,
+     14
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 56 (허용 101~167)",
+      "홀짝 0:7",
+      "고저 7:0",
+      "AC값 0 (최소 8)",
+      "분포 구간 2개",
+      "번호 폭 12",
+      "전부 홀수 또는 전부 짝수"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     13,
+     23
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 51 (허용 101~167)",
+      "고저 6:1",
+      "5연속수",
+      "연속쌍 4개",
+      "한 구간에 5개 집중",
+      "끝수합 21",
+      "같은 끝수 3개"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     5,
+     11,
+     17,
+     22,
+     26,
+     30,
+     33
+    ],
+    "verdict": {
+     "ok": true,
+     "violations": []
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     7,
+     14,
+     21,
+     28,
+     35
+    ],
+    "verdict": {
+     "ok": true,
+     "violations": []
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     34,
+     35,
+     36,
+     37
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "AC값 3 (최소 8)",
+      "4연속수",
+      "연속쌍 5개",
+      "분포 구간 2개"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     37,
+     30,
+     24,
+     23,
+     21,
+     19,
+     10
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "고저 1:6"
+     ]
+    }
+   }
+  ],
+  "relaxed": {
+   "1": {
+    "acMin": 7,
+    "carryoverRange": [
+     0,
+     4
+    ],
+    "endSumRange": [
+     18,
+     44
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     1,
+     6
+    ],
+    "maxConsecutivePairs": 3,
+    "maxPerZone": 5,
+    "maxRun": 4,
+    "maxSameEnding": 3,
+    "minZones": 2,
+    "mult3Range": [
+     0,
+     5
+    ],
+    "oddRange": [
+     1,
+     6
+    ],
+    "spreadMin": 15,
+    "sumRange": [
+     89,
+     179
+    ]
+   },
+   "2": {
+    "acMin": 6,
+    "carryoverRange": [
+     0,
+     5
+    ],
+    "endSumRange": [
+     13,
+     49
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     7
+    ],
+    "maxConsecutivePairs": 4,
+    "maxPerZone": 6,
+    "maxRun": 5,
+    "maxSameEnding": 4,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     6
+    ],
+    "oddRange": [
+     0,
+     7
+    ],
+    "spreadMin": 10,
+    "sumRange": [
+     77,
+     191
+    ]
+   },
+   "3": {
+    "acMin": 5,
+    "carryoverRange": [
+     0,
+     6
+    ],
+    "endSumRange": [
+     8,
+     54
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     7
+    ],
+    "maxConsecutivePairs": 5,
+    "maxPerZone": 7,
+    "maxRun": 6,
+    "maxSameEnding": 5,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     7
+    ],
+    "oddRange": [
+     0,
+     7
+    ],
+    "spreadMin": 5,
+    "sumRange": [
+     65,
+     203
+    ]
+   },
+   "6": {
+    "acMin": 2,
+    "carryoverRange": [
+     0,
+     7
+    ],
+    "endSumRange": [
+     0,
+     63
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     7
+    ],
+    "maxConsecutivePairs": 6,
+    "maxPerZone": 7,
+    "maxRun": 7,
+    "maxSameEnding": 7,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     7
+    ],
+    "oddRange": [
+     0,
+     7
+    ],
+    "spreadMin": 0,
+    "sumRange": [
+     29,
+     239
+    ]
+   }
+  }
+ },
+ "miniloto": {
+  "base": {
+   "acMin": 4,
+   "carryoverRange": [
+    0,
+    2
+   ],
+   "endSumRange": [
+    13,
+    29
+   ],
+   "forbidAllSameParity": true,
+   "lowRange": [
+    1,
+    4
+   ],
+   "maxConsecutivePairs": 1,
+   "maxPerZone": 3,
+   "maxRun": 2,
+   "maxSameEnding": 2,
+   "minZones": 2,
+   "mult3Range": [
+    0,
+    3
+   ],
+   "oddRange": [
+    1,
+    4
+   ],
+   "spreadMin": 14,
+   "sumRange": [
+    56,
+    105
+   ]
+  },
+  "cases": [
+   {
+    "numbers": [
+     2,
+     5,
+     6,
+     24,
+     28
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "이월수 5개"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     3,
+     17,
+     20,
+     25
+    ],
+    "verdict": {
+     "ok": true,
+     "violations": []
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 15 (허용 56~105)",
+      "고저 5:0",
+      "AC값 0 (최소 4)",
+      "5연속수",
+      "연속쌍 4개",
+      "한 구간에 5개 집중",
+      "분포 구간 1개",
+      "번호 폭 4"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     27,
+     28,
+     29,
+     30,
+     31
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 145 (허용 56~105)",
+      "고저 0:5",
+      "AC값 0 (최소 4)",
+      "5연속수",
+      "연속쌍 4개",
+      "번호 폭 4"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     3,
+     5,
+     7,
+     9
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 25 (허용 56~105)",
+      "홀짝 5:0",
+      "고저 5:0",
+      "AC값 0 (최소 4)",
+      "한 구간에 5개 집중",
+      "분포 구간 1개",
+      "번호 폭 8",
+      "전부 홀수 또는 전부 짝수"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     2,
+     4,
+     6,
+     8,
+     10
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 30 (허용 56~105)",
+      "홀짝 0:5",
+      "고저 5:0",
+      "AC값 0 (최소 4)",
+      "한 구간에 4개 집중",
+      "번호 폭 8",
+      "전부 홀수 또는 전부 짝수"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     13,
+     23
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "합계 42 (허용 56~105)",
+      "3연속수",
+      "연속쌍 2개",
+      "끝수합 12",
+      "같은 끝수 3개"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     5,
+     11,
+     17,
+     22,
+     26
+    ],
+    "verdict": {
+     "ok": true,
+     "violations": []
+    }
+   },
+   {
+    "numbers": [
+     1,
+     7,
+     14,
+     21,
+     28
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "AC값 3 (최소 4)"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     1,
+     2,
+     3,
+     30,
+     31
+    ],
+    "verdict": {
+     "ok": false,
+     "violations": [
+      "AC값 2 (최소 4)",
+      "3연속수",
+      "연속쌍 3개",
+      "끝수합 7"
+     ]
+    }
+   },
+   {
+    "numbers": [
+     22,
+     21,
+     18,
+     16,
+     8
+    ],
+    "verdict": {
+     "ok": true,
+     "violations": []
+    }
+   }
+  ],
+  "relaxed": {
+   "1": {
+    "acMin": 3,
+    "carryoverRange": [
+     0,
+     3
+    ],
+    "endSumRange": [
+     8,
+     34
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     5
+    ],
+    "maxConsecutivePairs": 2,
+    "maxPerZone": 4,
+    "maxRun": 3,
+    "maxSameEnding": 3,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     4
+    ],
+    "oddRange": [
+     0,
+     5
+    ],
+    "spreadMin": 10,
+    "sumRange": [
+     49,
+     112
+    ]
+   },
+   "2": {
+    "acMin": 2,
+    "carryoverRange": [
+     0,
+     4
+    ],
+    "endSumRange": [
+     3,
+     39
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     5
+    ],
+    "maxConsecutivePairs": 3,
+    "maxPerZone": 5,
+    "maxRun": 4,
+    "maxSameEnding": 4,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     5
+    ],
+    "oddRange": [
+     0,
+     5
+    ],
+    "spreadMin": 6,
+    "sumRange": [
+     42,
+     119
+    ]
+   },
+   "3": {
+    "acMin": 1,
+    "carryoverRange": [
+     0,
+     5
+    ],
+    "endSumRange": [
+     0,
+     44
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     5
+    ],
+    "maxConsecutivePairs": 4,
+    "maxPerZone": 5,
+    "maxRun": 5,
+    "maxSameEnding": 5,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     5
+    ],
+    "oddRange": [
+     0,
+     5
+    ],
+    "spreadMin": 2,
+    "sumRange": [
+     35,
+     126
+    ]
+   },
+   "6": {
+    "acMin": 0,
+    "carryoverRange": [
+     0,
+     5
+    ],
+    "endSumRange": [
+     0,
+     45
+    ],
+    "forbidAllSameParity": true,
+    "lowRange": [
+     0,
+     5
+    ],
+    "maxConsecutivePairs": 4,
+    "maxPerZone": 5,
+    "maxRun": 5,
+    "maxSameEnding": 5,
+    "minZones": 1,
+    "mult3Range": [
+     0,
+     5
+    ],
+    "oddRange": [
+     0,
+     5
+    ],
+    "spreadMin": 0,
+    "sumRange": [
+     14,
+     147
+    ]
+   }
+  }
+ }
+}
