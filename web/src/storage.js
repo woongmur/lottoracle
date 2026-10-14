@@ -2,6 +2,8 @@
  *
  * localStorage 를 못 쓰는 환경(사파리 프라이빗, 테스트)에서도 죽지 않게 메모리로 물러선다.
  */
+import { GAMES as JP_GAMES } from './jp/games.js';
+
 const PREFIX = 'lottoracle.';
 const MAX_PICKS = 200;
 
@@ -17,6 +19,20 @@ function isPick(p) {
     && Array.isArray(p.lines) && p.lines.length > 0
     && p.lines.every(row => Array.isArray(row) && row.length === 6
       && row.every(n => Number.isInteger(n) && n >= 1 && n <= 45));
+}
+
+/** 일본 로또 번호. 한국 번호와 다른 열쇠('jppicks')에 따로 둔다.
+ *
+ * 한국 쪽은 '1~45 에서 6개' 만 받으므로 섞어 두면 로또7 줄이 거기서 걸러져 사라지고,
+ * 반대로 로또6 줄이 한국 회차로 채점될 수도 있다. 아예 다른 서랍에 넣는다.
+ */
+function isJpPick(p) {
+  const g = p && JP_GAMES[p.game];
+  return !!g && Number.isFinite(Number(p.targetDraw))
+    && Array.isArray(p.lines) && p.lines.length > 0
+    && p.lines.every(row => Array.isArray(row) && row.length === g.pick
+      && new Set(row).size === g.pick
+      && row.every(n => Number.isInteger(n) && n >= 1 && n <= g.pool));
 }
 
 /** localStorage 흉내를 내는 메모리 백엔드. */
@@ -106,13 +122,52 @@ export function createStorage(backend = null) {
       return true;
     },
 
+    // ---- 일본 로또 번호
+    listJpPicks() {
+      const raw = read('jppicks', []);
+      return Array.isArray(raw) ? raw.filter(isJpPick) : [];
+    },
+    addJpPick(game, lines, targetDraw, targetDate = '', note = '') {
+      const g = JP_GAMES[game];
+      if (!g) throw new Error(`모르는 게임입니다: ${game}`);
+      const clean = lines.map(row => {
+        const nums = [...row].map(Number).sort((a, b) => a - b);
+        if (nums.length !== g.pick || new Set(nums).size !== g.pick
+          || nums.some(n => !Number.isInteger(n) || n < 1 || n > g.pool)) {
+          throw new Error(`${g.name} 조합은 1~${g.pool} 사이 서로 다른 번호 ${g.pick}개여야 합니다: ${[...row].join(', ')}`);
+        }
+        return nums;
+      });
+      if (!clean.length) throw new Error('저장할 조합이 없습니다.');
+      if (clean.length > 20) throw new Error('한 번에 최대 20줄까지 저장할 수 있습니다.');
+      const record = {
+        id: Math.random().toString(36).slice(2, 12),
+        game,
+        savedAt: new Date().toISOString().slice(0, 19),
+        targetDraw: Number(targetDraw),
+        targetDate: String(targetDate || ''),
+        lines: clean,
+        note: String(note || '').slice(0, 60),
+      };
+      write('jppicks', [...this.listJpPicks(), record].slice(-MAX_PICKS));
+      return record;
+    },
+    deleteJpPick(id) {
+      const picks = this.listJpPicks();
+      const kept = picks.filter(p => p.id !== id);
+      if (kept.length === picks.length) return false;
+      write('jppicks', kept);
+      return true;
+    },
+
     // ---- 설정
     loadSettings() {
       const raw = read('settings', {});
       return raw && typeof raw === 'object' ? raw : {};
     },
     saveSettings(patch) {
-      const allowed = ['autoRefresh', 'lastCheckedAt'];
+      // mode: 'kr' | 'jp' (상단 스위치), jpGame: 마지막으로 고른 일본 게임
+      const allowed = ['autoRefresh', 'lastCheckedAt', 'mode', 'jpGame'];
       const current = this.loadSettings();
       for (const [k, v] of Object.entries(patch)) {
         if (!allowed.includes(k)) continue;
@@ -127,7 +182,7 @@ export function createStorage(backend = null) {
     loadDrawCache: () => read('draws', null),
     saveDrawCache: draws => write('draws', draws),
     clearAll() {
-      for (const k of ['profile', 'picks', 'settings', 'draws']) drop(k);
+      for (const k of ['profile', 'picks', 'jppicks', 'settings', 'draws']) drop(k);
     },
 
     // ---- 백업
@@ -139,6 +194,7 @@ export function createStorage(backend = null) {
         exportedAt: new Date().toISOString().slice(0, 19),
         profile: this.loadProfile(),
         picks: this.listPicks(),
+        jpPicks: this.listJpPicks(),
         settings: this.loadSettings(),
       };
     },
@@ -161,6 +217,13 @@ export function createStorage(backend = null) {
       const added = incoming.filter(p => !seen.has(p.id));
       if (added.length) write('picks', [...current, ...added].slice(-MAX_PICKS));
 
+      // 일본 번호도 같은 방식으로 합친다. 이 칸이 없는 예전 백업은 그냥 건너뛴다.
+      const jpIncoming = Array.isArray(data.jpPicks) ? data.jpPicks.filter(isJpPick) : [];
+      const jpCurrent = this.listJpPicks();
+      const jpSeen = new Set(jpCurrent.map(p => p.id));
+      const jpAdded = jpIncoming.filter(p => !jpSeen.has(p.id));
+      if (jpAdded.length) write('jppicks', [...jpCurrent, ...jpAdded].slice(-MAX_PICKS));
+
       let profileRestored = false;
       if (data.profile && typeof data.profile === 'object'
         && (replaceProfile || !this.loadProfile())) {
@@ -169,7 +232,11 @@ export function createStorage(backend = null) {
       }
       if (data.settings && typeof data.settings === 'object') this.saveSettings(data.settings);
 
-      return { added: added.length, duplicates: incoming.length - added.length, skipped, profileRestored };
+      return {
+        added: added.length, duplicates: incoming.length - added.length, skipped, profileRestored,
+        jpAdded: jpAdded.length,
+        jpSkipped: (Array.isArray(data.jpPicks) ? data.jpPicks.length : 0) - jpIncoming.length,
+      };
     },
   };
 }
