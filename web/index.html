@@ -289,14 +289,23 @@
   .gamesw button b{display:block;font-size:14px}
   .gamesw button small{display:block;font-size:10.5px;color:var(--muted);letter-spacing:-.3px;margin-top:1px}
   .gamesw button.on{border-color:var(--accent);background:rgba(255,106,61,.12)}
-  .gamesw button.on b{color:var(--accent)}
-  /* 일본 로또 공: 번호대별 색이 없어서 한 가지 공에 게임별 테두리만 다르게 */
+  /* 일본 로또 게임별 상징색 — 공식 로고(다카라쿠지 공식 사이트 SVG)에서 뽑은 색.
+     로또6 은 '6' 의 마젠타, 로또7 은 '7' 의 빨강, 미니로또는 로고 바탕 띠의 주황. */
+  :root{--g-loto6:#e4007f;--g-loto7:#e60012;--g-miniloto:#f39800}
+  .g-loto6{--g:var(--g-loto6)}.g-loto7{--g:var(--g-loto7)}.g-miniloto{--g:var(--g-miniloto)}
+  /* 내 번호·추천 카드: 왼쪽 띠와 머리 쪽 은은한 바탕으로 게임을 가른다 */
+  .card.jp-card{border-left:5px solid var(--g);
+    background:linear-gradient(90deg,color-mix(in srgb,var(--g) 14%,var(--panel)) 0,var(--panel) 55%)}
+  .gchip{display:inline-block;background:var(--g);color:#fff;border-radius:999px;padding:1px 9px;
+    font-size:12px;font-weight:700;margin-right:6px;vertical-align:1px}
+  .gamesw button.g-loto6.on,.gamesw button.g-loto7.on,.gamesw button.g-miniloto.on{
+    border-color:var(--g);background:color-mix(in srgb,var(--g) 16%,transparent)}
+  .gamesw button.on b{color:var(--g, var(--accent))}
+  /* 일본 로또 공: 번호대별 색이 없어서 한 가지 공에 게임 상징색 테두리 */
   .ball.jp{background:#f4efe6;color:#1b2550}
   .jp-draw{padding:8px 0;border-bottom:1px solid var(--line)}
   .jp-draw .kv{margin:0 0 4px}
-  .ball.jp.g-loto6{box-shadow:inset 0 0 0 3px #4f7cf0}
-  .ball.jp.g-loto7{box-shadow:inset 0 0 0 3px #ff6a3d}
-  .ball.jp.g-miniloto{box-shadow:inset 0 0 0 3px #3fbf8f}
+  .ball.jp{box-shadow:inset 0 0 0 3px var(--g, var(--accent))}
   /* ---- 모바일 (세로 폭 640px 이하) ---- */
   @media(max-width:640px){
     /* 헤더: 로고 한 줄, 최신 회차는 그 아래 한 줄로 가로 스크롤 */

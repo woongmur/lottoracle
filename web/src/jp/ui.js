@@ -56,7 +56,7 @@ export function createJpUi(ctx) {
 
   const switcher = id => `<div class="gamesw" id="${id}" role="tablist">${GAME_KEYS.map(k => {
     const g = GAMES[k];
-    return `<button type="button" data-game="${k}" class="${k === game ? 'on' : ''}">
+    return `<button type="button" data-game="${k}" class="g-${k}${k === game ? ' on' : ''}">
       <b>${g.name}</b><small>1~${g.pool} 중 ${g.pick}개</small><small>${DRAW_DAYS[k]} 추첨</small></button>`;
   }).join('')}</div>`;
 
@@ -181,8 +181,8 @@ export function createJpUi(ctx) {
       if (r.rules) info.push(`보정 규칙: 합계 ${r.rules.sumRange.join('~')} · 홀수 ${r.rules.oddRange.join('~')} · 저구간 ${r.rules.lowRange.join('~')} · AC≥${r.rules.acMin} · 끝수합 ${r.rules.endSumRange.join('~')}`);
       $('#jp-rec-info').innerHTML = info.join('<br>');
       $('#jp-rec-results').innerHTML = r.lines.map(L => `
-        <div class="card">
-          <div class="head"><div class="title">${L.index}조합 <small>${esc(L.strategyName)}</small></div>
+        <div class="card jp-card g-${key}">
+          <div class="head"><div class="title"><span class="gchip">${esc(r.game.name)}</span>${L.index}조합 <small>${esc(L.strategyName)}</small></div>
             <div class="kv">전형성 상위 <b>${(100 - L.percentile).toFixed(0)}%</b>${L.relaxed ? ` · <span style="color:var(--warn)">규칙 ${L.relaxed}단계 완화</span>` : ''}</div></div>
           <div class="balls">${balls(key, L.numbers)}</div>
           <div class="note"><b>[분석 핵심]</b> ${esc(L.note)}</div>
@@ -254,7 +254,7 @@ export function createJpUi(ctx) {
         badge = `<span class="badge wait">추첨 전${when ? ' · ' + when : ''}</span>`;
         detail = p.lines.map((row, i) => `<div class="kv">${i + 1}줄 ${balls(p.game, row, null, true)}</div>`).join('');
       }
-      return `<div class="card"><div class="head"><div class="title">${esc(g.name)} ${p.targetDraw}회 목표
+      return `<div class="card jp-card g-${p.game}"><div class="head"><div class="title"><span class="gchip">${esc(g.name)}</span>${p.targetDraw}회 목표
           <small>${esc(p.savedAt.replace('T', ' '))} 저장${p.note ? ' · ' + esc(p.note) : ''}</small></div>
           <div>${badge} <button class="ghost" data-jpdel="${esc(p.id)}" title="삭제">✕</button></div></div>${detail}</div>`;
     }).join('');
