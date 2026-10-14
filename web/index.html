@@ -304,6 +304,13 @@
   /* 일본 로또 공: 번호대별 색이 없어서 한 가지 공에 게임 상징색 테두리 */
   .ball.jp{background:#f4efe6;color:#1b2550}
   .jp-draw{padding:8px 0;border-bottom:1px solid var(--line)}
+  /* 일본 복권방: 동네 버튼 줄, 지도 */
+  .jp-areas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+  .jp-areas>.kv{width:58px;flex:none;margin:0}
+  .jp-areas button{padding:6px 10px}
+  .jp-map{width:100%;height:480px;border-radius:12px;overflow:hidden;background:var(--panel2);border:1px solid var(--line)}
+  .jp-map iframe{width:100%;height:100%;border:0;display:block}
+  @media(max-width:640px){.jp-map{height:420px}.jp-areas>.kv{width:100%}}
   .jp-draw .kv{margin:0 0 4px}
   .ball.jp{box-shadow:inset 0 0 0 3px var(--g, var(--accent))}
   /* ---- 모바일 (세로 폭 640px 이하) ---- */
@@ -393,6 +400,7 @@
   <button data-tab="jp-recommend" data-mode="jp">번호 추천</button>
   <button data-tab="jp-picks" data-mode="jp">내 번호</button>
   <button data-tab="jp-stats" data-mode="jp">통계</button>
+  <button data-tab="jp-shops" data-mode="jp">복권방</button>
   <button data-tab="info">설정 · 정보</button>
 </nav>
 <main>
@@ -554,6 +562,7 @@
   <section id="tab-jp-recommend"><span class="spin"></span>일본 로또 화면을 불러오는 중…</section>
   <section id="tab-jp-picks"></section>
   <section id="tab-jp-stats"></section>
+  <section id="tab-jp-shops"></section>
 
   <!-- ============ 설정 · 정보 ============ -->
   <section id="tab-info">
@@ -668,7 +677,7 @@ async function boot() {
 //
 // 일본 쪽 화면은 src/jp/ui.js 에 따로 있고, 일본 로또를 처음 켤 때만 내려받는다.
 // 탭은 같은 자리끼리 짝을 지어 둔다 — 한국 '번호 추천' 을 보다가 바꾸면 일본 '번호 추천' 으로.
-const JP_TAB = { recommend: 'jp-recommend', picks: 'jp-picks', stats: 'jp-stats' };
+const JP_TAB = { recommend: 'jp-recommend', picks: 'jp-picks', stats: 'jp-stats', shops: 'jp-shops' };
 const KR_TAB = Object.fromEntries(Object.entries(JP_TAB).map(([k, v]) => [v, k]));
 const SHARED_TABS = ['fortune', 'info'];
 const modeNow = () => (document.documentElement.dataset.mode === 'jp' ? 'jp' : 'kr');
