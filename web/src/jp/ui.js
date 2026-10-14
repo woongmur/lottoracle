@@ -10,6 +10,7 @@
 import { GAMES, GAME_KEYS } from './games.js';
 import { createJpEngine } from './engine.js';
 import { strategies as allStrategies } from './strategies.js';
+import { AREAS, MAPS_EMBED_KEY, OFFICIAL_MAP, appUrl, embedUrl, inJapan } from './shops.js';
 
 const WEEKDAY = ['월', '화', '수', '목', '금', '토', '일'];
 const weekdayOf = iso => WEEKDAY[(new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7];
@@ -140,7 +141,30 @@ export function createJpUi(ctx) {
       <div class="panel" style="margin-bottom:16px">${switcher('jp-game-stats')}</div>
       <div id="jp-stats-body"></div>`;
 
+    $('#tab-jp-shops').innerHTML = `
+      <div class="grid">
+        <div class="panel" id="jp-shop-controls">
+          <h3>일본 복권 판매점 찾기</h3>
+          <p class="kv" style="margin-top:-4px">일본에서는 '宝くじ売り場(다카라쿠지 우리바)' 간판이 붙은 곳에서 로또6·로또7·미니로또를 팝니다.</p>
+          <button class="primary" id="jp-shop-locate" style="margin-top:6px">내 위치 주변 판매점</button>
+          <div id="jp-shop-status" class="kv" style="margin-top:8px"></div>
+          <label style="margin-top:14px">여행지에서 찾기</label>
+          ${AREAS.map(a => `<div class="jp-areas"><span class="kv">${esc(a.city)}</span>${a.items.map(([name, lat, lng]) =>
+            `<button type="button" class="ghost" data-lat="${lat}" data-lng="${lng}">${esc(name)}</button>`).join('')}</div>`).join('')}
+          <p class="kv" style="margin-top:14px">위치는 지도를 띄우는 데만 쓰고 저장하지 않습니다. 브라우저가 구글 지도로 바로 보냅니다.
+            <a href="${OFFICIAL_MAP}" target="_blank" rel="noopener" style="color:var(--accent)">공식 판매점 검색(일본어)</a></p>
+        </div>
+        <div id="jp-shop-mapwrap">
+          <div id="jp-shop-map" class="jp-map"><div class="kv" style="padding:24px">위에서 '내 위치' 나 동네를 고르면 주변 판매점이 지도에 뜹니다.</div></div>
+          <div id="jp-shop-foot" class="kv" style="margin-top:8px"></div>
+        </div>
+      </div>`;
+
     fillStrategies();
+    $('#jp-shop-locate').addEventListener('click', locateShops);
+    document.querySelectorAll('.jp-areas button').forEach(b => b.addEventListener('click', () => {
+      showShops(+b.dataset.lat, +b.dataset.lng, b.textContent);
+    }));
     document.querySelectorAll('.gamesw button').forEach(b =>
       b.addEventListener('click', () => setGame(b.dataset.game)));
     $('#jp-coverage').addEventListener('input', e => { $('#jp-coverage-v').textContent = e.target.value + '%'; });
@@ -322,6 +346,41 @@ export function createJpUi(ctx) {
     } catch (e) {
       box.innerHTML = `<div class="err">${esc(e.message)}</div>`;
     }
+  }
+
+  // ------------------------------------------------------------ 복권방
+  function showShops(lat, lng, label) {
+    const where = esc(label);
+    if (!MAPS_EMBED_KEY) {                       // 키가 없으면 구글 지도를 새 창으로
+      window.open(appUrl(lat, lng), '_blank', 'noopener');
+      return;
+    }
+    $('#jp-shop-map').innerHTML = `<iframe title="${where} 주변 복권 판매점" src="${embedUrl(lat, lng)}"
+      loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+    $('#jp-shop-foot').innerHTML = `지도 가운데가 <b>${where}</b>입니다. 핀을 누르면 영업시간과 길찾기가 나옵니다.
+      다른 곳을 보려면 버튼을 다시 누르세요. · <a href="${appUrl(lat, lng)}" target="_blank" rel="noopener" style="color:var(--accent)">구글 지도 앱에서 열기</a>`;
+    if (window.matchMedia('(max-width:900px)').matches) {
+      $('#jp-shop-mapwrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function locateShops() {
+    const st = $('#jp-shop-status');
+    if (!navigator.geolocation) { st.textContent = '이 브라우저는 위치를 알려 주지 않습니다. 아래 동네 버튼을 써 주세요.'; return; }
+    st.innerHTML = '<span class="spin"></span>위치를 확인하는 중…';
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      if (!inJapan(lat, lng)) {
+        st.textContent = '지금은 일본 밖에 계셔서 주변에 일본 판매점이 없습니다. 여행 가실 동네를 아래에서 골라 보세요.';
+        return;
+      }
+      st.textContent = '';
+      showShops(lat, lng, '지금 계신 곳');
+    }, err => {
+      st.textContent = err.code === 1
+        ? '위치 권한이 꺼져 있습니다. 브라우저 설정에서 허용하거나 아래 동네 버튼을 써 주세요.'
+        : '위치를 잡지 못했습니다. 잠시 뒤 다시 누르거나 아래 동네 버튼을 써 주세요.';
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
   }
 
   // ------------------------------------------------------------ 상단 최신 회차
