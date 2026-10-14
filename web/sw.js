@@ -43,7 +43,10 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;    // 동행복권·카카오는 그대로 통과
 
   // 회차·배출점 데이터: 네트워크 우선 (주간 갱신이 재방문자에게 바로 닿아야 한다)
-  if (url.pathname.endsWith('/data/draws.json') || url.pathname.endsWith('/data/stores.json')) {
+  // 일본 로또(data/jp/*.json)도 같다. 일본 화면 모듈(src/jp/)은 아래 캐시 우선 길로
+  // 처음 쓸 때 담긴다 — 한국 로또만 쓰는 사람에게까지 미리 내려보내지 않는다.
+  if (url.pathname.endsWith('/data/draws.json') || url.pathname.endsWith('/data/stores.json')
+    || url.pathname.includes('/data/jp/')) {
     event.respondWith(
       fetch(request)
         .then(res => {
