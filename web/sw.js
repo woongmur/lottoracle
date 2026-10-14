@@ -19,13 +19,33 @@ const SHELL_FILES = [
   './src/tzhistory.js', './src/solartime.js', './src/saju.js', './src/sipsin.js', './src/daeun.js',
 ];
 
+/** 이 배포의 파일을 '새로' 받는다.
+ *
+ * 그냥 fetch 하면 브라우저 HTTP 캐시와 Cloudflare 가장자리 캐시(GitHub Pages 는
+ * max-age=600)를 거친다. 배포 직후 10분 안에 설치되면 새 index.html 옆에 예전
+ * storage.js 가 담기고, 캐시 우선이라 그 짝이 다음 배포까지 굳는다 — 실제로 일본
+ * 화면이 예전 저장소를 불러 'addJpPick is not a function' 이 났다.
+ * 주소에 배포 버전을 붙이면 가장자리 캐시를 비켜 가고, cache:'reload' 는 브라우저
+ * 캐시를 비켜 간다. 담을 때는 원래 주소로 담아 페이지 요청과 맞춘다.
+ */
+function fresh(url) {
+  const u = new URL(url, self.location.href);
+  u.searchParams.set('v', VERSION);
+  return fetch(u, { cache: 'reload' });
+}
+
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(SHELL)
-      .then(c => c.addAll(SHELL_FILES))
-      .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())     // 일부 파일이 없어도 설치는 진행
-  );
+  event.waitUntil((async () => {
+    const c = await caches.open(SHELL);
+    // 하나가 실패해도 나머지는 담는다. 못 담은 파일은 처음 쓸 때 아래 fetch 처리기가 받는다.
+    await Promise.all(SHELL_FILES.map(async path => {
+      try {
+        const res = await fresh(path);
+        if (res.ok) await c.put(new URL(path, self.location.href), res);
+      } catch { /* 오프라인 등 */ }
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {
@@ -59,9 +79,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 나머지: 캐시 우선
+  // 나머지: 캐시 우선. 캐시에 없으면 이 배포 판을 새로 받아 담는다
+  // (일본 화면 src/jp/ 처럼 처음 쓸 때 내려가는 파일도 같은 배포 것끼리 맞물리게).
   event.respondWith(
-    caches.match(request).then(hit => hit || fetch(request).then(res => {
+    caches.match(request).then(hit => hit || fresh(request.url).then(res => {
       if (res.ok) {
         const copy = res.clone();
         caches.open(SHELL).then(c => c.put(request, copy));
