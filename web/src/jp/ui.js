@@ -10,7 +10,7 @@
 import { GAMES, GAME_KEYS } from './games.js';
 import { createJpEngine } from './engine.js';
 import { strategies as allStrategies } from './strategies.js';
-import { AREAS, MAPS_EMBED_KEY, OFFICIAL_MAP, appUrl, embedUrl, inJapan } from './shops.js';
+import { AREAS, JAPAN, MAPS_EMBED_KEY, OFFICIAL_MAP, appUrl, embedUrl, inJapan, placeOf } from './shops.js';
 
 const WEEKDAY = ['월', '화', '수', '목', '금', '토', '일'];
 const weekdayOf = iso => WEEKDAY[(new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7];
@@ -149,13 +149,13 @@ export function createJpUi(ctx) {
           <button class="primary" id="jp-shop-locate" style="margin-top:6px">내 위치 주변 판매점</button>
           <div id="jp-shop-status" class="kv" style="margin-top:8px"></div>
           <label style="margin-top:14px">여행지에서 찾기</label>
-          ${AREAS.map(a => `<div class="jp-areas"><span class="kv">${esc(a.city)}</span>${a.items.map(([name, lat, lng]) =>
-            `<button type="button" class="ghost" data-lat="${lat}" data-lng="${lng}">${esc(name)}</button>`).join('')}</div>`).join('')}
+          ${AREAS.map(a => `<div class="jp-areas"><span class="kv">${esc(a.city)}</span>${a.items.map(([name, lat, lng, ja]) =>
+            `<button type="button" class="ghost" data-lat="${lat}" data-lng="${lng}" data-place="${esc(ja)}">${esc(name)}</button>`).join('')}</div>`).join('')}
           <p class="kv" style="margin-top:14px">위치는 지도를 띄우는 데만 쓰고 저장하지 않습니다. 브라우저가 구글 지도로 바로 보냅니다.
             <a href="${OFFICIAL_MAP}" target="_blank" rel="noopener" style="color:var(--accent)">공식 판매점 검색(일본어)</a></p>
         </div>
         <div id="jp-shop-mapwrap">
-          <div id="jp-shop-map" class="jp-map"><div class="kv" style="padding:24px">위에서 '내 위치' 나 동네를 고르면 주변 판매점이 지도에 뜹니다.</div></div>
+          <div id="jp-shop-map" class="jp-map"></div>
           <div id="jp-shop-foot" class="kv" style="margin-top:8px"></div>
         </div>
       </div>`;
@@ -163,7 +163,7 @@ export function createJpUi(ctx) {
     fillStrategies();
     $('#jp-shop-locate').addEventListener('click', locateShops);
     document.querySelectorAll('.jp-areas button').forEach(b => b.addEventListener('click', () => {
-      showShops(+b.dataset.lat, +b.dataset.lng, b.textContent);
+      showShops(+b.dataset.lat, +b.dataset.lng, b.textContent, b.dataset.place);
     }));
     document.querySelectorAll('.gamesw button').forEach(b =>
       b.addEventListener('click', () => setGame(b.dataset.game)));
@@ -349,33 +349,41 @@ export function createJpUi(ctx) {
   }
 
   // ------------------------------------------------------------ 복권방
-  function showShops(lat, lng, label) {
+  /** 지도를 띄운다. place 는 검색어에 붙일 일본어 지명 — 이게 있어야 주변 핀이 찍힌다. */
+  function showShops(lat, lng, label, place = '', zoom = 15, scroll = true) {
     const where = esc(label);
     if (!MAPS_EMBED_KEY) {                       // 키가 없으면 구글 지도를 새 창으로
-      window.open(appUrl(lat, lng), '_blank', 'noopener');
+      window.open(appUrl(lat, lng, place, zoom), '_blank', 'noopener');
       return;
     }
-    $('#jp-shop-map').innerHTML = `<iframe title="${where} 주변 복권 판매점" src="${embedUrl(lat, lng)}"
-      loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
-    $('#jp-shop-foot').innerHTML = `지도 가운데가 <b>${where}</b>입니다. 핀을 누르면 영업시간과 길찾기가 나옵니다.
-      다른 곳을 보려면 버튼을 다시 누르세요. · <a href="${appUrl(lat, lng)}" target="_blank" rel="noopener" style="color:var(--accent)">구글 지도 앱에서 열기</a>`;
-    if (window.matchMedia('(max-width:900px)').matches) {
+    $('#jp-shop-map').innerHTML = `<iframe title="${where} 복권 판매점 지도" src="${embedUrl(lat, lng, place, zoom)}"
+      referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+    $('#jp-shop-foot').innerHTML = (zoom <= JAPAN.zoom
+      ? `일본 전체의 판매점 일부입니다. 위에서 <b>내 위치</b>나 동네를 고르면 그 주변을 찾습니다.`
+      : `지도 가운데가 <b>${where}</b>입니다. 핀을 누르면 영업시간과 길찾기가 나옵니다. 핀이 안 보이면 지도를 조금 축소해 보세요.`)
+      + ` · <a href="${appUrl(lat, lng, place, zoom)}" target="_blank" rel="noopener" style="color:var(--accent)">구글 지도 앱에서 열기</a>`;
+    if (scroll && window.matchMedia('(max-width:900px)').matches) {
       $('#jp-shop-mapwrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
+
+  const showJapan = (scroll = false) => showShops(JAPAN.lat, JAPAN.lng, '일본 전체', '', JAPAN.zoom, scroll);
 
   function locateShops() {
     const st = $('#jp-shop-status');
     if (!navigator.geolocation) { st.textContent = '이 브라우저는 위치를 알려 주지 않습니다. 아래 동네 버튼을 써 주세요.'; return; }
     st.innerHTML = '<span class="spin"></span>위치를 확인하는 중…';
-    navigator.geolocation.getCurrentPosition(pos => {
+    navigator.geolocation.getCurrentPosition(async pos => {
       const { latitude: lat, longitude: lng } = pos.coords;
       if (!inJapan(lat, lng)) {
-        st.textContent = '지금은 일본 밖에 계셔서 주변에 일본 판매점이 없습니다. 여행 가실 동네를 아래에서 골라 보세요.';
+        st.textContent = '지금은 일본 밖에 계셔서 일본 전체 지도를 보여 드립니다. 여행 가실 동네를 아래에서 골라 보세요.';
+        showJapan(true);
         return;
       }
-      st.textContent = '';
-      showShops(lat, lng, '지금 계신 곳');
+      st.innerHTML = '<span class="spin"></span>주변 지명을 찾는 중…';
+      const place = await placeOf(lat, lng);      // 東京都新宿区 같은 시·구 이름
+      st.textContent = place ? `${place} 주변` : '';
+      showShops(lat, lng, '지금 계신 곳', place);
     }, err => {
       st.textContent = err.code === 1
         ? '위치 권한이 꺼져 있습니다. 브라우저 설정에서 허용하거나 아래 동네 버튼을 써 주세요.'
@@ -413,6 +421,8 @@ export function createJpUi(ctx) {
       build();
       if (name === 'jp-picks') loadPicks();
       if (name === 'jp-stats') loadStats();
+      // 복권방은 처음 열 때 일본 전체 지도부터. 탭을 안 여는 사람에게는 구글 지도를 부르지 않는다.
+      if (name === 'jp-shops' && !$('#jp-shop-map iframe')) showJapan();
     },
     /** 운세의 '이 기운으로 번호 뽑기' — 오늘의 숫자를 행운수로 넣고 바로 뽑는다. */
     useFortune(lucky) {
