@@ -1,0 +1,73 @@
+name: update jp draws
+
+# 일본 로또 추첨: 로또6 월·목, 미니로또 화, 로또7 금 (모두 18:45 JST 무렵).
+# 집계 사이트가 결과를 올린 뒤인 그날 밤 23:17 JST 에 받는다. 토요일 회는 금요일
+# 로또7 이 늦게 올라온 경우를 한 번 더 줍는다. 새 회차가 없으면 아무것도 하지 않는다.
+on:
+  schedule:
+    - cron: "17 14 * * 1-6"   # UTC 14:17 = JST 23:17
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write     # 갱신 후 배포 워크플로를 직접 부른다
+  issues: write      # 실패하면 이슈로 알린다
+
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 원본 셋(thekyo · loto-life · 라쿠텐) 중 둘 이상이 같아야 저장한다.
+      # 서로 다르거나 형식이 바뀌면 여기서 실패하고 아래 '실패 알림' 이 이슈를 연다.
+      - name: 받기·대조
+        run: python3 tools/fetch_jp.py
+
+      - name: 테스트로 확인
+        run: python3 -m unittest discover -s tests
+
+      - name: 커밋
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/jp web/data/jp
+          if git diff --cached --quiet; then echo "새 회차가 없습니다."; exit 0; fi
+          latest() { python3 -c "from lottoracle.jp import data; print(data.load('$1')[-1].no)"; }
+          git commit -m "data(jp): 로또6 $(latest loto6)회 · 로또7 $(latest loto7)회 · 미니로또 $(latest miniloto)회까지"
+          git pull --rebase
+          git push
+          echo "pushed=1" >> "$GITHUB_OUTPUT"
+
+      # GITHUB_TOKEN 으로 한 푸시는 다른 워크플로(배포)를 깨우지 않는다.
+      # workflow_dispatch 는 예외라서 여기서 직접 부른다.
+      - name: 배포 부르기
+        if: steps.commit.outputs.pushed == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref "${{ github.ref_name }}"
+
+      - name: 실패 알림
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="일본 로또 자동 갱신 실패"
+          n=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$n" ]; then
+            gh issue comment "$n" --body "다시 실패했습니다: $RUN_URL"
+          else
+            gh issue create --title "$title" --body "$(printf '%s\n\n%s\n\n%s' \
+              "일본 로또 당첨번호 갱신이 실패했습니다. 고칠 때까지 사이트의 일본 로또 데이터가 멈춰 있습니다." \
+              "로그: $RUN_URL" \
+              "원본끼리 값이 달랐거나, 원본 사이트의 형식이 바뀌었거나, 둘 이상이 열리지 않은 경우입니다. 고친 뒤 이 이슈를 닫아 주세요.")"
+          fi
