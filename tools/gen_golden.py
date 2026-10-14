@@ -426,8 +426,150 @@ def main() -> int:
         "cases": [daeun_case(c, g) for c in saju_cases for g in ("남", "여")],
     })
 
+    jp_golden()
     print("완료")
     return 0
+
+
+def jp_samples(game, draws) -> list[list[int]]:
+    """게임마다 대조할 조합: 실제 당첨조합 + 경계값 + 극단적인 모양."""
+    from lottoracle.jp import metrics as jm
+    k, n = game.pick, game.pool
+    def fill(head, extra=(1, 2, 3, 4, 5, 6, 8, 9)):
+        out = list(dict.fromkeys(x for x in head if 1 <= x <= n))[:k]
+        out += [x for x in extra if x not in out][:k - len(out)]
+        return sorted(out)
+
+    odds = list(range(1, n + 1, 2))[:k]
+    evens = list(range(2, n + 1, 2))[:k]
+    same_end = fill([3, 13, 23])                                  # 끝수 3 이 셋
+    twins = fill(list(jm.twin_numbers(game)) + [5, 17, 26, 30])  # 쌍둥이수
+    sevens = fill(range(7, n + 1, 7))                             # 7의 배수
+    return [
+        list(draws[-1].numbers),                       # 최신 회차
+        list(draws[0].numbers),                        # 1회
+        list(range(1, k + 1)),                         # 최소
+        list(range(n - k + 1, n + 1)),                 # 최대
+        odds, evens, same_end, twins, sevens,
+        [1, 2, 3] + list(range(n - k + 4, n + 1)),     # 양극단
+        list(reversed(draws[len(draws) // 2].numbers)),  # 정렬 안 된 입력
+    ]
+
+
+def jp_golden() -> None:
+    """일본 로또 — lottoracle/jp 의 계산을 게임별로 떨군다. JS web/src/jp/ 가 대조한다."""
+    from lottoracle.jp import data as jd, explain as jx, filters as jf, folklore as jl
+    from lottoracle.jp import metrics as jm, model as jmo, stats as jst, strategies as jsg
+    from lottoracle.jp.games import GAMES
+
+    out = {name: {} for name in ("metrics", "filters", "stats", "model", "strategies", "explain")}
+    for key, game in GAMES.items():
+        draws = jd.load(key)
+        samples = jp_samples(game, draws)
+        prev = draws[-1]
+        prev_nums = list(prev.numbers)
+        out["metrics"][key] = {
+            "game": {"pool": game.pool, "pick": game.pick, "bonus": game.bonus,
+                     "ranks": game.ranks, "weekdays": list(game.weekdays),
+                     "carryover": game.carryover, "name": game.name, "nameJa": game.name_ja},
+            "lowMax": jm.low_max(game), "zoneBounds": [list(z) for z in jm.zone_bounds(game)],
+            "twins": list(jm.twin_numbers(game)), "expectedSum": jm.expected_sum(game),
+            "maxSum": jm.max_sum(game), "maxAc": jm.max_ac(game),
+            "previous": prev_nums,
+            "cases": [{"numbers": s, "noPrev": profile_dict(jm.profile(game, s)),
+                       "withPrev": profile_dict(jm.profile(game, s, prev_nums))} for s in samples],
+        }
+
+        base = jf.default_rules(game)
+        out["filters"][key] = {
+            "base": rules_dict(base),
+            "relaxed": {str(st): rules_dict(jf.relaxed(game, base, st)) for st in (1, 2, 3, 6)},
+            "cases": [{"numbers": s, "verdict": {"ok": (v := jf.check(game, s, base, prev_nums)).ok,
+                                                 "violations": v.violations}} for s in samples],
+        }
+
+        st = jst.build(game, draws, recent_window=30)
+        ps = jst.profile_stats(game, draws)
+        pool = jm.number_pool(game)
+        dist = lambda c: {str(k): v for k, v in sorted(c.items())}  # noqa: E731
+        out["stats"][key] = {
+            "drawsUsed": st.draws_used, "recentWindow": st.recent_window,
+            "meanFrequency": st.mean_frequency,
+            "frequency": {str(n): st.frequency.get(n, 0) for n in pool},
+            "recent": {str(n): st.recent.get(n, 0) for n in pool},
+            "gap": {str(n): st.gap[n] for n in pool},
+            "bonusFrequency": {str(n): st.bonus_frequency.get(n, 0) for n in pool},
+            "hot10": [list(x) for x in st.hot(10)],
+            "cold10": [list(x) for x in st.cold(10)],
+            "companionsOf7": [list(x) for x in st.companions(7, 6)],
+            "pairSamples": {f"{a}-{b}": st.pairs[frozenset((a, b))]
+                            for a, b in [(1, 2), (7, 13), (11, 22), (3, 17), (game.pool - 1, game.pool)]},
+            "profileStats": {
+                "count": ps.count, "meanSum": ps.mean_sum, "sumRange80": list(ps.sum_range_80),
+                "oddDistribution": dist(ps.odd_distribution), "lowDistribution": dist(ps.low_distribution),
+                "acDistribution": dist(ps.ac_distribution), "endSumMean": ps.end_sum_mean,
+                "consecutiveRatio": ps.consecutive_ratio,
+                "carryoverDistribution": dist(ps.carryover_distribution),
+            },
+        }
+
+        emp = jmo.fit(game, draws)
+        ref = jmo.reference_scores(draws, emp)
+        k = game.pick
+        out["model"][key] = {
+            "empCount": emp.count,
+            "supports": jmo.supports(game),
+            "calibrated": {f"{c:.2f}": rules_dict(jmo.calibrate(game, draws, c)) for c in (0.6, 0.8, 0.9, 0.95)},
+            "probes": {
+                "pTotal": {str(v): emp.p_total(v) for v in (20, 60, jm.expected_sum(game), 170, jm.max_sum(game))},
+                "pOdd": {str(v): emp.p_odd(v) for v in range(k + 1)},
+                "pLow": {str(v): emp.p_low(v) for v in range(k + 1)},
+                "pAc": {str(v): emp.p_ac(v) for v in range(jm.max_ac(game) + 1)},
+                "pEndSum": {str(v): emp.p_end_sum(v) for v in (5, 15, 25, 35, 45)},
+                "pConsecutive": {str(v): emp.p_consecutive(v) for v in range(k)},
+                "pCarryover": {str(v): emp.p_carryover(v) for v in range(k + 1)},
+                "pSpread": {str(v): emp.p_spread(v) for v in (8, 16, 24, 32, game.pool - 1)},
+                "pZone": {"-".join(map(str, z)): emp.p_zone(z)
+                          for z in {tuple(sorted(jm.zone_counts(game, s))) for s in samples}},
+                "pPosition": {f"{i}-{n}": emp.p_position(i, n)
+                              for i, n in [(0, 1), (0, 20), (k - 1, game.pool), (k - 1, 10), (k // 2, 15)]},
+            },
+            "typicality": [
+                {"numbers": s, "noPrev": jmo.typicality(s, emp),
+                 "withPrev": jmo.typicality(s, emp, prev_nums),
+                 "percentile": jmo.typicality_percentile(jmo.typicality(s, emp, prev_nums), ref)}
+                for s in samples
+            ],
+            "referenceStats": {"count": len(ref), "min": ref[0], "max": ref[-1], "median": ref[len(ref) // 2]},
+        }
+
+        out["strategies"][key] = [
+            {"key": s.key, "name": s.name, "concept": s.concept,
+             "wFrequency": s.w_frequency, "wRecent": s.w_recent, "wGap": s.w_gap,
+             "wCompanion": s.w_companion, "wTwin": s.w_twin,
+             "carryoverTarget": s.carryover_target, "usePrevBonus": s.use_prev_bonus,
+             "rules": rules_dict(s.rules)}
+            for s in jsg.strategies(game)
+        ]
+
+        wishes = jl.Wishes(lucky=(7, 13, 44), avoid=(4,))
+        prev_draw = {"no": prev.no, "numbers": prev_nums, "bonus": list(prev.bonus)}
+        out["explain"][key] = {
+            "previous": prev_draw,
+            "neighbors": sorted(jl.neighbor_numbers(game, prev)),
+            "multipliers": {str(n): v for n, v in jl.multipliers(game, wishes, prev).items()},
+            "cases": [
+                {"numbers": s, "zonePhrase": jx.zone_phrase(game, s),
+                 "noteWithPrev": jx.analysis_note(game, s, 0, prev, wishes),
+                 "noteRelaxed": jx.analysis_note(game, s, 2, prev, wishes),
+                 "noteNoPrev": jx.analysis_note(game, s, 0, None, wishes),
+                 "noteNoWishes": jx.analysis_note(game, s, 0, prev, None)}
+                for s in samples
+            ],
+        }
+
+    for name, payload in out.items():
+        dump(f"jp_{name}.json", payload)
 
 
 if __name__ == "__main__":

@@ -25,21 +25,35 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       # 원본 셋(thekyo · loto-life · 라쿠텐) 중 둘 이상이 같아야 저장한다.
       # 서로 다르거나 형식이 바뀌면 여기서 실패하고 아래 '실패 알림' 이 이슈를 연다.
       - name: 받기·대조
-        run: python3 tools/fetch_jp.py
+        id: fetch
+        run: |
+          python3 tools/fetch_jp.py
+          if git diff --quiet -- data/jp; then echo "changed=0" >> "$GITHUB_OUTPUT"; else echo "changed=1" >> "$GITHUB_OUTPUT"; fi
+
+      # 일본 추천 엔진(web/src/jp)은 파이썬(lottoracle/jp)과 골든 데이터로 대조한다.
+      # 통계·보정값은 회차에 따라 바뀌므로 회차가 늘면 골든도 다시 만든다.
+      - name: 골든 데이터 재생성
+        if: steps.fetch.outputs.changed == '1'
+        run: python3 tools/gen_golden.py
 
       - name: 테스트로 확인
-        run: python3 -m unittest discover -s tests
+        run: |
+          python3 -m unittest discover -s tests
+          cd web && npm test
 
       - name: 커밋
         id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data/jp web/data/jp
+          git add -A data/jp web/data/jp web/test/golden
           if git diff --cached --quiet; then echo "새 회차가 없습니다."; exit 0; fi
           latest() { python3 -c "from lottoracle.jp import data; print(data.load('$1')[-1].no)"; }
           git commit -m "data(jp): 로또6 $(latest loto6)회 · 로또7 $(latest loto7)회 · 미니로또 $(latest miniloto)회까지"
