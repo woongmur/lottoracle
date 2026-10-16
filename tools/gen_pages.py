@@ -91,6 +91,11 @@ footer{margin-top:34px;padding-top:14px;border-top:1px solid #34312b;color:#a29d
   .b.s{width:26px;height:26px;font-size:12px;margin-right:3px}.plus{margin:0 4px}}
 """
 
+# Google AdSense. 손으로 쓴 페이지(web/public)와 앱(index.html)에도 같은 줄이 있다.
+# 게시자 ID 를 바꾸면 web/public/ads.txt 도 함께 바꾼다.
+ADSENSE = ('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
+           '?client=ca-pub-2355882691173163"\n     crossorigin="anonymous"></script>')
+
 FOOTER_KR = ("당첨번호·판매점 자료 출처는 동행복권입니다. 모든 조합의 1등 확률은 1/8,145,060 으로 같습니다.\n"
              "  이 사이트의 어떤 기능도 확률을 바꾸지 않습니다. 19세 미만 구매 불가 · 도박문제 상담 1336")
 FOOTER_JP = ("일본 로또 당첨번호는 일본 집계 사이트 두 곳의 전체 이력을 라쿠텐 다카라쿠지 최근 결과와 맞춰 본 값입니다"
@@ -115,6 +120,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str, footer: st
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{ADSENSE}
 <title>{E(title)}</title>
 <meta name="description" content="{E(desc)}">
 <link rel="canonical" href="{E(canonical)}">
