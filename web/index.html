@@ -459,7 +459,7 @@
     <div class="panel">
       <h3>내 번호 <button class="ghost" id="picks-reload" style="float:right">새로고침</button></h3>
       <p class="kv">추천 탭에서 저장한 조합입니다. 목표 회차가 추첨되면 자동으로 채점됩니다. 이 브라우저에만 저장되고 서버로 보내지 않습니다.</p>
-      <div id="buy-msg"></div>
+      <div id="copy-msg"></div>
       <div id="picks-error"></div>
       <div id="picks-body"></div>
     </div>
@@ -634,7 +634,6 @@ import { NO_GENDER as DAEUN_NO_GENDER, BEFORE_FIRST as DAEUN_BEFORE_FIRST } from
 const VERSION = '0.4.0';
 // 카카오맵 JavaScript 키. 페이지 소스에 드러나는 것이 정상인 키이며, 등록된 도메인에서만 동작한다.
 const KAKAO_JS_KEY = '14d51c1614df122e68dbc7ca849d5d40';
-const BUY_URL = 'https://www.dhlottery.co.kr/';
 
 const $ = s => document.querySelector(s);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -1237,25 +1236,26 @@ function renderPicks(picks) {
       badge = `<span class="badge wait">추첨 전 · ${p.drawDate} (토)</span>`;
       detail = p.lines.map((row, i) => `<div class="kv">${i+1}줄 ${balls(row, p.colors[i], null, null, null, true)}</div>`).join('');
     }
-    const buy = p.results ? '' : `<button class="ghost" data-buy="${p.id}" style="margin-top:10px">이 번호로 로또 사기</button>`;
-    return `<div class="card"><div class="head"><div class="title">${p.targetDraw}회 목표 <small>${esc(p.savedAt.replace('T',' '))} 저장${p.note ? ' · ' + esc(p.note) : ''}</small></div><div>${badge} <button class="ghost" data-del="${p.id}" title="삭제">✕</button></div></div>${detail}${buy}</div>`;
+    const copy = `<button class="ghost" data-copy="${p.id}" style="margin-top:10px">번호 복사</button>`;
+    return `<div class="card"><div class="head"><div class="title">${p.targetDraw}회 목표 <small>${esc(p.savedAt.replace('T',' '))} 저장${p.note ? ' · ' + esc(p.note) : ''}</small></div><div>${badge} <button class="ghost" data-del="${p.id}" title="삭제">✕</button></div></div>${detail}${copy}</div>`;
   }).join('');
-  body.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => buyWith(picks.find(x => x.id === b.dataset.buy))));
+  body.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => copyPick(picks.find(x => x.id === b.dataset.copy))));
   body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     if (!confirm('이 기록을 삭제할까요?')) return;
     ENGINE.deletePick(b.dataset.del); loadPicks();
   }));
 }
-// 동행복권은 번호를 주소로 받는 공식 방법이 없어서, 번호를 복사해 두고 화면만 열어 준다.
-async function buyWith(pick) {
+// 저장한 줄을 글자로 복사한다. 판매점 용지에 옮겨 적거나 다른 곳에 붙여 넣을 때 쓴다.
+// 구매 사이트로 보내는 버튼은 두지 않는다 — 정보 도구로만 남기고, 사는 곳은 이용자가 고른다.
+const pickText = pick => [`${pick.targetDraw}회 목표`]
+  .concat(pick.lines.map((row, i) => `${i + 1}줄 ${row.join(' ')}`)).join('\n');
+async function copyPick(pick) {
   if (!pick) return;
-  const text = pick.lines.map(row => row.join(' ')).join('\n');
+  const text = pickText(pick);
   let copied = false;
   try { await navigator.clipboard.writeText(text); copied = true; } catch { copied = false; }
-  $('#buy-msg').innerHTML = `<div class="okbox">동행복권을 열었습니다. ${copied ? '번호를 클립보드에 복사해 두었습니다 — 화면에서 직접 선택해 주세요.' : '아래 번호를 보고 직접 선택해 주세요.'}
-    <div class="kv" style="margin-top:6px;white-space:pre-line;color:var(--text)">${esc(text)}</div>
-    <div class="kv" style="margin-top:6px">구매에는 동행복권 로그인과 예치금이 필요합니다. 지출은 잃어도 괜찮은 금액까지만 · 상담 1336</div></div>`;
-  window.open(BUY_URL, '_blank', 'noopener');
+  $('#copy-msg').innerHTML = `<div class="okbox">${copied ? '번호를 복사했습니다.' : '복사가 막혀 있어 아래에 띄워 둡니다. 길게 눌러 복사해 주세요.'}
+    <div class="kv" style="margin-top:6px;white-space:pre-line;color:var(--text);user-select:text">${esc(text)}</div></div>`;
 }
 $('#picks-reload').addEventListener('click', loadPicks);
 
