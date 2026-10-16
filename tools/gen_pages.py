@@ -37,53 +37,55 @@ def won(n: int) -> str:
 
 CSS = """
 :root{color-scheme:dark}
-body{margin:0;background:#0f1115;color:#e6ebf1;
-  font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+body{margin:0;background:#141311;color:#f2efe8;letter-spacing:-.01em;
+  font-family:'Pretendard Variable',Pretendard,system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   line-height:1.65;font-size:15px;word-break:keep-all;overflow-wrap:anywhere}
 .wrap{max-width:760px;margin:0 auto;padding:20px 16px 56px}
-a{color:#7aa2ff}
+a{color:#ffc83d;text-underline-offset:3px}
 /* 제목은 한 줄에: 좁은 화면에서는 글자를 줄이고, 긴 설명은 title·sub 로 보낸다 */
-h1{font-size:clamp(18px,5.4vw,22px);margin:8px 0 4px;line-height:1.35}
-h2{font-size:17px;margin:28px 0 8px;padding-top:14px;border-top:1px solid #232833}
-.sub{color:#8b95a5;font-size:13.5px;margin:0 0 16px}
+h1{font-size:clamp(18px,5.4vw,23px);margin:8px 0 4px;line-height:1.35;letter-spacing:-.03em}
+h2{font-size:17px;margin:28px 0 8px;padding-top:14px;border-top:1px solid #34312b}
+/* 소제목 앞 노란 막대 — 앱 화면과 같은 표시 */
+h2::before{content:'';display:inline-block;width:4px;height:14px;background:#ffc83d;margin-right:8px;vertical-align:-1px}
+.sub{color:#a29d92;font-size:13.5px;margin:0 0 16px}
 .balls{margin:10px 0 4px}
 .b{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;
   border-radius:50%;font-weight:800;color:#111;margin-right:6px;font-size:15px}
 .c1{background:#fbc400}.c2{background:#69c8f2}.c3{background:#ff7272}
 .c4{background:#aaa}.c5{background:#b0d840}
-.plus{color:#8b95a5;margin:0 6px;font-weight:700}
+.plus{color:#a29d92;margin:0 6px;font-weight:700}
 .b.s{width:27px;height:27px;font-size:12.5px;margin-right:4px}
 /* 회차 목록: 글머리표 대신 줄로 나누고 당첨번호를 공으로 보여 준다 */
 .dl{list-style:none;padding:0;margin:14px 0}
 .dl li{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;
-  padding:9px 0;margin:0;border-bottom:1px solid #232833}
+  padding:9px 0;margin:0;border-bottom:1px solid #34312b}
 .dl .no{font-weight:700;min-width:58px}
 .dl .balls{margin:0}
-.bonus{outline:2px dashed #8b95a5;outline-offset:2px;margin-left:4px}
+.bonus{outline:2px dashed #a29d92;outline-offset:2px;margin-left:4px}
 table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}
 .tw{overflow-x:auto;margin:10px 0}
 .tw>table{margin:0}
 /* 칸이 많은 표는 좁은 화면에서 쭈그러들지 않고 가로로 스크롤되게 한다 */
 .tw>table.wide{min-width:620px}
-th,td{border-bottom:1px solid #232833;padding:7px 8px;text-align:left}
+th,td{border-bottom:1px solid #34312b;padding:7px 8px;text-align:left}
 td.n,th.n{text-align:right;white-space:nowrap}
-th{color:#8b95a5;font-weight:600;white-space:nowrap}
+th{color:#a29d92;font-weight:600;white-space:nowrap}
 /* 표의 첫 칸(판매점·지역 이름, 등수)은 줄바꿈하지 않는다. 넘치면 .tw 가 가로로 스크롤한다 */
 .tw td:first-child{white-space:nowrap}
 ul{padding-left:18px;margin:8px 0}
 li{margin:4px 0}
-.kv{color:#8b95a5;font-size:13.5px}
-.cta{display:inline-block;margin:18px 0 0;padding:11px 16px;border-radius:10px;
-  background:#7aa2ff;color:#0f1115;font-weight:700;text-decoration:none}
+.kv{color:#a29d92;font-size:13.5px}
+.cta{display:inline-block;margin:18px 0 0;padding:11px 16px;border-radius:6px;
+  background:#ffc83d;color:#141311;font-weight:800;text-decoration:none;box-shadow:0 3px 0 #806418}
 .nav{display:flex;justify-content:space-between;margin-top:26px;font-size:14px}
-footer{margin-top:34px;padding-top:14px;border-top:1px solid #232833;color:#8b95a5;font-size:12.5px}
+footer{margin-top:34px;padding-top:14px;border-top:1px solid #34312b;color:#a29d92;font-size:12.5px}
 /* 일본 로또: 번호대별 색이 없어 한 가지 공에 게임 상징색 테두리(공식 로고 색) */
 .b.j{background:#f4efe6;color:#1b2550}
 .g-loto6{box-shadow:inset 0 0 0 3px #e4007f}.g-loto7{box-shadow:inset 0 0 0 3px #e60012}
 .g-miniloto{box-shadow:inset 0 0 0 3px #f39800}
-.chip{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12.5px;font-weight:700;color:#fff;margin-right:6px}
+.chip{display:inline-block;border-radius:3px;padding:1px 9px;font-size:12.5px;font-weight:700;color:#fff;margin-right:6px}
 .chip.loto6{background:#e4007f}.chip.loto7{background:#e60012}.chip.miniloto{background:#f39800}
-.cta.jp{background:#ff6a3d}
+.cta.jp{background:#ff6a3d;box-shadow:0 3px 0 #80351f}
 /* 좁은 화면: 공 7개 + 보너스 2개(로또7)가 한 줄에 들어가게 */
 @media(max-width:480px){.b{width:32px;height:32px;font-size:13.5px;margin-right:4px}
   .b.s{width:26px;height:26px;font-size:12px;margin-right:3px}.plus{margin:0 4px}}
@@ -123,6 +125,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str, footer: st
 <meta property="og:image" content="{E(base)}/icon-512.png">
 <meta property="og:locale" content="ko_KR">
 <link rel="icon" href="{E(base)}/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="{E(base)}/fonts/pretendard/pretendard.css">
 <style>{CSS}</style>
 </head>
 <body><div class="wrap">

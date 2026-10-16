@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>로또 번호 생성기 · 회차별 당첨번호 · 로또 명당 | lottoracle</title>
 <meta name="description" content="로또 6/45 번호 조합을 만들고, 회차별 당첨번호와 등수별 당첨금을 확인하고, 내 주변 1·2등 배출 판매점을 지도에서 찾습니다. 오늘의 운세도 함께. 당첨 확률은 바뀌지 않습니다.">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#141311">
 <meta name="naver-site-verification" content="ebba29594d06ffc55d3b0b1e40c85d8a42786ad7">
 <link rel="canonical" href="__BASE__/">
 <meta property="og:type" content="website">
@@ -29,27 +29,30 @@
   try { var st = JSON.parse(localStorage.getItem('lottoracle.settings') || '{}');
     if (st.mode === 'jp' || /[?&]mode=jp(&|$)/.test(location.search)) document.documentElement.dataset.mode = 'jp'; } catch (e) {}
 </script>
+<link rel="stylesheet" href="./fonts/pretendard/pretendard.css">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <style>
   :root{
-    --bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2a2f3a;--text:#e8eaf0;--muted:#9aa3b2;
-    --accent:#7aa2ff;--ok:#6fd39a;--warn:#ffb86b;--bad:#ff7b7b;--gold:#f5d76e;
+    /* 먹색 바탕에 로또 공 노랑 하나로 강조한다. 푸른 기 없는 따뜻한 회색. */
+    --bg:#141311;--panel:#1c1b18;--panel2:#25231f;--line:#34312b;--text:#f2efe8;--muted:#a29d92;
+    --accent:#ffc83d;--ink:#141311;--ok:#62c98d;--warn:#ff9b52;--bad:#ff6b6b;--gold:#ffc83d;
     --yellow:#fbc400;--blue:#69c8f2;--red:#ff7272;--gray:#aaaaaa;--green:#b0d840;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;word-break:keep-all;overflow-wrap:anywhere}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 "Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;word-break:keep-all;overflow-wrap:anywhere;letter-spacing:-.01em}
   header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
   header .brandbox{display:flex;flex-direction:column;gap:1px}
-  header .brand{font-size:20px;letter-spacing:.3px;font-weight:700}
+  header .brand{font-size:21px;letter-spacing:-.04em;font-weight:800}
   header .brand span{color:var(--accent)}
   header .tagline{margin:0;font-size:11.5px;font-weight:400;color:var(--muted);letter-spacing:0}
   header .meta{color:var(--muted);font-size:13px;flex:1}
   header .status{color:var(--muted);font-size:12px}
   nav{display:flex;gap:2px;padding:8px 24px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;overflow-x:auto}
   nav button{background:none;border:0;color:var(--muted);padding:10px 12px;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
-  nav button.active{color:var(--text);border-bottom-color:var(--accent)}
+  nav button{border-bottom-width:3px}
+  nav button.active{color:var(--text);font-weight:700;border-bottom-color:var(--accent)}
   main{padding:20px 24px;max-width:1180px;margin:0 auto}
   section{display:none}section.active{display:block}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
@@ -63,21 +66,23 @@
   #shop-mapwrap{grid-area:map}
   #shop-lists{grid-area:lists}
   #fame-list:not(:empty),#shop-list:not(:empty){background:var(--panel);border:1px solid var(--line);
-    border-radius:12px;padding:4px 16px 12px;margin-top:12px}
+    border-radius:6px;padding:4px 16px 12px;margin-top:12px}
   @media(max-width:900px){.grid,.grid.two,.grid.shops{grid-template-columns:1fr}main{padding:14px}header,nav{padding-left:14px;padding-right:14px}
     /* 한 줄로 접히면 지도가 목록 뒤로 밀린다 — 검색 → 지도 → 목록 순으로 고정 */
     .grid.shops{grid-template-areas:"ctl" "map" "lists"}}
-  #map{width:100%;height:440px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+  #map{width:100%;height:440px;border-radius:6px;background:var(--panel2);border:1px solid var(--line)}
   .shop{padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
   .shop:hover{background:rgba(255,255,255,.03)}
   .shop b{display:block}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  .panel h3{margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+  .panel h3{margin:0 0 12px;font-size:15px;color:var(--text);font-weight:700}
+  /* 제목 앞 노란 막대 — 로또 용지의 표시 칸 */
+  .panel h3::before{content:'';display:inline-block;width:4px;height:13px;background:var(--accent);margin-right:8px;vertical-align:-1px}
   label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
-  input[type=text],input[type=number],input[type=date],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:8px;font-size:14px}
+  input[type=text],input[type=number],input[type=date],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:4px;font-size:14px}
   input[type=range]{width:100%}
   #update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;
-    display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+    display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;
     background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.45);
     font-size:13.5px;color:var(--text);max-width:calc(100vw - 24px)}
   #update-bar button{padding:6px 10px;font-size:13px}
@@ -90,30 +95,33 @@
   .onb-date>#ob-m,.onb-date>#ob-d{min-width:44px}
   .check{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13.5px;color:var(--text)}
   .check input{width:auto}
-  button.primary{width:100%;margin-top:14px;background:var(--accent);color:#0b0e14;border:0;padding:11px;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer}
+  button.primary{width:100%;margin-top:14px;background:var(--accent);color:var(--ink);border:0;padding:11px;border-radius:6px;font-weight:800;font-size:15px;cursor:pointer;
+    box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 50%,#000)}
+  /* 누르면 그림자만큼 내려앉는다 */
+  button.primary:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--accent) 50%,#000)}
   button.primary:disabled{opacity:.5;cursor:wait}
-  button.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  button.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:4px;cursor:pointer;font-size:13px}
   button.ghost:disabled{opacity:.5}
-  a.ghost{display:inline-block;background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:8px;font-size:13px;text-decoration:none}
+  a.ghost{display:inline-block;background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:7px 12px;border-radius:4px;font-size:13px;text-decoration:none}
   .ball{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-weight:800;font-size:15px;color:#111;margin-right:6px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
   .ball.sm{width:28px;height:28px;font-size:12px;margin-right:4px}
   .c-노랑{background:var(--yellow)}.c-파랑{background:var(--blue)}.c-빨강{background:var(--red)}.c-회색{background:var(--gray)}.c-초록{background:var(--green)}
   /* outline 은 레이아웃 폭을 차지하지 않으므로(2px+오프셋 2px) 그만큼 여백을 따로 준다 */
   .ball.bonus{outline:2px dashed var(--muted);outline-offset:2px;margin-left:4px}
   .plus{color:var(--muted);margin:0 6px;font-weight:700}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px}
   .card .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-  .card .title{font-weight:700;font-size:15px}
+  .card .title{font-weight:800;font-size:15.5px;letter-spacing:-.02em}
   .card .title small{color:var(--muted);font-weight:400;margin-left:8px}
   .card .balls{margin:6px 0 10px}
-  .note{color:#c9cfdb;font-size:13.5px;margin:6px 0}
+  .note{color:#d9d4c9;font-size:13.5px;margin:6px 0}
   .kv{color:var(--muted);font-size:12.5px;margin:3px 0}
   /* 사주팔자 — 계산해서 나온 값만 적는다. 해석은 넣지 않는다. */
-  .saju{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+  .saju{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin:12px 0}
   .saju h3{margin:0 0 4px;font-size:15px}
   .pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 6px}
   .pillars.three{grid-template-columns:repeat(3,1fr)}
-  .pil{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  .pil{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
     padding:10px 6px;text-align:center}
   .pil .lab{color:var(--muted);font-size:11.5px}
   .pil .gz{font-size:19px;font-weight:800;margin:3px 0 1px;letter-spacing:1px}
@@ -121,7 +129,7 @@
   .pil .an{color:var(--muted);font-size:11px;letter-spacing:-.3px;margin-top:3px}
   .pil .el{color:var(--muted);font-size:11px;letter-spacing:-.3px}
   .elems{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
-  .elem{background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+  .elem{background:var(--panel2);border:1px solid var(--line);border-radius:3px;
     padding:3px 10px;font-size:12.5px}
   .elem b{color:var(--text)}
   .elem.zero{opacity:.45}
@@ -136,7 +144,7 @@
   .pil .sip.self{color:var(--gold);font-weight:700}
   .tell{margin:14px 0 0;border-top:1px solid var(--line);padding-top:12px}
   .tell h4{margin:0 0 10px;font-size:13px;font-weight:700}
-  .tl-me{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  .tl-me{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
     padding:10px 12px;margin:0 0 12px}
   .tl-who{font-size:14px;font-weight:700}
   .tl-who span{display:block;color:var(--muted);font-weight:400;font-size:11.5px;margin-top:2px}
@@ -150,13 +158,13 @@
   .dae{margin:14px 0 0;border-top:1px solid var(--line);padding-top:12px}
   .dae h4{margin:0 0 10px;font-size:13px;font-weight:700}
   .dae h4 span{font-weight:400;margin-left:6px}
-  .dae-now{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  .dae-now{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
     padding:10px 12px;margin:0 0 10px}
   .dae-now p{margin:6px 0 0;font-size:12.5px;line-height:1.7;color:var(--muted)}
   .dae-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;
     -webkit-overflow-scrolling:touch;scrollbar-width:thin}
   .dae-cell{flex:0 0 auto;width:62px;background:var(--panel2);border:1px solid var(--line);
-    border-radius:9px;padding:7px 4px;text-align:center}
+    border-radius:4px;padding:7px 4px;text-align:center}
   .dae-cell .age{font-size:10.5px;color:var(--muted);letter-spacing:-.3px}
   .dae-cell .gz{font-size:15px;font-weight:700;margin:2px 0 3px;letter-spacing:.5px}
   .dae-cell .g{font-size:10.5px;letter-spacing:-.3px}
@@ -164,7 +172,7 @@
   .dae-cell.now{border-color:var(--gold);background:rgba(245,215,110,.08)}
   .dae-cell.now .gz{color:var(--gold)}
   .tl-tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);
-    border-radius:999px;padding:1px 7px;font-size:10.5px;color:var(--muted);margin-right:5px;
+    border-radius:3px;padding:1px 7px;font-size:10.5px;color:var(--muted);margin-right:5px;
     vertical-align:1px;white-space:nowrap}
   .saju details{margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}
   .saju summary{cursor:pointer;font-size:12.5px;color:var(--accent);list-style:none}
@@ -177,7 +185,7 @@
   .saju .read b{color:var(--text);font-weight:600}
   /* 한 장 성적 요약 — 맞은 개수만 크게 띄우면 실제보다 잘한 것처럼 읽힌다.
      기대값과 분포상 위치를 늘 같이 보여 준다. */
-  .sheet{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  .sheet{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
     padding:10px 12px;margin:10px 0}
   .sheet .sheet-total{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
   .sheet .sheet-total em{font-style:normal;color:var(--ok)}
@@ -186,16 +194,16 @@
   .sheet dd{margin:0;color:var(--text);font-variant-numeric:tabular-nums}
   .sheet .pos{color:var(--muted)}
   .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-  .tag{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:2px 9px;font-size:12px}
-  .bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-top:4px}
+  .tag{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:3px;padding:2px 9px;font-size:12px}
+  .bar{height:6px;background:var(--panel2);border-radius:1px;overflow:hidden;margin-top:4px}
   .bar>i{display:block;height:100%;background:var(--accent)}
   .bar.luck>i{background:var(--warn)}
   .mini{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
   .mini .kv b{color:var(--text)}
-  .softbox{background:#1a1d26;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:10px 14px;font-size:12.5px;margin:12px 0}
-  .warnbox{background:#2a1f12;border:1px solid #5a3f1a;color:#ffd9a8;border-radius:10px;padding:12px 14px;font-size:13px;margin:0 0 16px}
-  .err{background:#2a1515;border:1px solid #6a2525;color:#ffb4b4;border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0}
-  .okbox{background:#12261b;border:1px solid #1f5a36;color:#b8f0cf;border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0}
+  .softbox{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:10px 14px;font-size:12.5px;margin:12px 0}
+  .warnbox{background:#2a1f12;border:1px solid #5a3f1a;color:#ffd9a8;border-radius:6px;padding:12px 14px;font-size:13px;margin:0 0 16px}
+  .err{background:#2a1515;border:1px solid #6a2525;color:#ffb4b4;border-radius:6px;padding:10px 14px;font-size:13px;margin:10px 0}
+  .okbox{background:#12261b;border:1px solid #1f5a36;color:#b8f0cf;border-radius:6px;padding:10px 14px;font-size:13px;margin:10px 0}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
   th{color:var(--muted);font-weight:600}
@@ -205,15 +213,15 @@
   .freq .f .bar{flex:1;margin:0}
   .freq .f .bar>i{background:var(--ok)}
   .dist{display:flex;gap:4px;align-items:flex-end;height:90px;margin:22px 0 22px}
-  .dist>div{flex:1;background:var(--accent);border-radius:4px 4px 0 0;position:relative;min-height:2px}
+  .dist>div{flex:1;background:var(--accent);border-radius:2px 2px 0 0;position:relative;min-height:2px}
   .dist>div span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
   .dist>div em{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--muted);font-style:normal}
   /* 6칸 + 삭제 버튼은 항상 한 줄이어야 한다. flex + 고정폭이면 패널이 좁을 때
      줄바꿈돼 마지막 칸이 아래로 밀린다. 그리드로 폭에 맞춰 줄여 담는다. */
-  .qr-view{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;background:#000;
+  .qr-view{position:relative;margin-top:10px;border-radius:6px;overflow:hidden;background:#000;
     border:1px solid var(--line)}
   .qr-view video{display:block;width:100%;max-height:60vh;object-fit:cover}
-  .qr-frame{position:absolute;inset:12% 14%;border:2px solid rgba(122,162,255,.9);border-radius:10px;
+  .qr-frame{position:absolute;inset:12% 14%;border:2px solid var(--accent);border-radius:6px;
     box-shadow:0 0 0 100vmax rgba(0,0,0,.35);pointer-events:none}
   .gradeline{display:grid;grid-template-columns:repeat(6,minmax(0,56px)) auto;
     gap:6px;margin:6px 0;align-items:center}
@@ -225,14 +233,14 @@
   .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--muted);border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
   /* 운세 */
-  .fortune{background:linear-gradient(160deg,#1b1f2c,#141720);border:1px solid var(--line);border-radius:16px;padding:26px 28px;margin-bottom:16px}
+  .fortune{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:4px;padding:26px 28px;margin-bottom:16px}
   .fortune .date{color:var(--muted);font-size:13px}
-  .fortune .greet{font-size:22px;font-weight:800;margin:4px 0 14px}
+  .fortune .greet{font-size:23px;font-weight:800;letter-spacing:-.03em;margin:4px 0 14px}
   .fortune .dots{letter-spacing:4px;color:var(--gold);font-size:18px;margin-right:10px}
   .fortune .label{font-size:17px;font-weight:700;display:inline-block}
-  .fortune .sentence{font-size:16px;line-height:1.7;margin:12px 0 18px;color:#e2e6f0}
+  .fortune .sentence{font-size:16px;line-height:1.7;margin:12px 0 18px;color:var(--text)}
   .fortune .items{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:10px 0 18px}
-  .fortune .item{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .fortune .item{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
   .fortune .item .k{color:var(--muted);font-size:12px;margin-bottom:6px}
   .fortune .swatch{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:-4px;margin-right:6px}
   .fortune .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
@@ -243,18 +251,18 @@
   .caution{color:var(--muted);font-size:11.5px;line-height:1.6;margin-top:10px}
   .celebrate .caution{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);opacity:.9}
   .ztable{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
-  .ztable .z{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .ztable .z{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
   .ztable .z.me{border-color:var(--gold)}
   .ztable .z b{font-size:14px}
   .ztable .z .dots{color:var(--gold);letter-spacing:2px;font-size:13px;margin-left:6px}
   .ztable .z .kv{margin-top:4px}
-  .badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+  .badge{display:inline-block;border-radius:3px;padding:2px 10px;font-size:12px;font-weight:700}
   .badge.wait{background:#2a2f3a;color:var(--muted)}
   .badge.win{background:#1f5a36;color:#b8f0cf}
   .badge.lose{background:#3a2a2a;color:#e8b4b4}
   /* 당첨 축하 */
   #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:none}
-  .celebrate{border-radius:16px;padding:22px 24px;margin-bottom:14px;text-align:center;border:2px solid transparent}
+  .celebrate{border-radius:6px;padding:22px 24px;margin-bottom:14px;text-align:center;border:2px solid transparent}
   .celebrate .big{font-size:30px;font-weight:900;letter-spacing:2px;margin-bottom:6px}
   .celebrate .sub{font-size:14px;opacity:.85}
   .celebrate.rank-gold{background:linear-gradient(160deg,#4a3a10,#2a2008);border-color:#f5d76e}
@@ -268,24 +276,23 @@
   .celebrate.rank-none{background:var(--panel);border-color:var(--line)}
   .celebrate.rank-none .big{color:var(--muted);font-size:20px;font-weight:700;letter-spacing:0}
   /* ---- 한국 / 일본 로또 스위치 ---- */
-  .modesw{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-left:auto;flex:none}
+  .modesw{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-left:auto;flex:none}
   .modesw button{background:none;border:0;color:var(--muted);padding:6px 13px;font-size:13px;cursor:pointer;white-space:nowrap}
-  .modesw button.on{background:var(--accent);color:#0b0e14;font-weight:700}
+  .modesw button.on{background:var(--accent);color:var(--ink);font-weight:700}
   html[data-mode="jp"] nav button[data-mode="kr"],
   html:not([data-mode="jp"]) nav button[data-mode="jp"]{display:none}
   /* 일본 모드: 쪽빛(藍) 바탕에 주홍(朱) 강조. 토리이 색이다. */
   html[data-mode="jp"]{
-    --bg:#0b1222;--panel:#111a2f;--panel2:#18233d;--line:#27344f;--text:#eef0f6;--muted:#9da8c0;
-    --accent:#ff6a3d;
+    --bg:#0d1322;--panel:#141b2e;--panel2:#1b2439;--line:#2a3550;--text:#f2efe8;--muted:#a3abbf;
+    --accent:#ff6a3d;--ink:#0d1322;
   }
   html[data-mode="jp"] header{border-top:3px solid var(--accent)}
   html[data-mode="jp"] .softbox{background:var(--panel2)}
-  html[data-mode="jp"] .fortune{background:linear-gradient(160deg,#1a2442,#101830)}
-  html[data-mode="jp"] .dist>div{background:var(--accent)}
+    html[data-mode="jp"] .dist>div{background:var(--accent)}
   html[data-mode="jp"] input[type=range],html[data-mode="jp"] input[type=checkbox]{accent-color:var(--accent)}
   /* 일본 로또 게임 고르기 */
   .gamesw{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .gamesw button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;
+  .gamesw button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;
     padding:8px 4px;cursor:pointer;text-align:center;min-width:0}
   .gamesw button b{display:block;font-size:14px}
   .gamesw button small{display:block;font-size:10.5px;color:var(--muted);letter-spacing:-.3px;margin-top:1px}
@@ -297,7 +304,7 @@
   /* 내 번호·추천 카드: 왼쪽 띠와 머리 쪽 은은한 바탕으로 게임을 가른다 */
   .card.jp-card{border-left:5px solid var(--g);
     background:linear-gradient(90deg,color-mix(in srgb,var(--g) 14%,var(--panel)) 0,var(--panel) 55%)}
-  .gchip{display:inline-block;background:var(--g);color:#fff;border-radius:999px;padding:1px 9px;
+  .gchip{display:inline-block;background:var(--g);color:#fff;border-radius:3px;padding:1px 9px;
     font-size:12px;font-weight:700;margin-right:6px;vertical-align:1px}
   .gamesw button.g-loto6.on,.gamesw button.g-loto7.on,.gamesw button.g-miniloto.on{
     border-color:var(--g);background:color-mix(in srgb,var(--g) 16%,transparent)}
@@ -309,7 +316,7 @@
   .jp-areas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
   .jp-areas>.kv{width:58px;flex:none;margin:0}
   .jp-areas button{padding:6px 10px}
-  .jp-map{width:100%;height:480px;border-radius:12px;overflow:hidden;background:var(--panel2);border:1px solid var(--line)}
+  .jp-map{width:100%;height:480px;border-radius:6px;overflow:hidden;background:var(--panel2);border:1px solid var(--line)}
   .jp-map iframe{width:100%;height:100%;border:0;display:block}
   @media(max-width:640px){.jp-map{height:420px}.jp-areas>.kv{width:100%}}
   .jp-draw .kv{margin:0 0 4px}
@@ -704,7 +711,7 @@ function jpUi() {
 }
 async function setMode(mode, { save = true } = {}) {
   document.documentElement.dataset.mode = mode;
-  document.querySelector('meta[name="theme-color"]').content = mode === 'jp' ? '#0b1222' : '#0f1115';
+  document.querySelector('meta[name="theme-color"]').content = mode === 'jp' ? '#0d1322' : '#141311';
   document.querySelectorAll('.modesw button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
   if (save) storage.saveSettings({ mode });
   const current = document.querySelector('nav button.active')?.dataset.tab || 'fortune';
@@ -1713,7 +1720,7 @@ function showFameMarkers(list) {
         'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
           `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
              <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 2}" fill="${color}" fill-opacity="0.85"
-                     stroke="#0f1115" stroke-width="2"/>
+                     stroke="#141311" stroke-width="2"/>
              ${st.firstCount ? `<text x="${size/2}" y="${size/2 + 4}" font-size="${Math.max(9, size/2.6)}"
                      font-weight="700" fill="#0b0e14" text-anchor="middle">${st.firstCount}</text>` : ''}
            </svg>`),
@@ -1901,14 +1908,14 @@ function showHereMarker(pos, accuracy) {
     image: new kakao.maps.MarkerImage(
       'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
         `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
-           <circle cx="12" cy="12" r="7" fill="#7aa2ff" stroke="#fff" stroke-width="3"/></svg>`),
+           <circle cx="12" cy="12" r="7" fill="#ffc83d" stroke="#fff" stroke-width="3"/></svg>`),
       new kakao.maps.Size(24, 24), { offset: new kakao.maps.Point(12, 12) }),
   });
   if (accuracy && accuracy > 50) {
     hereCircle = new kakao.maps.Circle({
       map: kmap, center: pos, radius: Math.min(accuracy, 5000),
-      strokeWeight: 1, strokeColor: '#7aa2ff', strokeOpacity: 0.6,
-      fillColor: '#7aa2ff', fillOpacity: 0.12,
+      strokeWeight: 1, strokeColor: '#ffc83d', strokeOpacity: 0.6,
+      fillColor: '#ffc83d', fillOpacity: 0.12,
     });
   }
 }

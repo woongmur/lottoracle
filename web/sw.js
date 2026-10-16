@@ -8,6 +8,8 @@
 const VERSION = 'v0.4.0-__BUILD__';
 const SHELL = `shell-${VERSION}`;
 const DATA = `data-${VERSION}`;
+// 글꼴(fonts/)은 배포마다 바뀌지 않는다. 배포 판 이름을 붙이지 않고 따로 오래 둔다.
+const FONTS = 'fonts-pretendard-1.3.9';
 const SHELL_FILES = [
   './', './index.html', './privacy.html', './manifest.webmanifest',
   './icon.svg', './icon-192.png', './icon-512.png',
@@ -51,7 +53,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== SHELL && k !== DATA).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== SHELL && k !== DATA && k !== FONTS).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -76,6 +78,14 @@ self.addEventListener('fetch', event => {
         })
         .catch(() => caches.match(request))
     );
+    return;
+  }
+
+  if (url.pathname.includes('/fonts/')) {
+    event.respondWith(caches.match(request).then(hit => hit || fetch(request).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(FONTS).then(c => c.put(request, copy)); }
+      return res;
+    })));
     return;
   }
 
