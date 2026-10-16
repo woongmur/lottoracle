@@ -151,5 +151,32 @@ class StaticPages(unittest.TestCase):
                 self.assertIn(label[key], table, f"{key} 를 저장하는데 방침 표에 '{label[key]}' 가 없다")
 
 
+class AdSense(unittest.TestCase):
+    """광고 코드가 빠진 페이지는 광고가 안 뜰 뿐 아무 오류도 내지 않는다."""
+
+    PUB = "ca-pub-2355882691173163"
+
+    def test_모든_페이지_head_에_광고_코드(self):
+        pages = [os.path.join(ROOT, "web", "index.html")] + [
+            os.path.join(StaticPages.PUBLIC, n) for n in os.listdir(StaticPages.PUBLIC) if n.endswith(".html")]
+        with tempfile.TemporaryDirectory() as out:
+            subprocess.run([sys.executable, os.path.join(ROOT, "tools", "gen_pages.py"), "--base", BASE, "--out", out],
+                           check=True, capture_output=True, cwd=ROOT)
+            pages += [os.path.join(out, n) for n in os.listdir(out) if n.endswith(".html")]
+            for path in pages:
+                html = open(path, encoding="utf-8").read()
+                head = html[:html.index("</head>")]
+                self.assertIn(f"adsbygoogle.js?client={self.PUB}", head, os.path.basename(path))
+
+    def test_ads_txt_가_같은_게시자(self):
+        line = open(os.path.join(StaticPages.PUBLIC, "ads.txt"), encoding="utf-8").read().strip()
+        self.assertEqual(line, f"google.com, {self.PUB.removeprefix('ca-')}, DIRECT, f08c47fec0942fa0")
+
+    def test_개인정보처리방침에_광고_쿠키_안내(self):
+        policy = open(os.path.join(StaticPages.PUBLIC, "privacy.html"), encoding="utf-8").read()
+        for must in ("Google AdSense", "쿠키", "adssettings.google.com", "aboutads.info"):
+            self.assertIn(must, policy)
+
+
 if __name__ == "__main__":
     unittest.main()
