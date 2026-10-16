@@ -340,7 +340,8 @@ export function createJpUi(ctx) {
             <div>${balls(key, d.numbers, null, true)}${bonusBalls(key, d.bonus, true)}</div></div>`).join('')}
           <p class="kv" style="margin-top:8px">일본 당첨번호 집계 사이트 두 곳의 전체 이력을 라쿠텐 다카라쿠지 최근 결과와 맞춰 본 값입니다. 공식 발표는 미즈호은행입니다.</p>
         </div>
-        <div class="panel" style="margin-top:20px"><h3>번호별 출현 횟수 (본숫자 기준 · 툴팁에 보너스/최근/미출현)</h3>
+        <div class="panel" style="margin-top:20px"><h3>번호별 출현 횟수</h3>
+          <p class="note">본숫자 기준 · 번호를 누르고 있으면 보너스·최근·미출현</p>
           <div class="freq">${s.frequency.map(f => `<div class="f" title="보너스 ${f.bonus}회 · 최근 ${s.recentWindow}회 중 ${f.recent}회 · ${f.gap}회차째 미출현"><span class="ball sm jp g-${key}">${f.n}</span><div class="bar"><i style="width:${f.count / maxF * 100}%"></i></div><span>${f.count}</span></div>`).join('')}</div>
         </div>`;
     } catch (e) {
