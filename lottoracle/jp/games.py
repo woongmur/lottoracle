@@ -34,3 +34,17 @@ def get(key: str) -> Game:
         return GAMES[key]
     except KeyError:
         raise ValueError(f"모르는 게임입니다: {key!r} (가능: {', '.join(GAMES)})") from None
+
+
+def next_draw_date(game: Game, last_date: str) -> str:
+    """'YYYY-MM-DD' 다음의 추첨일. 요일표만 본다(연말연시 휴무 같은 예외는 모른다).
+
+    JS 판은 web/src/jp/engine.js 의 nextDrawDate.
+    """
+    from datetime import date, timedelta
+    d = date.fromisoformat(last_date)
+    for _ in range(14):
+        d += timedelta(days=1)
+        if d.weekday() in game.weekdays:
+            return d.isoformat()
+    raise ValueError(f"{game.name} 추첨 요일표가 비었습니다")

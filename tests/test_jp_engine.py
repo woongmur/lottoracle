@@ -137,6 +137,16 @@ class Words(unittest.TestCase):
         self.assertEqual(folklore.neighbor_numbers(MINI, prev), {3, 14, 16, 17, 29})
 
 
+class NextDraw(unittest.TestCase):
+    def test_다음_추첨일은_요일표대로(self):
+        """JS nextDrawDate(web/test/jp_engine.test.js)와 같은 값."""
+        from lottoracle.jp.games import next_draw_date
+        self.assertEqual(next_draw_date(L6, "2026-10-12"), "2026-10-15")   # 월 → 목
+        self.assertEqual(next_draw_date(L6, "2026-10-15"), "2026-10-19")   # 목 → 월
+        self.assertEqual(next_draw_date(L7, "2026-10-09"), "2026-10-16")
+        self.assertEqual(next_draw_date(MINI, "2026-10-13"), "2026-10-20")
+
+
 class Stats(unittest.TestCase):
     def test_보너스_빈도는_보너스_개수만큼(self):
         st = stats.build(L7, DRAWS["loto7"])
