@@ -58,7 +58,7 @@ class Sitemap(unittest.TestCase):
         """같은 페이지를 두 가지 글자로 부르면 크롤러에겐 다른 주소일 수 있다."""
         for loc, _ in self.urls:
             p = self.path_of(loc)
-            if not p.startswith(("region-", "draw-")):
+            if not p.startswith(("region-", "draw-", "jp")):
                 continue
             head = open(os.path.join(self.out, p), encoding="utf-8").read(3000)
             canon = re.search(r'rel="canonical" href="([^"]+)"', head).group(1)
@@ -89,8 +89,23 @@ class Sitemap(unittest.TestCase):
             self.assertEqual(mod, latest, f"{p} 는 매주 갱신되므로 최신 회차 날짜")
 
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_일본_로또_페이지(self):
+        """게임마다 한 장 + 허브. lastmod 는 그 게임의 최신 추첨일이다."""
+        from lottoracle.jp import data as jd
+        mods = {self.path_of(loc): mod for loc, mod in self.urls}
+        latest = {}
+        for key in ("loto6", "loto7", "miniloto"):
+            p = f"jp-{key}.html"
+            self.assertIn(p, mods)
+            last = jd.load(key, jd.WEB_DATA_DIR)[-1]
+            latest[p] = last.date
+            self.assertEqual(mods[p], last.date, p)
+            text = open(os.path.join(self.out, p), encoding="utf-8").read()
+            self.assertIn(f"{last.no}회", text)
+            self.assertIn(f"?mode=jp&amp;game={key}", text, "앱으로 바로 들어가는 버튼")
+            self.assertNotIn("1/8,145,060", text, "한국 로또 확률을 적지 않는다")
+            self.assertNotIn("동행복권", text)
+        self.assertEqual(mods["jp.html"], max(latest.values()))
 
 
 class StaticPages(unittest.TestCase):
@@ -134,3 +149,7 @@ class StaticPages(unittest.TestCase):
         for key in sorted(stored):
             if label[key]:
                 self.assertIn(label[key], table, f"{key} 를 저장하는데 방침 표에 '{label[key]}' 가 없다")
+
+
+if __name__ == "__main__":
+    unittest.main()
