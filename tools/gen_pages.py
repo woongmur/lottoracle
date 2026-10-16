@@ -39,10 +39,11 @@ CSS = """
 :root{color-scheme:dark}
 body{margin:0;background:#0f1115;color:#e6ebf1;
   font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
-  line-height:1.65;font-size:15px}
+  line-height:1.65;font-size:15px;word-break:keep-all;overflow-wrap:anywhere}
 .wrap{max-width:760px;margin:0 auto;padding:20px 16px 56px}
 a{color:#7aa2ff}
-h1{font-size:22px;margin:8px 0 4px}
+/* 제목은 한 줄에: 좁은 화면에서는 글자를 줄이고, 긴 설명은 title·sub 로 보낸다 */
+h1{font-size:clamp(18px,5.4vw,22px);margin:8px 0 4px;line-height:1.35}
 h2{font-size:17px;margin:28px 0 8px;padding-top:14px;border-top:1px solid #232833}
 .sub{color:#8b95a5;font-size:13.5px;margin:0 0 16px}
 .balls{margin:10px 0 4px}
@@ -66,7 +67,9 @@ table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}
 .tw>table.wide{min-width:620px}
 th,td{border-bottom:1px solid #232833;padding:7px 8px;text-align:left}
 td.n,th.n{text-align:right;white-space:nowrap}
-th{color:#8b95a5;font-weight:600}
+th{color:#8b95a5;font-weight:600;white-space:nowrap}
+/* 표의 첫 칸(판매점·지역 이름, 등수)은 줄바꿈하지 않는다. 넘치면 .tw 가 가로로 스크롤한다 */
+.tw td:first-child{white-space:nowrap}
 ul{padding-left:18px;margin:8px 0}
 li{margin:4px 0}
 .kv{color:#8b95a5;font-size:13.5px}
@@ -160,7 +163,7 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
             f'<td class="n">{pz["winners"]:,}게임</td><td class="n">{won(pz["amount"])}</td></tr>'
             for pz in d["prizes"])
         rows = ('<h2>등수별 당첨 현황</h2><div class="tw"><table>'
-                '<tr><th>등수</th><th>일치</th><th class="n">당첨 게임 수</th><th class="n">1게임당</th></tr>'
+                '<tr><th>등수</th><th>일치</th><th class="n">당첨</th><th class="n">1게임당</th></tr>'
                 + body + "</table></div>")
         if d.get("total_sales", -1) > 0:
             rows += f'<p class="kv">이 회차 총 판매금액 {won(d["total_sales"])}</p>'
@@ -344,8 +347,8 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
     odd_mode = max(ps.odd_distribution.items(), key=lambda kv: kv[1])[0]
     body = (
         f'<p class="kv"><a href="{base}/">lottoracle</a> › <a href="{base}/jp.html">일본 로또</a> › {E(g.name)}</p>'
-        f'<h1><span class="chip {key}">{E(g.name)}</span>일본 {E(g.name)}({E(g.name_ja)}) 당첨번호 · 통계</h1>'
-        f'<p class="sub">최신 {last.no}회 {jp_day(last.date)} · 다음 추첨 {last.no + 1}회 {jp_day(nxt)}</p>'
+        f'<h1><span class="chip {key}">{E(g.name_ja)}</span>일본 {E(g.name)} 당첨번호</h1>'
+        f'<p class="sub">최신 {last.no}회 · {jp_day(last.date)}<br>다음 {last.no + 1}회 · {jp_day(nxt)}</p>'
         f"<h2>{last.no}회 당첨번호</h2>{jp_balls(key, last.numbers, last.bonus)}"
         + (f'<p class="kv">{E(prize)}</p>' if prize else "")
         + f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
@@ -355,7 +358,7 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f"<tr><th>추첨</th><td>매주 {JP_DAYS[key]}요일</td></tr>"
         f"<tr><th>1구 가격</th><td>{JP_PRICE[key]}엔</td></tr>"
         f"<tr><th>1등 확률</th><td>1/{JP_ODDS[key]} (어떤 조합이든 같습니다)</td></tr>"
-        + (f"<tr><th>역대 최고 1등</th><td>1구당 {top_prize:,}엔 ({top_no}회)</td></tr>" if top_prize else "")
+        + (f"<tr><th>최고 1등</th><td>1구당 {top_prize:,}엔 ({top_no}회)</td></tr>" if top_prize else "")
         + f"<tr><th>첫 추첨</th><td>{draws[0].date} (1회)</td></tr></table>"
         f"<h2>최근 20회 당첨번호</h2><ul class=\"dl\">{recent}</ul>"
         f"<h2>당첨번호 평균치 ({len(draws):,}회 전체)</h2><table>"
@@ -392,8 +395,8 @@ def jp_hub_page(base: str, latest: dict) -> str:
         for last in [jp_data.load(key, jp_data.WEB_DATA_DIR)[-1]])
     body = (
         f'<p class="kv"><a href="{base}/">lottoracle</a> › 일본 로또</p>'
-        f"<h1>일본 로또 — 로또6 · 로또7 · 미니로또 당첨번호와 번호 추천</h1>"
-        f'<p class="sub">일본 여행 중 판매점(宝くじ売り場)에서 살 수 있는 숫자 고르기 복권 세 가지를 정리했습니다.</p>'
+        f"<h1>일본 로또 당첨번호 · 번호 추천</h1>"
+        f'<p class="sub">로또6 · 로또7 · 미니로또<br>일본 판매점(宝くじ売り場)에서 사는 숫자 복권</p>'
         f"<h2>최신 당첨번호</h2><ul class=\"dl\">{latest_rows}</ul>"
         f'<h2>세 게임 비교</h2><div class="tw"><table class="wide"><tr><th>게임</th><th>번호</th><th>보너스</th>'
         f'<th>추첨 요일</th><th class="n">1구</th><th class="n">1등 확률</th></tr>{"".join(rows)}</table></div>'
@@ -444,7 +447,7 @@ def main() -> int:
         for d in reversed(targets))
     body = (f'<p class="kv"><a href="{base}/">lottoracle</a> › 회차별 당첨번호</p>'
             f"<h1>로또 6/45 회차별 당첨번호</h1>"
-            f'<p class="sub">{nos[0]}회부터 {nos[-1]}회까지. 회차를 누르면 등수별 당첨금과 그 회차 1·2등 배출점을 볼 수 있습니다.</p>'
+            f'<p class="sub">{nos[0]}회 ~ {nos[-1]}회<br>회차를 누르면 당첨금과 1·2등 배출점</p>'
             f'<ul class="dl">{items}</ul>'
             f'<a class="cta" href="{base}/">번호 뽑아보기</a>')
     open(os.path.join(args.out, "draws.html"), "w", encoding="utf-8").write(page(
@@ -462,9 +465,9 @@ def main() -> int:
         f'<td class="kv">{", ".join(str(n) for n in sorted(s["r1"], reverse=True)[:6])}</td></tr>'
         for s in fame)
     body = (f'<p class="kv"><a href="{base}/">lottoracle</a> › 로또 명당</p>'
-            f"<h1>로또 명당 — 1등을 두 번 이상 배출한 판매점</h1>"
-            f'<p class="sub">{min(raw["draws"])}회~{max(raw["draws"])}회 기준 {len(fame)}곳. '
-            f'동행복권 당첨판매점 자료입니다.</p>'
+            f"<h1>로또 명당 · 1등 2회 이상 판매점</h1>"
+            f'<p class="sub">{min(raw["draws"])}회 ~ {max(raw["draws"])}회 · {len(fame)}곳<br>'
+            f'자료: 동행복권 당첨판매점</p>'
             f'<div class="tw"><table class="wide"><tr><th>판매점</th><th class="n">1등</th>'
             f'<th class="n">2등</th><th>주소</th><th>배출 회차</th></tr>'
             f"{rows}</table></div>"
@@ -507,11 +510,10 @@ def main() -> int:
                  + f' › {E(name)}</p>')
         # 1등이 한 번도 안 나온 지역에까지 '명당' 이라고 쓰면 사실과 다르다.
         # 없으면 없다고 적고, 대신 2등 배출점을 보여 준다.
-        title_h1 = (f"{E(name)} 로또 명당 — 1등 배출 판매점" if stat["r1"]
-                    else f"{E(name)} 로또 판매점 — 아직 1등이 나오지 않았습니다")
-        sub = (f'{span} 기준. 판매점 {stat["shops"]:,}곳 중 {stat["winners"]:,}곳이 1등을 냈습니다.'
+        title_h1 = f"{E(name)} 로또 명당" if stat["r1"] else f"{E(name)} 로또 판매점"
+        sub = (f'{span} 기준<br>판매점 {stat["shops"]:,}곳 중 {stat["winners"]:,}곳이 1등 배출'
                if stat["r1"] else
-               f'{span} 기준. 판매점 {stat["shops"]:,}곳에서 아직 1등이 나오지 않았습니다.')
+               f'{span} 기준<br>판매점 {stat["shops"]:,}곳, 아직 1등이 없습니다')
         head = (f"<h1>{title_h1}</h1>"
                 f'<p class="sub">{sub}</p>'
                 f'<div class="tw"><table>'
@@ -569,8 +571,8 @@ def main() -> int:
     rows = [(sd, region_file(sd), sido_stats[sd]) for sd in sido_order]
     body = (f'<p class="kv"><a href="{base}/">lottoracle</a> › 지역별 로또 명당</p>'
             f"<h1>지역별 로또 1등 배출 순위</h1>"
-            f'<p class="sub">{span} 기준. 전국 판매점 {nation["shops"]:,}곳에서 '
-            f'1등 {nation["r1"]:,}회, 2등 {nation["r2"]:,}회가 나왔습니다.</p>'
+            f'<p class="sub">{span} 기준 · 판매점 {nation["shops"]:,}곳<br>'
+            f'1등 {nation["r1"]:,}회 · 2등 {nation["r2"]:,}회</p>'
             + rank_table(rows, base) + CAVEAT
             + f'<a class="cta" href="{base}/fame.html">1등을 두 번 이상 배출한 판매점 보기</a>')
     open(os.path.join(args.out, "regions.html"), "w", encoding="utf-8").write(page(
