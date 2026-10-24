@@ -19810,5 +19810,53 @@
    }
   ],
   "total_sales": 60928553620
+ },
+ {
+  "no": 1247,
+  "numbers": [
+   8,
+   14,
+   21,
+   22,
+   42,
+   45
+  ],
+  "bonus": 24,
+  "draw_date": "2026-10-24",
+  "first_winners": 8,
+  "first_prize": 3637439250,
+  "prizes": [
+   {
+    "rank": 1,
+    "winners": 8,
+    "amount": 3637439250,
+    "total": 29099514000
+   },
+   {
+    "rank": 2,
+    "winners": 74,
+    "amount": 65539446,
+    "total": 4849919004
+   },
+   {
+    "rank": 3,
+    "winners": 2983,
+    "amount": 1625853,
+    "total": 4849919499
+   },
+   {
+    "rank": 4,
+    "winners": 154703,
+    "amount": 50000,
+    "total": 7735150000
+   },
+   {
+    "rank": 5,
+    "winners": 2591204,
+    "amount": 5000,
+    "total": 12956020000
+   }
+  ],
+  "total_sales": 59490522503
  }
 ]
