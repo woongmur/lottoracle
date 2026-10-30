@@ -318,17 +318,20 @@ def jp_draw_file(key: str, no: int) -> str:
 
 
 def jp_prize_table(key: str, d) -> str:
-    """한 회차의 등수별 당첨 구수와 1구당 금액, 이월금."""
+    """한 회차의 등수별 당첨 게임 수와 1게임당 금액, 이월금.
+
+    일본은 한 게임을 1口(구)라고 세지만 한국 사람에게 낯설어 한국 로또처럼 '게임' 으로 적는다.
+    """
     if not d.prizes:
         return '<p class="kv">당첨금은 집계 중입니다. 보통 추첨 다음 날 아침까지 올라옵니다.</p>'
     rows = "".join(
         f'<tr><td>{i}등</td><td class="kv">{m}</td>'
-        + (f'<td class="n">{w:,}구</td><td class="n">{a:,}엔</td>' if w else
-           '<td class="n">0구</td><td class="n kv">해당 없음</td>')
+        + (f'<td class="n">{w:,}게임</td><td class="n">{a:,}엔</td>' if w else
+           '<td class="n">0게임</td><td class="n kv">해당 없음</td>')
         + "</tr>"
         for i, ((w, a), m) in enumerate(zip(d.prizes, RANK_MATCH[key]), 1))
-    out = ('<div class="tw"><table><tr><th>등수</th><th>일치</th><th class="n">당첨</th>'
-           f'<th class="n">1구당</th></tr>{rows}</table></div>')
+    out = ('<div class="tw"><table><tr><th>등수</th><th>일치</th><th class="n">당첨 게임 수</th>'
+           f'<th class="n">1게임당</th></tr>{rows}</table></div>')
     if d.carryover > 0:
         out += f'<p class="kv">다음 회차로 넘어가는 1등 이월금 <b>{d.carryover:,}엔</b></p>'
     return out
@@ -339,7 +342,7 @@ def jp_first_prize(d) -> str:
     if not d.prizes:
         return ""
     w, a = d.prizes[0]
-    return f"1등 {w:,}구 · {a:,}엔" if w else "1등 없음 (이월)"
+    return f"1등 {w:,}게임 · {a:,}엔" if w else "1등 없음 (이월)"
 
 
 WEEKDAY_KO = "월화수목금토일"
@@ -435,9 +438,9 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f"<tr><th>번호</th><td>1~{g.pool} 중 {g.pick}개를 고릅니다</td></tr>"
         f"<tr><th>보너스</th><td>{g.bonus}개 (고르지 않습니다. 2등을 가르는 데만 씁니다)</td></tr>"
         f"<tr><th>추첨</th><td>매주 {JP_DAYS[key]}요일</td></tr>"
-        f"<tr><th>1구 가격</th><td>{JP_PRICE[key]}엔</td></tr>"
+        f"<tr><th>1게임 가격</th><td>{JP_PRICE[key]}엔</td></tr>"
         f"<tr><th>1등 확률</th><td>1/{JP_ODDS[key]} (어떤 조합이든 같습니다)</td></tr>"
-        + (f"<tr><th>최고 1등</th><td>1구당 {top_prize:,}엔 ({top_no}회)</td></tr>" if top_prize else "")
+        + (f"<tr><th>최고 1등</th><td>1게임당 {top_prize:,}엔 ({top_no}회)</td></tr>" if top_prize else "")
         + f"<tr><th>첫 추첨</th><td>{draws[0].date} (1회)</td></tr></table>"
         f"<h2>최근 20회 당첨번호</h2><ul class=\"dl\">{recent}</ul>"
         + (f'<details><summary class="kv">지난 회차 ({paged[0]}~{paged[-21]}회)</summary><p class="kv">'
@@ -485,7 +488,7 @@ def jp_hub_page(base: str, latest: dict) -> str:
         f'<p class="sub">로또6 · 로또7 · 미니로또<br>일본 판매점(宝くじ売り場)에서 사는 숫자 복권</p>'
         f"<h2>최신 당첨번호</h2><ul class=\"dl\">{latest_rows}</ul>"
         f'<h2>세 게임 비교</h2><div class="tw"><table class="wide"><tr><th>게임</th><th>번호</th><th>보너스</th>'
-        f'<th>추첨 요일</th><th class="n">1구</th><th class="n">1등 확률</th></tr>{"".join(rows)}</table></div>'
+        f'<th>추첨 요일</th><th class="n">1게임</th><th class="n">1등 확률</th></tr>{"".join(rows)}</table></div>'
         f"<h2>한국 로또와 다른 점</h2><ul>"
         f"<li>보너스 숫자는 사는 사람이 고르지 않습니다. 추첨에서 따로 뽑아 2등을 가르는 데만 씁니다.</li>"
         f"<li>로또6·로또7은 1등이 없으면 1등 몫이 다음 회차로 넘어갑니다(이월, キャリーオーバー).</li>"
