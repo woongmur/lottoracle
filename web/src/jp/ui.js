@@ -121,6 +121,7 @@ export function createJpUi(ctx) {
             <div><label>줄 간 최대 중복</label><input type="number" id="jp-max_overlap" value="${Math.floor(GAMES[game].pick / 2)}" min="0" max="${GAMES[game].pick}"></div>
           </div>
           <button class="primary" id="jp-run">추천 5줄 뽑기</button>
+          <p class="kv" style="margin-top:10px;text-align:center">번호 추천은 무료입니다 · 회원가입 없음</p>
           <p class="kv" style="margin-top:12px">일본 로또는 보너스 숫자를 고르지 않습니다. 본숫자만 뽑습니다.
             표를 사는 것은 일본 현지 판매점에서 직접 해 주세요 — 이 사이트는 구매를 대신하거나 연결하지 않습니다.</p>
         </div>
