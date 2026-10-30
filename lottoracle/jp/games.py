@@ -29,6 +29,15 @@ GAMES: dict[str, Game] = {
 }
 
 
+# 등수별로 맞혀야 하는 것 (다카라쿠지 공식 규칙). 당첨 데이터의 prizes 와 같은 순서·길이.
+# 로또7 2등·6등의 '보너스' 는 보너스 두 개 중 하나 이상. JS 판은 web/src/jp/games.js 의 RANK_MATCH.
+RANK_MATCH: dict[str, tuple[str, ...]] = {
+    "loto6": ("6개 일치", "5개 + 보너스", "5개 일치", "4개 일치", "3개 일치"),
+    "loto7": ("7개 일치", "6개 + 보너스", "6개 일치", "5개 일치", "4개 일치", "3개 + 보너스"),
+    "miniloto": ("5개 일치", "4개 + 보너스", "4개 일치", "3개 일치"),
+}
+
+
 def get(key: str) -> Game:
     try:
         return GAMES[key]

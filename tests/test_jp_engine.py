@@ -147,6 +147,16 @@ class NextDraw(unittest.TestCase):
         self.assertEqual(next_draw_date(MINI, "2026-10-13"), "2026-10-20")
 
 
+class RankMatch(unittest.TestCase):
+    def test_등수표는_게임_등수와_데이터_길이에_맞다(self):
+        from lottoracle.jp.games import RANK_MATCH
+        for key, game in GAMES.items():
+            self.assertEqual(len(RANK_MATCH[key]), game.ranks, key)
+            with_prizes = [d for d in DRAWS[key] if d.prizes]
+            self.assertTrue(with_prizes, key)
+            self.assertTrue(all(len(d.prizes) == game.ranks for d in with_prizes), key)
+
+
 class Stats(unittest.TestCase):
     def test_보너스_빈도는_보너스_개수만큼(self):
         st = stats.build(L7, DRAWS["loto7"])

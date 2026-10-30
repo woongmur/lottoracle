@@ -410,6 +410,7 @@
   <button data-tab="jp-recommend" data-mode="jp">번호 추천</button>
   <button data-tab="jp-picks" data-mode="jp">내 번호</button>
   <button data-tab="jp-stats" data-mode="jp">통계</button>
+  <button data-tab="jp-draws" data-mode="jp">회차</button>
   <button data-tab="jp-shops" data-mode="jp">복권방</button>
   <button data-tab="info">설정 · 정보</button>
 </nav>
@@ -572,6 +573,7 @@
   <section id="tab-jp-recommend"><span class="spin"></span>일본 로또 화면을 불러오는 중…</section>
   <section id="tab-jp-picks"></section>
   <section id="tab-jp-stats"></section>
+  <section id="tab-jp-draws"></section>
   <section id="tab-jp-shops"></section>
 
   <!-- ============ 설정 · 정보 ============ -->
@@ -695,7 +697,7 @@ async function boot() {
 //
 // 일본 쪽 화면은 src/jp/ui.js 에 따로 있고, 일본 로또를 처음 켤 때만 내려받는다.
 // 탭은 같은 자리끼리 짝을 지어 둔다 — 한국 '번호 추천' 을 보다가 바꾸면 일본 '번호 추천' 으로.
-const JP_TAB = { recommend: 'jp-recommend', picks: 'jp-picks', stats: 'jp-stats', shops: 'jp-shops' };
+const JP_TAB = { recommend: 'jp-recommend', picks: 'jp-picks', stats: 'jp-stats', draws: 'jp-draws', shops: 'jp-shops' };
 const KR_TAB = Object.fromEntries(Object.entries(JP_TAB).map(([k, v]) => [v, k]));
 const SHARED_TABS = ['fortune', 'info'];
 const modeNow = () => (document.documentElement.dataset.mode === 'jp' ? 'jp' : 'kr');

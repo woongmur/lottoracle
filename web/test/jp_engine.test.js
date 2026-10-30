@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { GAMES, GAME_KEYS, getGame } from '../src/jp/games.js';
+import { GAMES, GAME_KEYS, RANK_MATCH, getGame } from '../src/jp/games.js';
 import * as gen from '../src/jp/generator.js';
 import * as jst from '../src/jp/stats.js';
 import * as jmo from '../src/jp/model.js';
@@ -155,4 +155,14 @@ test('데이터가 없어도 추천은 된다 (전형성 없이 규칙만)', () 
   assert.equal(r.previous, null);
   assert.equal(r.next, null);
   for (const L of r.lines) valid(GAMES.miniloto, L.numbers, L.strategy);
+});
+
+test('등수표는 파이썬과 같고 게임 등수만큼 있다', () => {
+  for (const k of GAME_KEYS) assert.equal(RANK_MATCH[k].length, GAMES[k].ranks, k);
+  const py = readFileSync(new URL('../../lottoracle/jp/games.py', import.meta.url), 'utf8');
+  for (const k of GAME_KEYS) {
+    const m = py.match(new RegExp(`"${k}": \\(([^)]*)\\)`));
+    assert.ok(m, k);
+    assert.deepEqual([...m[1].matchAll(/"([^"]+)"/g)].map(x => x[1]), RANK_MATCH[k], k);
+  }
 });
