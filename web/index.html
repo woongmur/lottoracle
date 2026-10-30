@@ -83,6 +83,8 @@
   label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
   input[type=text],input[type=number],input[type=date],input[type=password],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:4px;font-size:14px}
   input[type=range]{width:100%}
+  /* 슬라이더·체크박스도 강조색으로 (브라우저 기본 파랑이 남아 있었다). 일본 모드는 --accent 가 주홍이라 그대로 따라간다 */
+  input[type=range],input[type=checkbox],input[type=radio]{accent-color:var(--accent)}
   #update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;
     display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;
     background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.45);
@@ -291,7 +293,6 @@
   html[data-mode="jp"] header{border-top:3px solid var(--accent)}
   html[data-mode="jp"] .softbox{background:var(--panel2)}
     html[data-mode="jp"] .dist>div{background:var(--accent)}
-  html[data-mode="jp"] input[type=range],html[data-mode="jp"] input[type=checkbox]{accent-color:var(--accent)}
   /* 일본 로또 게임 고르기 */
   .gamesw{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
   .gamesw button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;
@@ -454,6 +455,7 @@
           <div><label>줄 간 최대 중복</label><input type="number" id="max_overlap" value="3" min="0" max="6"></div>
         </div>
         <button class="primary" id="run-recommend">추천 5줄 뽑기</button>
+        <p class="kv" style="margin-top:10px;text-align:center">번호 추천은 무료입니다 · 회원가입 없음</p>
       </div>
       <div>
         <div id="rec-info" class="kv" style="margin-bottom:10px"></div>
