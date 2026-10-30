@@ -305,10 +305,11 @@ export function createJpUi(ctx) {
   const yen = n => `${fmt(n)}엔`;
   function prizeTable(key, d) {
     if (!d.prizes.length) return '<p class="kv">이 회차 당첨금은 아직 집계 중입니다. 보통 추첨 다음 날 아침까지 올라옵니다.</p>';
-    return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨 게임 수</th><th class="num">1게임당</th></tr>` +
+    return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨 게임 수</th><th class="num">1게임당</th><th class="num">등수별 총액</th></tr>` +
       d.prizes.map(([w, a], i) => `<tr><td>${i + 1}등</td><td class="kv">${RANK_MATCH[key][i] || ''}</td>
-        <td class="num">${fmt(w)}게임</td><td class="num">${w ? yen(a) : '<span class="kv">해당 없음</span>'}</td></tr>`).join('') +
-      (d.carryover > 0 ? `<tr><th colspan="3">다음 회차로 넘어가는 1등 이월금</th><td class="num">${yen(d.carryover)}</td></tr>` : '') +
+        <td class="num">${fmt(w)}게임</td><td class="num">${w ? yen(a) : '<span class="kv">해당 없음</span>'}</td>
+        <td class="num kv">${w ? yen(w * a) : '-'}</td></tr>`).join('') +
+      (d.carryover > 0 ? `<tr><th colspan="4">다음 회차로 넘어가는 1등 이월금</th><td class="num">${yen(d.carryover)}</td></tr>` : '') +
       `</table>`;
   }
 
