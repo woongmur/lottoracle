@@ -72,6 +72,8 @@ td.n,th.n{text-align:right;white-space:nowrap}
 th{color:#a29d92;font-weight:600;white-space:nowrap}
 /* 표의 첫 칸(판매점·지역 이름, 등수)은 줄바꿈하지 않는다. 넘치면 .tw 가 가로로 스크롤한다 */
 .tw td:first-child{white-space:nowrap}
+/* 칸이 다섯인 숫자 표(일본 등수별 당첨금)는 칸 안에서 줄을 바꾸지 않고 표 전체를 가로로 스크롤 */
+.tw>table.nw td{white-space:nowrap}
 ul{padding-left:18px;margin:8px 0}
 li{margin:4px 0}
 .kv{color:#a29d92;font-size:13.5px}
@@ -326,12 +328,12 @@ def jp_prize_table(key: str, d) -> str:
         return '<p class="kv">당첨금은 집계 중입니다. 보통 추첨 다음 날 아침까지 올라옵니다.</p>'
     rows = "".join(
         f'<tr><td>{i}등</td><td class="kv">{m}</td>'
-        + (f'<td class="n">{w:,}게임</td><td class="n">{a:,}엔</td>' if w else
-           '<td class="n">0게임</td><td class="n kv">해당 없음</td>')
+        + (f'<td class="n">{w:,}게임</td><td class="n">{a:,}엔</td><td class="n kv">{w * a:,}엔</td>' if w else
+           '<td class="n">0게임</td><td class="n kv">해당 없음</td><td class="n kv">-</td>')
         + "</tr>"
         for i, ((w, a), m) in enumerate(zip(d.prizes, RANK_MATCH[key]), 1))
-    out = ('<div class="tw"><table><tr><th>등수</th><th>일치</th><th class="n">당첨 게임 수</th>'
-           f'<th class="n">1게임당</th></tr>{rows}</table></div>')
+    out = ('<div class="tw"><table class="nw"><tr><th>등수</th><th>일치</th><th class="n">당첨 게임 수</th>'
+           f'<th class="n">1게임당</th><th class="n">등수별 총액</th></tr>{rows}</table></div>')
     if d.carryover > 0:
         out += f'<p class="kv">다음 회차로 넘어가는 1등 이월금 <b>{d.carryover:,}엔</b></p>'
     return out
