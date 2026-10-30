@@ -304,9 +304,9 @@ export function createJpUi(ctx) {
   const yen = n => `${fmt(n)}엔`;
   function prizeTable(key, d) {
     if (!d.prizes.length) return '<p class="kv">이 회차 당첨금은 아직 집계 중입니다. 보통 추첨 다음 날 아침까지 올라옵니다.</p>';
-    return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨</th><th class="num">1구당</th></tr>` +
+    return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨 게임 수</th><th class="num">1게임당</th></tr>` +
       d.prizes.map(([w, a], i) => `<tr><td>${i + 1}등</td><td class="kv">${RANK_MATCH[key][i] || ''}</td>
-        <td class="num">${fmt(w)}구</td><td class="num">${w ? yen(a) : '<span class="kv">해당 없음</span>'}</td></tr>`).join('') +
+        <td class="num">${fmt(w)}게임</td><td class="num">${w ? yen(a) : '<span class="kv">해당 없음</span>'}</td></tr>`).join('') +
       (d.carryover > 0 ? `<tr><th colspan="3">다음 회차로 넘어가는 1등 이월금</th><td class="num">${yen(d.carryover)}</td></tr>` : '') +
       `</table>`;
   }
@@ -319,12 +319,12 @@ export function createJpUi(ctx) {
       const engine = await engineOf(key);
       if (key !== game) return;
       const rows = engine.drawsPayload(drawLimit);
-      box.innerHTML = `<p class="kv">회차를 누르면 등수별 당첨금이 펼쳐집니다.</p><table><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th class="num">1등</th><th class="num">1구당</th></tr>` +
+      box.innerHTML = `<p class="kv">회차를 누르면 등수별 당첨금이 펼쳐집니다.</p><table><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th class="num">1등</th><th class="num">1게임당</th></tr>` +
         rows.map(d => {
           const [w, a] = d.prizes[0] || [-1, 0];
           return `<tr class="drawrow" data-no="${d.no}" style="cursor:pointer"><td>${d.no}회 ▾</td><td>${dayLabel(d.date)}</td>
             <td>${balls(key, d.numbers, null, true)}${bonusBalls(key, d.bonus, true)}</td>
-            <td class="num">${w < 0 ? '-' : w ? fmt(w) + '구' : '없음'}</td><td class="num">${w > 0 ? yen(a) : w === 0 ? '이월' : '-'}</td></tr>
+            <td class="num">${w < 0 ? '-' : w ? fmt(w) + '게임' : '없음'}</td><td class="num">${w > 0 ? yen(a) : w === 0 ? '이월' : '-'}</td></tr>
             <tr class="drawdetail" data-detail="${d.no}" style="display:none"><td colspan="5">${prizeTable(key, d)}</td></tr>`;
         }).join('') + '</table>';
       box.querySelectorAll('.drawrow').forEach(tr => tr.addEventListener('click', () => {
