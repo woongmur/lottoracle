@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lottoracle.engine import draw_date_of
 from lottoracle.jp import data as jp_data
 from lottoracle.jp import stats as jp_stats
-from lottoracle.jp.games import GAMES as JP_GAMES, next_draw_date
-from lottoracle.jp.metrics import expected_sum
+from lottoracle.jp.games import GAMES as JP_GAMES, RANK_MATCH, next_draw_date
+from lottoracle.jp.metrics import expected_sum, profile as jp_profile
 from lottoracle.metrics import profile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -303,12 +303,45 @@ CAVEAT = ('<p class="kv">1등이 많이 나온 지역은 그만큼 복권이 많
 
 # ---------------------------------------------------------------- 일본 로또
 # 앱의 일본 모드는 JS 로 그려져 주소가 따로 없다. "일본 로또7 당첨번호" 처럼 한국어로
-# 찾는 사람에게 걸리도록 게임마다 글자로 된 페이지를 하나씩 두고, 앱으로 바로 들어가는
-# 버튼(?mode=jp&game=…)을 단다. 당첨 확인·구매 안내는 넣지 않는다 — 번호와 통계만.
+# 찾는 사람에게 걸리도록 게임마다 글자로 된 페이지와 최근 회차별 페이지를 두고, 앱으로
+# 바로 들어가는 버튼(?mode=jp&game=…)을 단다. 구매 안내는 넣지 않는다. 등수별 당첨금은
+# 집계 사이트 두 곳이 일치한 공식 집계값을 옮긴다.
 
 JP_ODDS = {"loto6": "6,096,454", "loto7": "10,295,472", "miniloto": "169,911"}
 JP_PRICE = {"loto6": 200, "loto7": 300, "miniloto": 200}
 JP_DAYS = {"loto6": "월·목", "loto7": "금", "miniloto": "화"}
+JP_DRAW_PAGES = 100               # 게임마다 최근 몇 회차를 회차 페이지로 만들까
+
+
+def jp_draw_file(key: str, no: int) -> str:
+    return f"jp-{key}-{no}.html"
+
+
+def jp_prize_table(key: str, d) -> str:
+    """한 회차의 등수별 당첨 구수와 1구당 금액, 이월금."""
+    if not d.prizes:
+        return '<p class="kv">당첨금은 집계 중입니다. 보통 추첨 다음 날 아침까지 올라옵니다.</p>'
+    rows = "".join(
+        f'<tr><td>{i}등</td><td class="kv">{m}</td>'
+        + (f'<td class="n">{w:,}구</td><td class="n">{a:,}엔</td>' if w else
+           '<td class="n">0구</td><td class="n kv">해당 없음</td>')
+        + "</tr>"
+        for i, ((w, a), m) in enumerate(zip(d.prizes, RANK_MATCH[key]), 1))
+    out = ('<div class="tw"><table><tr><th>등수</th><th>일치</th><th class="n">당첨</th>'
+           f'<th class="n">1구당</th></tr>{rows}</table></div>')
+    if d.carryover > 0:
+        out += f'<p class="kv">다음 회차로 넘어가는 1등 이월금 <b>{d.carryover:,}엔</b></p>'
+    return out
+
+
+def jp_first_prize(d) -> str:
+    """목록에 붙일 1등 한 줄."""
+    if not d.prizes:
+        return ""
+    w, a = d.prizes[0]
+    return f"1등 {w:,}구 · {a:,}엔" if w else "1등 없음 (이월)"
+
+
 WEEKDAY_KO = "월화수목금토일"
 
 
@@ -326,6 +359,46 @@ def jp_balls(key: str, nums, bonus=(), small=False) -> str:
     return f'<div class="balls">{out}</div>'
 
 
+def jp_draw_page(key: str, draws, i: int, base: str, paged: set) -> tuple[str, str]:
+    """회차 하나. draws[i] 가 그 회차. paged 는 페이지가 있는 회차 번호(앞뒤 이동용)."""
+    g = JP_GAMES[key]
+    d = draws[i]
+    prev = draws[i - 1] if i > 0 else None
+    p = jp_profile(g, d.numbers, prev.numbers if prev else ())
+    name = jp_draw_file(key, d.no)
+    nav = '<div class="nav">'
+    nav += (f'<a href="{base}/{jp_draw_file(key, d.no - 1)}">← {d.no - 1}회</a>'
+            if d.no - 1 in paged else "<span></span>")
+    nav += (f'<a href="{base}/{jp_draw_file(key, d.no + 1)}">{d.no + 1}회 →</a>'
+            if d.no + 1 in paged else "<span></span>")
+    nav += "</div>"
+    body = (
+        f'<p class="kv"><a href="{base}/">lottoracle</a> › <a href="{base}/jp.html">일본 로또</a> › '
+        f'<a href="{base}/jp-{key}.html">{E(g.name)}</a> › {d.no}회</p>'
+        f"<h1>일본 {E(g.name)} {d.no}회 당첨번호</h1>"
+        f'<p class="sub">{jp_day(d.date)} 추첨</p>'
+        f"{jp_balls(key, d.numbers, d.bonus)}"
+        f'<p class="kv">본숫자 {", ".join(map(str, d.numbers))} · 보너스 {", ".join(map(str, d.bonus))}</p>'
+        f"<h2>등수별 당첨금</h2>{jp_prize_table(key, d)}"
+        f"<h2>조합 특징</h2>"
+        f'<div class="tw"><table>'
+        f'<tr><th>번호 합계</th><td class="n">{p.total}</td><th>홀수 개수</th><td class="n">{p.odd}개</td></tr>'
+        f'<tr><th>저구간(1~{g.pool // 2})</th><td class="n">{p.low}개</td><th>AC값</th><td class="n">{p.ac}</td></tr>'
+        f'<tr><th>끝수 합</th><td class="n">{p.end_sum}</td><th>연속 번호쌍</th><td class="n">{p.consecutive}</td></tr>'
+        + (f'<tr><th>직전 회차와 겹침</th><td class="n">{p.carryover}개</td><th></th><td></td></tr>' if prev else "")
+        + "</table></div>"
+        f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
+        f"{nav}")
+    nums = ", ".join(map(str, d.numbers))
+    first = jp_first_prize(d)
+    title = f"일본 {g.name} {d.no}회 당첨번호 ({d.date}) · 등수별 당첨금"
+    desc = (f"일본 {g.name}({g.name_ja}) {d.no}회 {d.date} 추첨 당첨번호는 {nums}, "
+            f"보너스 {', '.join(map(str, d.bonus))} 입니다."
+            + (f" {first}." if first else "")
+            + (f" 이월금 {d.carryover:,}엔." if d.carryover > 0 else ""))
+    return name, page(title, desc, f"{base}/{name}", body, base, FOOTER_JP)
+
+
 def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
     """(파일 이름, html, 최신 추첨일)"""
     g = JP_GAMES[key]
@@ -338,14 +411,11 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
     top_prize, top_no = max(first_prizes) if first_prizes else (0, 0)
     name = f"jp-{key}.html"
 
-    prize = ""
-    if last.prizes:
-        w, a = last.prizes[0]
-        prize = (f"1등 {w:,}구 · 1구당 {a:,}엔" if w else "1등 해당 없음") + (
-            f" · 이월금 {last.carryover:,}엔" if g.carryover and last.carryover > 0 else "")
+    paged = [d.no for d in draws[-JP_DRAW_PAGES:]]
     recent = "".join(
-        f'<li><span class="no">{d.no}회</span><span class="kv">{jp_day(d.date)}</span>'
-        f'{jp_balls(key, d.numbers, d.bonus, small=True)}</li>'
+        f'<li><a class="no" href="{base}/{jp_draw_file(key, d.no)}">{d.no}회</a><span class="kv">{jp_day(d.date)}</span>'
+        f'{jp_balls(key, d.numbers, d.bonus, small=True)}'
+        + (f'<span class="kv">{jp_first_prize(d)}</span>' if d.prizes else "") + "</li>"
         for d in reversed(draws[-20:]))
     freq = sorted(((n, st.frequency.get(n, 0)) for n in range(1, g.pool + 1)), key=lambda kv: (-kv[1], kv[0]))
     freq_rows = "".join(f'<tr><td>{n}</td><td class="n">{c:,}회</td><td class="n">{st.bonus_frequency.get(n, 0):,}회</td>'
@@ -359,8 +429,8 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f'<h1><span class="chip {key}">{E(g.name_ja)}</span>일본 {E(g.name)} 당첨번호</h1>'
         f'<p class="sub">최신 {last.no}회 · {jp_day(last.date)}<br>다음 {last.no + 1}회 · {jp_day(nxt)}</p>'
         f"<h2>{last.no}회 당첨번호</h2>{jp_balls(key, last.numbers, last.bonus)}"
-        + (f'<p class="kv">{E(prize)}</p>' if prize else "")
-        + f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
+        f"<h2>{last.no}회 등수별 당첨금</h2>{jp_prize_table(key, last)}"
+        f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
         f"<h2>게임 규칙</h2><table>"
         f"<tr><th>번호</th><td>1~{g.pool} 중 {g.pick}개를 고릅니다</td></tr>"
         f"<tr><th>보너스</th><td>{g.bonus}개 (고르지 않습니다. 2등을 가르는 데만 씁니다)</td></tr>"
@@ -370,6 +440,10 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         + (f"<tr><th>최고 1등</th><td>1구당 {top_prize:,}엔 ({top_no}회)</td></tr>" if top_prize else "")
         + f"<tr><th>첫 추첨</th><td>{draws[0].date} (1회)</td></tr></table>"
         f"<h2>최근 20회 당첨번호</h2><ul class=\"dl\">{recent}</ul>"
+        + (f'<details><summary class="kv">지난 회차 ({paged[0]}~{paged[-21]}회)</summary><p class="kv">'
+           + " · ".join(f'<a href="{base}/{jp_draw_file(key, n)}">{n}회</a>' for n in reversed(paged[:-20]))
+           + "</p></details>" if len(paged) > 20 else "")
+        + 
         f"<h2>당첨번호 평균치 ({len(draws):,}회 전체)</h2><table>"
         f'<tr><th>합계 평균</th><td class="n">{ps.mean_sum:.1f} (이론값 {expected_sum(g)})</td></tr>'
         f'<tr><th>합계 80% 구간</th><td class="n">{ps.sum_range_80[0]} ~ {ps.sum_range_80[1]}</td></tr>'
@@ -384,7 +458,8 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
     )
     title = f"일본 {g.name}({g.name_ja}) 당첨번호 — 최신 {last.no}회 · 번호별 통계"
-    desc = (f"일본 {g.name} {last.no}회({last.date}) 당첨번호와 최근 20회 결과, 1~{g.pool} 번호별 출현 횟수. "
+    desc = (f"일본 {g.name} {last.no}회({last.date}) 당첨번호와 등수별 당첨금"
+            + ("·이월금" if g.carryover else "") + f", 최근 20회 결과, 1~{g.pool} 번호별 출현 횟수. "
             f"다음 추첨 {nxt}. {g.pick}개를 고르는 게임으로 1등 확률은 1/{JP_ODDS[key]}입니다.")
     return name, page(title, desc, f"{base}/{name}", body, base, FOOTER_JP), last.date
 
@@ -399,7 +474,9 @@ def jp_hub_page(base: str, latest: dict) -> str:
             f'<td class="n">{JP_PRICE[key]}엔</td><td class="n">1/{JP_ODDS[key]}</td></tr>')
     latest_rows = "".join(
         f'<li><a class="no" href="{base}/jp-{key}.html">{E(g.name)}</a>'
-        f'<span class="kv">{last.no}회 {jp_day(last.date)}</span>{jp_balls(key, last.numbers, last.bonus, small=True)}</li>'
+        f'<a class="kv" href="{base}/{jp_draw_file(key, last.no)}">{last.no}회 {jp_day(last.date)}</a>'
+        f'{jp_balls(key, last.numbers, last.bonus, small=True)}'
+        + (f'<span class="kv">{jp_first_prize(last)}</span>' if last.prizes else "") + "</li>"
         for key, g in JP_GAMES.items()
         for last in [jp_data.load(key, jp_data.WEB_DATA_DIR)[-1]])
     body = (
@@ -598,13 +675,21 @@ def main() -> int:
         open(os.path.join(args.out, fn), "w", encoding="utf-8").write(text)
         written.append(fn)
         jp_dates[fn] = last_date
+        draws = jp_data.load(key, jp_data.WEB_DATA_DIR)
+        paged = {d.no for d in draws[-JP_DRAW_PAGES:]}
+        for i in range(len(draws) - len(paged), len(draws)):
+            dn, dtext = jp_draw_page(key, draws, i, base, paged)
+            open(os.path.join(args.out, dn), "w", encoding="utf-8").write(dtext)
+            written.append(dn)
+            jp_dates[dn] = draws[i].date
     jp_dates["jp.html"] = max(jp_dates.values())
     open(os.path.join(args.out, "jp.html"), "w", encoding="utf-8").write(jp_hub_page(base, jp_dates))
     written.append("jp.html")
 
     # ---- 사이트맵. 크롤러가 이 페이지들을 찾아가는 지도다.
     region_urls = [f for f in written if f.startswith("region-")]
-    jp_urls = ["jp.html"] + [f"jp-{k}.html" for k in JP_GAMES]
+    jp_urls = (["jp.html"] + [f"jp-{k}.html" for k in JP_GAMES]
+               + sorted((f for f in jp_dates if f.count("-") == 2), key=lambda f: (-int(f[:-5].rsplit("-", 1)[1]), f)))
     urls = (["", "draws.html", "fame.html", "regions.html", "about.html", "privacy.html"]
             + jp_urls + region_urls + [f"draw-{n}.html" for n in reversed(nos)])
     # lastmod 는 구글이 실제로 읽는 유일한 신호다(changefreq·priority 는 무시한다).
@@ -612,7 +697,7 @@ def main() -> int:
     #   회차 페이지     그 회차 추첨일 — 이후로 내용이 안 바뀐다
     #   목록·명당·지역  최신 회차 추첨일 — 매주 회차와 배출점이 함께 갱신된다
     #   소개·개인정보   날짜를 모른다 — 모르면 안 적는다
-    #   일본 로또       그 게임의 최신 추첨일 (허브는 셋 중 가장 늦은 날)
+    #   일본 로또       그 게임의 최신 추첨일 (허브는 셋 중 가장 늦은 날), 회차 페이지는 그 회차 추첨일
     date_of = {d["no"]: d.get("draw_date") or draw_date_of(d["no"]) for d in targets}
     latest = date_of[nos[-1]]
 
@@ -628,10 +713,12 @@ def main() -> int:
     def entry(u: str) -> str:
         prio = ("1.0" if u == "" else
                 "0.8" if u in ("draws.html", "fame.html", "regions.html", "jp.html") else
+                "0.5" if u.startswith("jp-") and u.count("-") == 2 else
                 "0.7" if u.startswith("jp-") else
                 "0.7" if u.startswith("region-") else
                 "0.4" if u == "about.html" else "0.3" if u == "privacy.html" else "0.6")
-        freq = ("daily" if u.startswith("jp") else
+        freq = ("yearly" if u.startswith("jp-") and u.count("-") == 2 else
+                "daily" if u.startswith("jp") else
                 "weekly" if u in ("", "draws.html", "fame.html", "regions.html") or u.startswith("region-") else "yearly")
         mod = lastmod(u)
         mod = f"<lastmod>{mod}</lastmod>" if mod else ""

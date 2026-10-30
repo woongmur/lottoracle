@@ -2,12 +2,12 @@
  *
  * index.html 은 상단 스위치가 '일본 로또' 로 처음 바뀔 때 이 모듈을 불러온다
  * (한국 로또만 쓰는 사람에게는 내려가지 않는다). 한국 화면의 함수·DOM 은 건드리지 않고,
- * 자기 몫의 세 섹션(#tab-jp-recommend · #tab-jp-picks · #tab-jp-stats) 안만 그린다.
+ * 자기 몫의 섹션(#tab-jp-recommend · -picks · -stats · -draws · -shops) 안만 그린다.
  *
- * 구매 대행·온라인 구매 링크는 넣지 않는다. 당첨 확인(등수·당첨금)도 넣지 않는다 —
- * 추첨이 끝난 회차는 당첨번호와 '맞은 개수' 만 보여 주고 공식 발표로 안내한다.
+ * 구매 대행·온라인 구매 링크는 넣지 않는다. 회차 탭은 등수별 당첨금을 보여 주지만
+ * (집계 사이트 두 곳이 일치한 값), 내 번호는 '맞은 개수' 만 세고 등수는 공식 발표로 안내한다.
  */
-import { GAMES, GAME_KEYS } from './games.js';
+import { GAMES, GAME_KEYS, RANK_MATCH } from './games.js';
 import { createJpEngine } from './engine.js';
 import { strategies as allStrategies } from './strategies.js';
 import { AREAS, JAPAN, MAPS_EMBED_KEY, OFFICIAL_MAP, appUrl, embedUrl, inJapan, placeOf } from './shops.js';
@@ -28,6 +28,7 @@ export function createJpUi(ctx) {
   let built = false;
   let last = null;                 // 마지막 추천 결과 (저장용)
   let statsFor = null;
+  let drawLimit = 30;
 
   // 서비스 워커 캐시에 예전 storage.js 가 남아 있으면 일본 번호 함수가 없다.
   // 그대로 부르면 'is not a function' 이 뜨므로, 새로고침하면 된다고 알려 준다.
@@ -81,6 +82,8 @@ export function createJpUi(ctx) {
     last = null;
     await renderMeta();
     if ($('#tab-jp-stats').classList.contains('active')) loadStats();
+    drawLimit = 30;
+    if ($('#tab-jp-draws').classList.contains('active')) loadDraws();
   }
 
   function fillStrategies() {
@@ -141,6 +144,13 @@ export function createJpUi(ctx) {
       <div class="panel" style="margin-bottom:16px">${switcher('jp-game-stats')}</div>
       <div id="jp-stats-body"></div>`;
 
+    $('#tab-jp-draws').innerHTML = `
+      <div class="panel" style="margin-bottom:16px">${switcher('jp-game-draws')}</div>
+      <div class="panel">
+        <h3>최근 회차 <span style="float:right"><button class="ghost" id="jp-draws-more">더 보기</button></span></h3>
+        <div id="jp-draws-body"></div>
+      </div>`;
+
     $('#tab-jp-shops').innerHTML = `
       <div class="grid">
         <div class="panel" id="jp-shop-controls">
@@ -172,6 +182,7 @@ export function createJpUi(ctx) {
     $('#jp-run').addEventListener('click', runRecommend);
     $('#jp-save').addEventListener('click', savePicks);
     $('#jp-picks-reload').addEventListener('click', loadPicks);
+    $('#jp-draws-more').addEventListener('click', () => { drawLimit += 30; loadDraws(); });
   }
 
   const options = () => ({
@@ -287,6 +298,45 @@ export function createJpUi(ctx) {
       storage.deleteJpPick(b.dataset.jpdel);
       loadPicks();
     }));
+  }
+
+  // ------------------------------------------------------------ 회차
+  const yen = n => `${fmt(n)}엔`;
+  function prizeTable(key, d) {
+    if (!d.prizes.length) return '<p class="kv">이 회차 당첨금은 아직 집계 중입니다. 보통 추첨 다음 날 아침까지 올라옵니다.</p>';
+    return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨</th><th class="num">1구당</th></tr>` +
+      d.prizes.map(([w, a], i) => `<tr><td>${i + 1}등</td><td class="kv">${RANK_MATCH[key][i] || ''}</td>
+        <td class="num">${fmt(w)}구</td><td class="num">${w ? yen(a) : '<span class="kv">해당 없음</span>'}</td></tr>`).join('') +
+      (d.carryover > 0 ? `<tr><th colspan="3">다음 회차로 넘어가는 1등 이월금</th><td class="num">${yen(d.carryover)}</td></tr>` : '') +
+      `</table>`;
+  }
+
+  async function loadDraws() {
+    const key = game;
+    const box = $('#jp-draws-body');
+    if (!box.innerHTML) box.innerHTML = '<span class="spin"></span>불러오는 중…';
+    try {
+      const engine = await engineOf(key);
+      if (key !== game) return;
+      const rows = engine.drawsPayload(drawLimit);
+      box.innerHTML = `<p class="kv">회차를 누르면 등수별 당첨금이 펼쳐집니다.</p><table><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th class="num">1등</th><th class="num">1구당</th></tr>` +
+        rows.map(d => {
+          const [w, a] = d.prizes[0] || [-1, 0];
+          return `<tr class="drawrow" data-no="${d.no}" style="cursor:pointer"><td>${d.no}회 ▾</td><td>${dayLabel(d.date)}</td>
+            <td>${balls(key, d.numbers, null, true)}${bonusBalls(key, d.bonus, true)}</td>
+            <td class="num">${w < 0 ? '-' : w ? fmt(w) + '구' : '없음'}</td><td class="num">${w > 0 ? yen(a) : w === 0 ? '이월' : '-'}</td></tr>
+            <tr class="drawdetail" data-detail="${d.no}" style="display:none"><td colspan="5">${prizeTable(key, d)}</td></tr>`;
+        }).join('') + '</table>';
+      box.querySelectorAll('.drawrow').forEach(tr => tr.addEventListener('click', () => {
+        const row = box.querySelector(`[data-detail="${tr.dataset.no}"]`);
+        const open = row.style.display !== 'none';
+        box.querySelectorAll('.drawdetail').forEach(r => { r.style.display = 'none'; });
+        row.style.display = open ? 'none' : '';
+      }));
+      $('#jp-draws-more').style.display = rows.length < engine.draws.length ? '' : 'none';
+    } catch (e) {
+      box.innerHTML = `<div class="err">${esc(e.message)}</div>`;
+    }
   }
 
   // ------------------------------------------------------------ 통계
@@ -422,6 +472,7 @@ export function createJpUi(ctx) {
       build();
       if (name === 'jp-picks') loadPicks();
       if (name === 'jp-stats') loadStats();
+      if (name === 'jp-draws') loadDraws();
       // 복권방은 처음 열 때 일본 전체 지도부터. 탭을 안 여는 사람에게는 구글 지도를 부르지 않는다.
       if (name === 'jp-shops' && !$('#jp-shop-map iframe')) showJapan();
     },
