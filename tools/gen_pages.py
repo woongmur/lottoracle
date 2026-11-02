@@ -35,6 +35,25 @@ def won(n: int) -> str:
     return f"{n:,}원"
 
 
+def won_short(n: int, unit: str = "원") -> str:
+    """검색 결과 제목용 큰 금액: 1,933,658,450 → '19억 3,366만원' (엔이면 unit='엔')."""
+    eok, man = divmod(round(n / 10_000), 10_000)
+    if eok and man:
+        return f"{eok}억 {man:,}만{unit}"
+    if eok:
+        return f"{eok}억{unit}"
+    return f"{man:,}만{unit}" if man else f"{n:,}{unit}"
+
+
+def md(iso: str) -> str:
+    """'2026-10-31' → '10/31'. 검색 결과 제목에 붙여 최신 정보임을 보인다."""
+    return f"{int(iso[5:7])}/{int(iso[8:10])}"
+
+
+# 검색 결과 제목. 네이버 노출은 많은데 클릭률이 0.4~0.6% 에 머물렀다.
+# 제목만 보고도 '최신 회차 · 언제 · 1등이 얼마' 인지 보이게 한다. 당첨번호는 설명(description)에 둔다.
+
+
 CSS = """
 :root{color-scheme:dark}
 body{margin:0;background:#141311;color:#f2efe8;letter-spacing:-.01em;
@@ -162,7 +181,9 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
     date = d.get("draw_date") or draw_date_of(no)
     nums, bonus = d["numbers"], d["bonus"]
     p = profile(nums)
-    title = f"{no}회 로또 당첨번호 — {' · '.join(str(n) for n in nums)} + {bonus}"
+    first = next((pz for pz in d.get("prizes", ()) if pz["rank"] == 1), None)
+    title = f"로또 {no}회 당첨번호 ({md(date)} 추첨)" + (
+        f" · 1등 {first['winners']}명 {won_short(first['amount'])}" if first and first["winners"] > 0 else "")
     desc = (f"{no}회 로또 6/45 당첨번호는 {', '.join(str(n) for n in nums)} 이고 보너스는 {bonus} 입니다."
             f" {date} 추첨.")
 
@@ -350,9 +371,13 @@ def jp_first_prize(d) -> str:
 WEEKDAY_KO = "월화수목금토일"
 
 
-def jp_day(iso: str) -> str:
+def weekday_ko(iso: str) -> str:
     from datetime import date
-    return f"{iso} ({WEEKDAY_KO[date.fromisoformat(iso).weekday()]})"
+    return WEEKDAY_KO[date.fromisoformat(iso).weekday()]
+
+
+def jp_day(iso: str) -> str:
+    return f"{iso} ({weekday_ko(iso)})"
 
 
 def jp_balls(key: str, nums, bonus=(), small=False) -> str:
@@ -396,7 +421,9 @@ def jp_draw_page(key: str, draws, i: int, base: str, paged: set) -> tuple[str, s
         f"{nav}")
     nums = ", ".join(map(str, d.numbers))
     first = jp_first_prize(d)
-    title = f"일본 {g.name} {d.no}회 당첨번호 ({d.date}) · 등수별 당첨금"
+    w1, a1 = d.prizes[0] if d.prizes else (-1, 0)
+    title = f"일본 {g.name} {d.no}회 당첨번호 ({md(d.date)} 추첨)" + (
+        f" · 1등 {w1:,}게임 {won_short(a1, '엔')}" if w1 > 0 else " · 1등 없음, 이월" if w1 == 0 else "")
     desc = (f"일본 {g.name}({g.name_ja}) {d.no}회 {d.date} 추첨 당첨번호는 {nums}, "
             f"보너스 {', '.join(map(str, d.bonus))} 입니다."
             + (f" {first}." if first else "")
@@ -462,7 +489,7 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f'<p class="kv">자주 나온 번호가 다음에도 나온다는 근거는 없습니다. 매 회차는 처음부터 다시 뽑습니다.</p>'
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
     )
-    title = f"일본 {g.name}({g.name_ja}) 당첨번호 — 최신 {last.no}회 · 번호별 통계"
+    title = f"일본 {g.name} 당첨번호 {last.no}회 ({md(last.date)} {weekday_ko(last.date)}) · 등수별 당첨금 · {g.name_ja}"
     desc = (f"일본 {g.name} {last.no}회({last.date}) 당첨번호와 등수별 당첨금"
             + ("·이월금" if g.carryover else "") + f", 최근 20회 결과, 1~{g.pool} 번호별 출현 횟수. "
             f"다음 추첨 {nxt}. {g.pick}개를 고르는 게임으로 1등 확률은 1/{JP_ODDS[key]}입니다.")
@@ -498,7 +525,11 @@ def jp_hub_page(base: str, latest: dict) -> str:
         f'<a class="cta jp" href="{base}/?mode=jp">일본 로또 번호 뽑아보기</a>'
         f'<p class="kv" style="margin-top:14px">앱의 일본 모드에서 게임을 골라 번호를 뽑고, 저장하고, '
         f"일본 판매점 지도를 볼 수 있습니다.</p>")
-    return page("일본 로또 당첨번호 · 번호 추천 — 로또6 · 로또7 · 미니로또",
+    lasts = {k: jp_data.load(k, jp_data.WEB_DATA_DIR)[-1] for k in JP_GAMES}
+    newest = max(d.date for d in lasts.values())
+    title = ("일본 로또 당첨번호 — " + " · ".join(f"{g.name} {lasts[k].no}회" for k, g in JP_GAMES.items())
+             + f" ({md(newest)} 갱신)")
+    return page(title,
                 "일본 로또6·로또7·미니로또의 최신 당첨번호, 게임 규칙 비교(번호 범위·추첨 요일·1등 확률), 번호 추천.",
                 f"{base}/jp.html", body, base, FOOTER_JP)
 
@@ -531,6 +562,7 @@ def main() -> int:
         written.append(name)
 
     # ---- 회차 목록 허브
+    date_of_latest = targets[-1].get("draw_date") or draw_date_of(nos[-1])
     items = "".join(
         f'<li><a class="no" href="{base}/draw-{d["no"]}.html">{d["no"]}회</a>'
         f'<span class="kv">{E(d.get("draw_date") or draw_date_of(d["no"]))}</span>'
@@ -542,7 +574,8 @@ def main() -> int:
             f'<ul class="dl">{items}</ul>'
             f'<a class="cta" href="{base}/">번호 뽑아보기</a>')
     open(os.path.join(args.out, "draws.html"), "w", encoding="utf-8").write(page(
-        "로또 회차별 당첨번호 모음", f"{nos[0]}회~{nos[-1]}회 로또 6/45 당첨번호와 등수별 당첨금, 회차별 1·2등 배출점.",
+        f"로또 당첨번호 조회 — 최신 {nos[-1]}회 ({md(date_of_latest)} 추첨) · 회차별 모음",
+        f"{nos[0]}회~{nos[-1]}회 로또 6/45 당첨번호와 등수별 당첨금, 회차별 1·2등 배출점.",
         f"{base}/draws.html", body, base))
     written.append("draws.html")
 

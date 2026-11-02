@@ -11,14 +11,12 @@ on:
       # 이게 빠져 있어서 gen_pages.py 만 고친 변경(PR #18)이 배포되지 않았다.
       - "tools/gen_pages.py"
       - "lottoracle/**"
+  # 데이터 갱신(update-draws · update-jp)은 GITHUB_TOKEN 으로 푸시한다. GitHub 는 그 토큰이
+  # 만든 이벤트로는 다른 워크플로를 시작하지 않으므로(무한 반복 방지) 위의 push 로는 배포가
+  # 걸리지 않는다. 두 갱신 모두 실제로 커밋했을 때만 끝에서 이 워크플로를 직접 부른다.
+  # (예전엔 workflow_run 으로 갱신이 끝날 때마다 배포했는데, 추첨일 밤에 여러 번 돌게 되면서
+  #  바뀐 것 없는 실행까지 배포하게 돼 뺐다.)
   workflow_dispatch:
-  # 주간 갱신(update-draws)은 GITHUB_TOKEN 으로 푸시한다. GitHub 는 그 토큰이 만든
-  # 이벤트로는 다른 워크플로를 시작하지 않는다(무한 반복 방지). 그래서 위의 push 로는
-  # 새 회차가 커밋돼도 배포가 걸리지 않는다. 갱신이 끝나면 이어서 배포하도록 따로 묶는다.
-  # workflow_run 은 기본 브랜치의 최신 커밋으로 돌아서 방금 커밋한 데이터를 그대로 받는다.
-  workflow_run:
-    workflows: ["update draws"]
-    types: [completed]
 
 permissions:
   contents: read
@@ -31,8 +29,6 @@ concurrency:
 
 jobs:
   test:
-    # 갱신이 실패했으면 배포할 것도 없다. deploy 는 test 에 묶여 있어 함께 건너뛴다.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

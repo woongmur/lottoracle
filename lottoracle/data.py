@@ -207,9 +207,30 @@ def fetch_range(start: int, end: int, timeout: float = 10.0) -> list[Draw]:
     return out
 
 
+def prizes_settled(d: Draw) -> bool:
+    """등수별 당첨금 집계가 끝난 회차인가.
+
+    토요일 밤 추첨 직후에 받으면 번호는 나와도 2~5등 당첨자·금액이 아직 0 일 수 있다.
+    2~5등은 매회 당첨자가 나오므로 하나라도 0 이면 집계 전으로 본다(1등은 0명일 수 있다).
+    """
+    if len(d.prizes) != 5:
+        return False
+    return all(p.winners > 0 and p.amount > 0 for p in d.prizes if p.rank >= 2)
+
+
 def update_cache(path: str = DEFAULT_CACHE, timeout: float = 10.0) -> list[Draw]:
-    """캐시에 없는 최신 회차만 이어서 받아 저장한다."""
+    """캐시에 없는 최신 회차를 이어서 받아 저장한다.
+
+    마지막 회차의 당첨금이 아직 집계 전이었으면 그 회차도 다시 받는다 — 추첨일 밤에
+    여러 번 도는 갱신이 번호만 먼저 저장하고, 당첨금은 다음 번에 채운다.
+    """
     draws = load_draws(path, required=False)
+    if draws:
+        last = max(draws, key=lambda d: d.no)
+        if not prizes_settled(last):
+            again = fetch_draw(last.no, timeout=timeout)
+            if again is not None and again.numbers == last.numbers and again.bonus == last.bonus:
+                draws = [again if d.no == last.no else d for d in draws]
     start = (max(d.no for d in draws) + 1) if draws else 1
     newest = fetch_latest(timeout=timeout)
     if newest is not None:
