@@ -107,6 +107,20 @@ class Sitemap(unittest.TestCase):
             self.assertNotIn("동행복권", text)
         self.assertEqual(mods["jp.html"], max(latest.values()))
 
+    def test_회차_페이지에서_바로_당첨_확인(self):
+        """AI 요약이 당첨번호를 보여 줘도, 내 번호 확인은 사이트에 와야 할 수 있다."""
+        draws = sorted((self.path_of(loc) for loc, _ in self.urls if self.path_of(loc).startswith("draw-")),
+                       key=lambda p: int(p[5:-5]))
+        no = int(draws[-1][5:-5])
+        html = open(os.path.join(self.out, draws[-1]), encoding="utf-8").read()
+        self.assertIn(f'href="{BASE}/?tab=grade&amp;draw={no}"', html)
+        for key in ("loto6", "loto7", "miniloto"):
+            jp = sorted((self.path_of(loc) for loc, _ in self.urls if self.path_of(loc).startswith(f"jp-{key}-")),
+                        key=lambda p: int(p[:-5].rsplit("-", 1)[1]))[-1]
+            n = int(jp[:-5].rsplit("-", 1)[1])
+            text = open(os.path.join(self.out, jp), encoding="utf-8").read()
+            self.assertIn(f"?mode=jp&amp;game={key}&amp;tab=grade&amp;draw={n}", text)
+
     def test_제목에_최신_회차와_날짜(self):
         """검색 결과 제목만 보고도 최신 회차·추첨일이 보여야 한다 (네이버 CTR 0.4~0.6% 대응)."""
         from lottoracle.jp import data as jd

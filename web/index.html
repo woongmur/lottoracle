@@ -230,6 +230,8 @@
   .gradeline{display:grid;grid-template-columns:repeat(6,minmax(0,56px)) auto;
     gap:6px;margin:6px 0;align-items:center}
   .gradeline input{width:100%;text-align:center}
+  /* 일본 로또는 게임마다 칸 수가 다르다(5·6·7). --n 은 ui.js 가 넣는다 */
+  .gradeline.jp{grid-template-columns:repeat(var(--n),minmax(0,56px)) auto}
   .rank-1,.rank-2,.rank-3{color:var(--ok);font-weight:700}.rank-4,.rank-5{color:var(--warn);font-weight:700}.rank-0{color:var(--muted)}
   .hit{outline:3px solid var(--ok);outline-offset:1px}
   footer{color:var(--muted);font-size:12px;padding:20px 24px;border-top:1px solid var(--line);text-align:center}
@@ -359,10 +361,11 @@
     .plus{margin:0 3px}
     /* 채점 입력: 6칸 + 삭제 버튼을 한 줄에 */
     .gradeline{display:grid;grid-template-columns:repeat(6,1fr) auto;gap:4px}
+    .gradeline.jp{grid-template-columns:repeat(var(--n),1fr) auto}
     .gradeline input{width:100%;padding:10px 2px;text-align:center}
     .gradeline button{padding:8px 10px}
     /* 넓은 표는 가로로 스크롤 */
-    .panel table,#stats-body table,#draws-body table{display:block;overflow-x:auto;white-space:nowrap}
+    .panel table,#stats-body table,#draws-body table,#grade-results table,#jp-grade-results table{display:block;overflow-x:auto;white-space:nowrap}
     /* 카드·패널 여백 축소 */
     .panel,.card{padding:14px}
     .fortune{padding:18px 16px}
@@ -411,6 +414,7 @@
   <button data-tab="jp-recommend" data-mode="jp">번호 추천</button>
   <button data-tab="jp-picks" data-mode="jp">내 번호</button>
   <button data-tab="jp-stats" data-mode="jp">통계</button>
+  <button data-tab="jp-grade" data-mode="jp">당첨 확인</button>
   <button data-tab="jp-draws" data-mode="jp">회차</button>
   <button data-tab="jp-shops" data-mode="jp">복권방</button>
   <button data-tab="info">설정 · 정보</button>
@@ -575,6 +579,7 @@
   <section id="tab-jp-recommend"><span class="spin"></span>일본 로또 화면을 불러오는 중…</section>
   <section id="tab-jp-picks"></section>
   <section id="tab-jp-stats"></section>
+  <section id="tab-jp-grade"></section>
   <section id="tab-jp-draws"></section>
   <section id="tab-jp-shops"></section>
 
@@ -682,8 +687,11 @@ async function boot() {
   if (Array.isArray(cached) && cached.length >= draws.length) draws = cached;
   ENGINE = createEngine(draws, storage);
   // 일본 로또 정적 페이지에서 '번호 뽑아보기' 로 들어오면 그 게임 추천 화면을 바로 연다.
+  // 회차 페이지의 '내 번호 당첨 확인하기'(?tab=grade&draw=…)는 당첨 확인을 그 회차로 연다.
   const link = new URLSearchParams(location.search);
   const fromLink = link.get('mode') === 'jp';
+  const toGrade = link.get('tab') === 'grade';
+  const linkDraw = parseInt(link.get('draw'), 10) || null;
   if (fromLink) {
     const game = link.get('game');
     storage.saveSettings({ mode: 'jp', ...(['loto6', 'loto7', 'miniloto'].includes(game) ? { jpGame: game } : {}) });
@@ -691,7 +699,17 @@ async function boot() {
   renderMeta();
   loadFortune();
   if (modeNow() === 'jp') await setMode('jp', { save: false });
-  if (fromLink) goto('jp-recommend');
+  if (fromLink && toGrade) {
+    goto('jp-grade');
+    try { await (await jpUi()).openGrade(link.get('game'), linkDraw); } catch (e) { /* goto 가 이미 오류를 그렸다 */ }
+  } else if (fromLink) {
+    goto('jp-recommend');
+  } else if (toGrade) {
+    // 한국 회차 페이지에서 왔으면 일본 모드로 저장돼 있어도 이번에는 한국 화면으로 연다.
+    if (modeNow() === 'jp') await setMode('kr', { save: false });
+    if (linkDraw) $('#grade-draw').value = linkDraw;
+    goto('grade');
+  }
   autoRefresh();
 }
 
@@ -699,7 +717,7 @@ async function boot() {
 //
 // 일본 쪽 화면은 src/jp/ui.js 에 따로 있고, 일본 로또를 처음 켤 때만 내려받는다.
 // 탭은 같은 자리끼리 짝을 지어 둔다 — 한국 '번호 추천' 을 보다가 바꾸면 일본 '번호 추천' 으로.
-const JP_TAB = { recommend: 'jp-recommend', picks: 'jp-picks', stats: 'jp-stats', draws: 'jp-draws', shops: 'jp-shops' };
+const JP_TAB = { recommend: 'jp-recommend', picks: 'jp-picks', stats: 'jp-stats', grade: 'jp-grade', draws: 'jp-draws', shops: 'jp-shops' };
 const KR_TAB = Object.fromEntries(Object.entries(JP_TAB).map(([k, v]) => [v, k]));
 const SHARED_TABS = ['fortune', 'info'];
 const modeNow = () => (document.documentElement.dataset.mode === 'jp' ? 'jp' : 'kr');
