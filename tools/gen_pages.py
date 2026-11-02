@@ -227,6 +227,8 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
 <p class="sub">{E(date)} 추첨</p>
 {ball_html(nums, bonus)}
 <p class="kv">당첨번호 {', '.join(str(n) for n in nums)} · 보너스 {bonus}</p>
+<a class="cta" href="{base}/?tab=grade&amp;draw={no}">내 번호 {no}회 당첨 확인하기</a>
+{shops}
 {rows}
 <h2>조합 특징</h2>
 <div class="tw"><table>
@@ -234,7 +236,6 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
 <tr><th>저구간(1~22)</th><td class="n">{p.low}개</td><th>AC값</th><td class="n">{p.ac}</td></tr>
 <tr><th>끝수 합</th><td class="n">{p.end_sum}</td><th>연속 번호쌍</th><td class="n">{p.consecutive}</td></tr>
 </table></div>
-{shops}
 <a class="cta" href="{base}/">번호 뽑아보기 · 내 주변 복권방 찾기</a>
 {nav}"""
     return f"draw-{no}.html", page(title, desc, f"{base}/draw-{no}.html", body, base)
@@ -409,6 +410,7 @@ def jp_draw_page(key: str, draws, i: int, base: str, paged: set) -> tuple[str, s
         f'<p class="sub">{jp_day(d.date)} 추첨</p>'
         f"{jp_balls(key, d.numbers, d.bonus)}"
         f'<p class="kv">본숫자 {", ".join(map(str, d.numbers))} · 보너스 {", ".join(map(str, d.bonus))}</p>'
+        f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}&amp;tab=grade&amp;draw={d.no}">내 번호 {d.no}회 당첨 확인하기</a>'
         f"<h2>등수별 당첨금</h2>{jp_prize_table(key, d)}"
         f"<h2>조합 특징</h2>"
         f'<div class="tw"><table>'
@@ -461,6 +463,7 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f'<h1><span class="chip {key}">{E(g.name_ja)}</span>일본 {E(g.name)} 당첨번호</h1>'
         f'<p class="sub">최신 {last.no}회 · {jp_day(last.date)}<br>다음 {last.no + 1}회 · {jp_day(nxt)}</p>'
         f"<h2>{last.no}회 당첨번호</h2>{jp_balls(key, last.numbers, last.bonus)}"
+        f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}&amp;tab=grade&amp;draw={last.no}">내 번호 {last.no}회 당첨 확인하기</a>'
         f"<h2>{last.no}회 등수별 당첨금</h2>{jp_prize_table(key, last)}"
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
         f"<h2>게임 규칙</h2><table>"

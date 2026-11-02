@@ -2,12 +2,13 @@
  *
  * index.html 은 상단 스위치가 '일본 로또' 로 처음 바뀔 때 이 모듈을 불러온다
  * (한국 로또만 쓰는 사람에게는 내려가지 않는다). 한국 화면의 함수·DOM 은 건드리지 않고,
- * 자기 몫의 섹션(#tab-jp-recommend · -picks · -stats · -draws · -shops) 안만 그린다.
+ * 자기 몫의 섹션(#tab-jp-recommend · -picks · -stats · -grade · -draws · -shops) 안만 그린다.
  *
- * 구매 대행·온라인 구매 링크는 넣지 않는다. 회차 탭은 등수별 당첨금을 보여 주지만
- * (집계 사이트 두 곳이 일치한 값), 내 번호는 '맞은 개수' 만 세고 등수는 공식 발표로 안내한다.
+ * 구매 대행·온라인 구매 링크는 넣지 않는다. 등수별 당첨금은 집계 사이트 두 곳이 일치한 값으로
+ * 보여 주고(회차 · 당첨 확인 · 내 번호), 최종 확인은 공식 발표로 안내한다.
  */
 import { GAMES, GAME_KEYS, RANK_MATCH } from './games.js';
+import { gradeLines, lineError } from './grade.js';
 import { createJpEngine } from './engine.js';
 import { strategies as allStrategies } from './strategies.js';
 import { AREAS, JAPAN, MAPS_EMBED_KEY, OFFICIAL_MAP, appUrl, embedUrl, inJapan, placeOf } from './shops.js';
@@ -29,6 +30,7 @@ export function createJpUi(ctx) {
   let last = null;                 // 마지막 추천 결과 (저장용)
   let statsFor = null;
   let drawLimit = 30;
+  let gradeDraw = null;            // 링크로 들어온 회차 (?tab=grade&draw=…)
 
   // 서비스 워커 캐시에 예전 storage.js 가 남아 있으면 일본 번호 함수가 없다.
   // 그대로 부르면 'is not a function' 이 뜨므로, 새로고침하면 된다고 알려 준다.
@@ -84,6 +86,8 @@ export function createJpUi(ctx) {
     if ($('#tab-jp-stats').classList.contains('active')) loadStats();
     drawLimit = 30;
     if ($('#tab-jp-draws').classList.contains('active')) loadDraws();
+    gradeDraw = null;
+    resetGrade();
   }
 
   function fillStrategies() {
@@ -137,13 +141,35 @@ export function createJpUi(ctx) {
       <div class="panel">
         <h3>일본 로또 내 번호 <button class="ghost" id="jp-picks-reload" style="float:right">새로고침</button></h3>
         <p class="kv">일본 로또 추천에서 저장한 조합입니다. 한국 로또 번호와 따로 보관하고, 이 브라우저에만 저장합니다.
-          목표 회차가 추첨되면 당첨번호와 맞은 개수를 보여 드립니다. 등수와 당첨금은 일본 공식 발표로 확인해 주세요.</p>
+          목표 회차가 추첨되면 줄마다 등수와 당첨금을 보여 드립니다.</p>
         <div id="jp-picks-error"></div>
         <div id="jp-picks-body"></div>
       </div>`;
     $('#tab-jp-stats').innerHTML = `
       <div class="panel" style="margin-bottom:16px">${switcher('jp-game-stats')}</div>
       <div id="jp-stats-body"></div>`;
+
+    $('#tab-jp-grade').innerHTML = `
+      <div class="grid">
+        <div class="panel">
+          <h3>일본 로또 당첨 확인</h3>
+          ${switcher('jp-game-grade')}
+          <label>회차</label><select id="jp-grade-draw"></select>
+          <label id="jp-grade-label">번호</label>
+          <div id="jp-grade-lines"></div>
+          <div class="row wrap" style="margin-top:8px">
+            <button class="ghost" id="jp-grade-add">줄 추가</button>
+            <button class="ghost" id="jp-grade-from-picks">내 번호 가져오기</button>
+          </div>
+          <div id="jp-grade-hint" class="softbox" style="display:none;margin:8px 0 0"></div>
+          <button class="primary" id="jp-run-grade">채점하기</button>
+          <p class="kv" style="margin-top:10px">보너스 숫자는 사는 사람이 고르지 않습니다. 본숫자만 넣으면 보너스 일치는 자동으로 봅니다.</p>
+        </div>
+        <div>
+          <div id="jp-grade-error"></div>
+          <div id="jp-grade-results"></div>
+        </div>
+      </div>`;
 
     $('#tab-jp-draws').innerHTML = `
       <div class="panel" style="margin-bottom:16px">${switcher('jp-game-draws')}</div>
@@ -184,6 +210,9 @@ export function createJpUi(ctx) {
     $('#jp-save').addEventListener('click', savePicks);
     $('#jp-picks-reload').addEventListener('click', loadPicks);
     $('#jp-draws-more').addEventListener('click', () => { drawLimit += 30; loadDraws(); });
+    $('#jp-grade-add').addEventListener('click', () => addGradeLine());
+    $('#jp-grade-from-picks').addEventListener('click', gradeFromPicks);
+    $('#jp-run-grade').addEventListener('click', runGrade);
   }
 
   const options = () => ({
@@ -277,14 +306,14 @@ export function createJpUi(ctx) {
       const draw = engine ? engine.draws.find(d => d.no === p.targetDraw) : null;
       let badge, detail;
       if (draw) {
-        const drawn = new Set(draw.numbers);
-        const hits = p.lines.map(row => row.filter(n => drawn.has(n)));
-        const best = Math.max(...hits.map(h => h.length));
-        badge = `<span class="badge ${best >= 3 ? 'win' : 'lose'}">추첨 완료 · 최고 ${best}개</span>`;
+        const r = gradeLines(p.game, draw, p.lines);
+        badge = r.bestRank
+          ? `<span class="badge win">추첨 완료 · 최고 ${r.bestRank}등</span>`
+          : `<span class="badge lose">추첨 완료 · 낙첨</span>`;
         detail = `<div class="kv" style="margin:6px 0 2px">${draw.no}회 (${dayLabel(draw.date)}) 당첨번호</div>
           <div style="margin:0 0 8px">${balls(p.game, draw.numbers, null, true)}${bonusBalls(p.game, draw.bonus, true)}</div>` +
-          p.lines.map((row, i) => `<div class="kv">${i + 1}줄 ${balls(p.game, row, hits[i], true)} ${hits[i].length}개</div>`).join('') +
-          `<div class="caution">맞은 개수만 셉니다. 등수·당첨금은 일본 공식 발표(미즈호은행 · 다카라쿠지 공식 사이트)로 확인해 주세요.</div>`;
+          r.results.map((x, i) => `<div class="kv">${i + 1}줄 ${balls(p.game, x.numbers, x.hit, true)} ${rankText(x)}</div>`).join('') +
+          `<div class="caution">당첨금은 일본 집계 사이트 두 곳이 일치한 값입니다. 최종 확인은 일본 공식 발표(미즈호은행 · 다카라쿠지 공식 사이트)로 해 주세요.</div>`;
       } else {
         const when = p.targetDate ? dayLabel(p.targetDate) : '';
         badge = `<span class="badge wait">추첨 전${when ? ' · ' + when : ''}</span>`;
@@ -301,8 +330,106 @@ export function createJpUi(ctx) {
     }));
   }
 
-  // ------------------------------------------------------------ 회차
+  // ------------------------------------------------------------ 당첨 확인
+  const MAX_GRADE_LINES = 10;
   const yen = n => `${fmt(n)}엔`;
+  const rankText = x => x.rank
+    ? `<b class="rank-${Math.min(x.rank, 5)}">${x.rank}등</b>${x.prize ? ' · ' + yen(x.prize) : x.prize === null ? ' · 당첨금 집계 전' : ''}`
+    : `<span class="rank-0">낙첨 · ${x.hit.length}개 일치</span>`;
+
+  function addGradeLine(vals) {
+    const box = $('#jp-grade-lines');
+    if (box.children.length >= MAX_GRADE_LINES) return;
+    const g = GAMES[game];
+    const d = el('div', 'gradeline jp');
+    d.style.setProperty('--n', g.pick);
+    d.innerHTML = Array.from({ length: g.pick }, (_, i) =>
+      `<input type="number" inputmode="numeric" min="1" max="${g.pool}" value="${vals ? vals[i] ?? '' : ''}">`).join('')
+      + '<button class="ghost" title="삭제">✕</button>';
+    d.querySelector('button').addEventListener('click', () => d.remove());
+    box.appendChild(d);
+  }
+
+  const gradeHint = text => {
+    const h = $('#jp-grade-hint');
+    h.style.display = text ? '' : 'none';
+    h.textContent = text || '';
+  };
+
+  /** 게임이 바뀌면 칸 수와 회차 목록이 달라진다. */
+  async function resetGrade() {
+    if (!built) return;
+    const g = GAMES[game];
+    $('#jp-grade-label').textContent = `번호 (한 줄에 ${g.pick}개, 1~${g.pool}, 최대 ${MAX_GRADE_LINES}줄)`;
+    $('#jp-grade-lines').innerHTML = '';
+    addGradeLine();
+    $('#jp-grade-results').innerHTML = '';
+    gradeHint('');
+    showErr('#jp-grade-error', null);
+    const sel = $('#jp-grade-draw');
+    sel.innerHTML = '<option>불러오는 중…</option>';
+    try {
+      const key = game;
+      const engine = await engineOf(key);
+      if (key !== game) return;
+      const rows = engine.drawsPayload(60);
+      if (gradeDraw && !rows.some(d => d.no === gradeDraw)) {
+        const extra = engine.draws.find(d => d.no === gradeDraw);
+        if (extra) rows.push(extra);
+      }
+      sel.innerHTML = rows.map(d => `<option value="${d.no}">${d.no}회 · ${dayLabel(d.date)}</option>`).join('');
+      if (gradeDraw) sel.value = String(gradeDraw);
+    } catch (e) {
+      sel.innerHTML = '';
+      showErr('#jp-grade-error', e);
+    }
+  }
+
+  function gradeFromPicks() {
+    if (!storageReady()) { gradeHint(STALE); return; }
+    const picks = storage.listJpPicks().filter(p => p.game === game)
+      .sort((a, b) => String(b.savedAt).localeCompare(a.savedAt));
+    if (!picks.length) { gradeHint(`저장한 ${GAMES[game].name} 번호가 없습니다.`); return; }
+    const p = picks[0];
+    $('#jp-grade-lines').innerHTML = '';
+    p.lines.slice(0, MAX_GRADE_LINES).forEach(row => addGradeLine(row));
+    if ([...$('#jp-grade-draw').options].some(o => o.value === String(p.targetDraw))) $('#jp-grade-draw').value = String(p.targetDraw);
+    gradeHint(`${p.targetDraw}회 목표로 저장한 ${p.lines.length}줄을 가져왔습니다.`);
+  }
+
+  async function runGrade() {
+    showErr('#jp-grade-error', null);
+    const key = game;
+    const rows = [...document.querySelectorAll('#jp-grade-lines .gradeline')]
+      .map(d => [...d.querySelectorAll('input')].map(i => i.value.trim()))
+      .filter(r => r.some(Boolean));
+    if (!rows.length) { showErr('#jp-grade-error', new Error('번호를 넣어 주세요.')); return; }
+    for (const [i, r] of rows.entries()) {
+      const why = lineError(key, r.map(Number));
+      if (why) { showErr('#jp-grade-error', new Error(`${i + 1}줄: ${why}`)); return; }
+    }
+    try {
+      const engine = await engineOf(key);
+      const no = Number($('#jp-grade-draw').value);
+      const draw = engine.draws.find(d => d.no === no);
+      if (!draw) throw new Error('회차를 골라 주세요.');
+      const r = gradeLines(key, draw, rows.map(x => x.map(Number)));
+      $('#jp-grade-results').innerHTML =
+        `<div class="card jp-card g-${key}"><div class="title"><span class="gchip">${esc(GAMES[key].name)}</span>${draw.no}회 (${dayLabel(draw.date)}) 당첨번호</div>
+          <div class="balls" style="margin:8px 0 10px">${balls(key, draw.numbers)}${bonusBalls(key, draw.bonus)}</div>
+          <div class="kv" style="margin:10px 0 4px"><b>이 회차 등수별 당첨금</b></div>${prizeTable(key, draw)}</div>` +
+        r.results.map((x, i) => `<div class="card"><div class="head"><div class="title">${i + 1}줄</div><div>${rankText(x)}</div></div>
+          <div class="balls">${balls(key, x.numbers, x.hit)}</div>
+          <div class="kv">본숫자 ${x.hit.length}개 일치${x.hit.length ? ' [' + x.hit.join(', ') + ']' : ''}${x.bonusHit.length ? ` · 보너스 ${x.bonusHit.join(', ')}` : ''}</div></div>`).join('') +
+        `<div class="card"><b>합계 ${yen(r.totalPrize)}</b>${r.prizesKnown ? '' : ' <span class="kv">— 금액을 모르는 등수가 있어 빠졌습니다</span>'}
+          <div class="caution">당첨금은 일본 집계 사이트 두 곳이 일치한 값입니다. 최종 확인은 일본 공식 발표(미즈호은행 · 다카라쿠지 공식 사이트)로 해 주세요.</div></div>`;
+      $('#jp-grade-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      showErr('#jp-grade-error', e);
+    }
+  }
+
+  // ------------------------------------------------------------ 회차
   function prizeTable(key, d) {
     if (!d.prizes.length) return '<p class="kv">이 회차 당첨금은 아직 집계 중입니다. 보통 추첨 다음 날 아침까지 올라옵니다.</p>';
     return `<table><tr><th>등수</th><th>일치</th><th class="num">당첨 게임 수</th><th class="num">1게임당</th><th class="num">등수별 총액</th></tr>` +
@@ -475,6 +602,7 @@ export function createJpUi(ctx) {
       if (name === 'jp-picks') loadPicks();
       if (name === 'jp-stats') loadStats();
       if (name === 'jp-draws') loadDraws();
+      if (name === 'jp-grade' && !$('#jp-grade-lines').children.length) resetGrade();
       // 복권방은 처음 열 때 일본 전체 지도부터. 탭을 안 여는 사람에게는 구글 지도를 부르지 않는다.
       if (name === 'jp-shops' && !$('#jp-shop-map iframe')) showJapan();
     },
@@ -490,6 +618,13 @@ export function createJpUi(ctx) {
         ? `오늘의 숫자 중 ${g.name} 범위(1~${g.pool}) 안의 ${inRange.join('·')}을 행운수로 채웠습니다. 바꿔도 됩니다.`
         : `오늘의 숫자가 모두 ${g.name} 범위(1~${g.pool}) 밖이라 행운수 없이 뽑습니다.`;
       $('#jp-run').click();
+    },
+    /** 정적 페이지의 '내 번호 당첨 확인하기' (?mode=jp&game=…&tab=grade&draw=…). */
+    async openGrade(key, no) {
+      build();
+      if (GAMES[key]) await setGame(key);
+      gradeDraw = Number(no) || null;
+      await resetGrade();
     },
     get game() { return game; },
   };
