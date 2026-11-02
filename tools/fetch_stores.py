@@ -116,11 +116,18 @@ def main() -> int:
         return 0
     print(f"{len(targets)}개 회차 수집: {targets[0]}~{targets[-1]} (등수 {ranks})")
 
-    failed = []
+    failed, pending = [], []
     for i, no in enumerate(targets, start=1):
         try:
-            for rank in ranks:
-                absorb(db, no, rank, fetch(no, rank))
+            rows = {rank: fetch(no, rank) for rank in ranks}
+            # 추첨 당일 밤에는 배출점이 아직 발표 전일 수 있다. 2등 배출점은 매회 수십 곳이라
+            # 비어 있으면 발표 전으로 보고, 받은 것으로 적지 않는다(다음 갱신 때 다시 받는다).
+            if 2 in rows and not rows[2]:
+                pending.append(no)
+                print(f"  {no}회 배출점 발표 전 — 다음 갱신 때 다시 받습니다")
+                continue
+            for rank, got in rows.items():
+                absorb(db, no, rank, got)
             db["draws"].append(no)
         except Exception as exc:
             failed.append(no)
@@ -135,6 +142,8 @@ def main() -> int:
     print(f"완료: 회차 {len(db['draws'])}개 · 판매점 {len(db['stores'])}곳 · 1등 {r1}건 · 2등 {r2}건")
     if failed:
         print(f"실패 {len(failed)}회차: {failed[:20]}")
+    if pending:
+        print(f"발표 전 {len(pending)}회차: {pending}")
     return 0
 
 

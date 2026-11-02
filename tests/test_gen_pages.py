@@ -107,6 +107,22 @@ class Sitemap(unittest.TestCase):
             self.assertNotIn("동행복권", text)
         self.assertEqual(mods["jp.html"], max(latest.values()))
 
+    def test_제목에_최신_회차와_날짜(self):
+        """검색 결과 제목만 보고도 최신 회차·추첨일이 보여야 한다 (네이버 CTR 0.4~0.6% 대응)."""
+        from lottoracle.jp import data as jd
+        title = lambda p: re.search(r"<title>([^<]+)", open(os.path.join(self.out, p), encoding="utf-8").read()).group(1)
+        draws = {self.path_of(loc) for loc, _ in self.urls if self.path_of(loc).startswith("draw-")}
+        newest = max(draws, key=lambda p: int(p[5:-5]))
+        no = int(newest[5:-5])
+        self.assertRegex(title(newest), rf"^로또 {no}회 당첨번호 \(\d+/\d+ 추첨\)")
+        self.assertIn(f"최신 {no}회", title("draws.html"))
+        hub = title("jp.html")
+        for key in ("loto6", "loto7", "miniloto"):
+            last = jd.load(key, jd.WEB_DATA_DIR)[-1]
+            self.assertIn(f"{last.no}회", hub)
+            self.assertIn(f"{last.no}회", title(f"jp-{key}.html"))
+            self.assertRegex(title(f"jp-{key}-{last.no}.html"), r"\(\d+/\d+ 추첨\)")
+
 
 class StaticPages(unittest.TestCase):
     """web/public 의 손으로 쓴 페이지. 생성기가 아니라 배포 단계에서 그대로 복사된다."""
