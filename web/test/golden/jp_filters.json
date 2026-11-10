@@ -817,10 +817,10 @@
    {
     "numbers": [
      3,
-     5,
+     6,
      12,
-     17,
-     31
+     19,
+     25
     ],
     "verdict": {
      "ok": false,
@@ -995,16 +995,14 @@
    {
     "numbers": [
      29,
-     16,
-     15,
-     6,
-     4
+     27,
+     23,
+     11,
+     2
     ],
     "verdict": {
-     "ok": false,
-     "violations": [
-      "끝수합 30"
-     ]
+     "ok": true,
+     "violations": []
     }
    }
   ],
