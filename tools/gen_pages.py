@@ -184,8 +184,10 @@ def draw_page(d, prev_no, next_no, stores_for, base) -> tuple[str, str]:
     first = next((pz for pz in d.get("prizes", ()) if pz["rank"] == 1), None)
     title = f"로또 {no}회 당첨번호 ({md(date)} 추첨)" + (
         f" · 1등 {first['winners']}명 {won_short(first['amount'])}" if first and first["winners"] > 0 else "")
-    desc = (f"{no}회 로또 6/45 당첨번호는 {', '.join(str(n) for n in nums)} 이고 보너스는 {bonus} 입니다."
-            f" {date} 추첨.")
+    # 검색 결과 설명: 번호와 1등 결과를 바로 보여 준다 (같은 자리의 다른 사이트가 그렇게 하고 있었다)
+    desc = (f"로또 {no}회({md(date)} 토) 당첨번호 {'·'.join(str(n) for n in nums)} + 보너스 {bonus}."
+            + (f" 1등 {first['winners']}명 · 1인당 {won_short(first['amount'])}." if first and first["winners"] > 0 else "")
+            + " 등수별 당첨금과 1·2등 배출점.")
 
     rows = ""
     if d.get("prizes"):
@@ -390,6 +392,18 @@ def jp_balls(key: str, nums, bonus=(), small=False) -> str:
     return f'<div class="balls">{out}</div>'
 
 
+def jp_summary(d) -> str:
+    """검색 결과 설명용 한 회차 요약: '702회(11/6 금) 당첨번호 2·3·… + 보너스 13·34. 1등 …'"""
+    s = (f"{d.no}회({md(d.date)} {weekday_ko(d.date)}) 당첨번호 {'·'.join(map(str, d.numbers))}"
+         f" + 보너스 {'·'.join(map(str, d.bonus))}.")
+    if d.prizes:
+        w, a = d.prizes[0]
+        s += f" 1등 {w:,}게임 · 1게임당 {won_short(a, '엔')}." if w else " 1등 없음."
+    if d.carryover > 0:
+        s += f" 이월금 {won_short(d.carryover, '엔')}."
+    return s
+
+
 def jp_draw_page(key: str, draws, i: int, base: str, paged: set) -> tuple[str, str]:
     """회차 하나. draws[i] 가 그 회차. paged 는 페이지가 있는 회차 번호(앞뒤 이동용)."""
     g = JP_GAMES[key]
@@ -421,15 +435,10 @@ def jp_draw_page(key: str, draws, i: int, base: str, paged: set) -> tuple[str, s
         + "</table></div>"
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
         f"{nav}")
-    nums = ", ".join(map(str, d.numbers))
-    first = jp_first_prize(d)
     w1, a1 = d.prizes[0] if d.prizes else (-1, 0)
     title = f"일본 {g.name} {d.no}회 당첨번호 ({md(d.date)} 추첨)" + (
         f" · 1등 {w1:,}게임 {won_short(a1, '엔')}" if w1 > 0 else " · 1등 없음, 이월" if w1 == 0 else "")
-    desc = (f"일본 {g.name}({g.name_ja}) {d.no}회 {d.date} 추첨 당첨번호는 {nums}, "
-            f"보너스 {', '.join(map(str, d.bonus))} 입니다."
-            + (f" {first}." if first else "")
-            + (f" 이월금 {d.carryover:,}엔." if d.carryover > 0 else ""))
+    desc = f"일본 {g.name}({g.name_ja}) {jp_summary(d)} 등수별 당첨금과 조합 특징."
     return name, page(title, desc, f"{base}/{name}", body, base, FOOTER_JP)
 
 
@@ -493,9 +502,8 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
     )
     title = f"일본 {g.name} 당첨번호 {last.no}회 ({md(last.date)} {weekday_ko(last.date)}) · 등수별 당첨금 · {g.name_ja}"
-    desc = (f"일본 {g.name} {last.no}회({last.date}) 당첨번호와 등수별 당첨금"
-            + ("·이월금" if g.carryover else "") + f", 최근 20회 결과, 1~{g.pool} 번호별 출현 횟수. "
-            f"다음 추첨 {nxt}. {g.pick}개를 고르는 게임으로 1등 확률은 1/{JP_ODDS[key]}입니다.")
+    desc = (f"일본 {g.name} {jp_summary(last)} 다음 추첨 {md(nxt)}({weekday_ko(nxt)})."
+            f" 등수별 당첨금 · 최근 20회 · 번호별 통계.")
     return name, page(title, desc, f"{base}/{name}", body, base, FOOTER_JP), last.date
 
 
@@ -533,7 +541,8 @@ def jp_hub_page(base: str, latest: dict) -> str:
     title = ("일본 로또 당첨번호 — " + " · ".join(f"{g.name} {lasts[k].no}회" for k, g in JP_GAMES.items())
              + f" ({md(newest)} 갱신)")
     return page(title,
-                "일본 로또6·로또7·미니로또의 최신 당첨번호, 게임 규칙 비교(번호 범위·추첨 요일·1등 확률), 번호 추천.",
+                "최신 " + " · ".join(f"{g.name} {lasts[k].no}회({md(lasts[k].date)})" for k, g in JP_GAMES.items())
+                + " 당첨번호와 1등 당첨금. 세 게임 규칙 비교 · 회차별 당첨번호 · 번호 추천.",
                 f"{base}/jp.html", body, base, FOOTER_JP)
 
 
