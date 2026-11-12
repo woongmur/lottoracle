@@ -93,6 +93,7 @@ th{color:#a29d92;font-weight:600;white-space:nowrap}
 .tw td:first-child{white-space:nowrap}
 /* 칸이 다섯인 숫자 표(일본 등수별 당첨금)는 칸 안에서 줄을 바꾸지 않고 표 전체를 가로로 스크롤 */
 .tw>table.nw td{white-space:nowrap}
+caption{caption-side:top;text-align:left;color:#a29d92;font-size:13px;padding:0 0 6px}
 ul{padding-left:18px;margin:8px 0}
 li{margin:4px 0}
 .kv{color:#a29d92;font-size:13.5px}
@@ -343,7 +344,7 @@ def jp_draw_file(key: str, no: int) -> str:
     return f"jp-{key}-{no}.html"
 
 
-def jp_prize_table(key: str, d) -> str:
+def jp_prize_table(key: str, d, caption: str = "") -> str:
     """한 회차의 등수별 당첨 게임 수와 1게임당 금액, 이월금.
 
     일본은 한 게임을 1口(구)라고 세지만 한국 사람에게 낯설어 한국 로또처럼 '게임' 으로 적는다.
@@ -356,8 +357,9 @@ def jp_prize_table(key: str, d) -> str:
            '<td class="n">0게임</td><td class="n kv">해당 없음</td><td class="n kv">-</td>')
         + "</tr>"
         for i, ((w, a), m) in enumerate(zip(d.prizes, RANK_MATCH[key]), 1))
-    out = ('<div class="tw"><table class="nw"><tr><th>등수</th><th>일치</th><th class="n">당첨 게임 수</th>'
-           f'<th class="n">1게임당</th><th class="n">등수별 총액</th></tr>{rows}</table></div>')
+    cap = f'<caption>{E(caption)}</caption>' if caption else ""
+    out = (f'<div class="tw"><table class="nw">{cap}<thead><tr><th>등수</th><th>일치</th><th class="n">당첨 게임 수</th>'
+           f'<th class="n">1게임당</th><th class="n">등수별 총액</th></tr></thead><tbody>{rows}</tbody></table></div>')
     if d.carryover > 0:
         out += f'<p class="kv">다음 회차로 넘어가는 1등 이월금 <b>{d.carryover:,}엔</b></p>'
     return out
@@ -471,9 +473,10 @@ def jp_game_page(key: str, base: str) -> tuple[str, str, str]:
         f'<p class="kv"><a href="{base}/">lottoracle</a> › <a href="{base}/jp.html">일본 로또</a> › {E(g.name)}</p>'
         f'<h1><span class="chip {key}">{E(g.name_ja)}</span>일본 {E(g.name)} 당첨번호</h1>'
         f'<p class="sub">최신 {last.no}회 · {jp_day(last.date)}<br>다음 {last.no + 1}회 · {jp_day(nxt)}</p>'
-        f"<h2>{last.no}회 당첨번호</h2>{jp_balls(key, last.numbers, last.bonus)}"
+        # 검색 결과에 표가 펼쳐져 나오는 사이트들은 본문 맨 앞이 당첨금 표다. 번호와 표를 제목 바로 아래 한 덩어리로.
+        f"<h2>{last.no}회 당첨번호 · 등수별 당첨금</h2>{jp_balls(key, last.numbers, last.bonus)}"
+        f"{jp_prize_table(key, last, caption=f'일본 {g.name} {last.no}회 등수별 당첨금')}"
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}&amp;tab=grade&amp;draw={last.no}">내 번호 {last.no}회 당첨 확인하기</a>'
-        f"<h2>{last.no}회 등수별 당첨금</h2>{jp_prize_table(key, last)}"
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}">{E(g.name)} 번호 뽑아보기</a>'
         f"<h2>게임 규칙</h2><table>"
         f"<tr><th>번호</th><td>1~{g.pool} 중 {g.pick}개를 고릅니다</td></tr>"
