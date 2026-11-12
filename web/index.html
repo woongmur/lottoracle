@@ -255,6 +255,25 @@
     62%{transform:translateX(calc(50vw - 52px)) rotate(0deg)}
     100%{transform:translateX(calc(100vw + 130px)) rotate(420deg)}
   }
+  /* 이스터에그: 1/777 확률로 반짝이는 황금 1번 공. 가운데서 더 오래 머문다. */
+  #modeball.gold{animation-duration:2.2s}
+  #modeball .mb.gold{animation:mbrollg 2.2s cubic-bezier(.33,.8,.4,1) both;overflow:hidden;color:#5a3a00;
+    background:radial-gradient(circle at 32% 28%,#fffbe0 0 10%,#ffe066 28%,#f2b600 58%,#a86f00 100%);
+    box-shadow:0 0 28px 8px rgba(255,205,50,.75),0 0 70px 20px rgba(255,190,40,.35),inset 0 -8px 0 rgba(0,0,0,.18)}
+  #modeball .mb.gold::after{content:'';position:absolute;inset:0;border-radius:50%;
+    background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.9) 50%,transparent 65%);
+    background-size:260% 100%;animation:mbshine .7s linear infinite}
+  #modeball .mbcap{position:absolute;left:0;right:0;top:calc(42% + 70px);text-align:center;
+    font-weight:800;font-size:17px;color:#ffd84a;text-shadow:0 2px 10px rgba(0,0,0,.6);
+    animation:mbcap 2.2s ease both}
+  @keyframes mbrollg{
+    0%{transform:translateX(-130px) rotate(-420deg)}
+    28%{transform:translateX(calc(50vw - 52px)) rotate(0deg)}
+    74%{transform:translateX(calc(50vw - 52px)) rotate(0deg)}
+    100%{transform:translateX(calc(100vw + 130px)) rotate(420deg)}
+  }
+  @keyframes mbshine{from{background-position:150% 0}to{background-position:-110% 0}}
+  @keyframes mbcap{0%,26%{opacity:0;transform:translateY(6px)}34%,70%{opacity:1;transform:none}80%,100%{opacity:0}}
   /* 공이 지나가는 동안 뒤 화면을 살짝 흐리고 어둡게 했다가 되돌린다 */
   @keyframes mbfade{
     0%,100%{background:rgba(0,0,0,0);backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0)}
@@ -775,6 +794,15 @@ function rollModeBall(mode) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const box = $('#modeball');
   box.hidden = true; void box.offsetWidth;   // 연달아 누르면 흐림 애니메이션도 처음부터 다시
+  // 이스터에그: 아주 드물게(1/777) 반짝이는 황금 1번 공. 주소에 ?golden 을 붙이면 늘 나온다(확인용).
+  const gold = /[?&]golden\b/.test(location.search) || Math.random() < 1 / 777;
+  box.classList.toggle('gold', gold);
+  if (gold) {
+    box.innerHTML = '<span class="mb gold">1</span><div class="mbcap">✨ 황금공 등장! 1/777</div>';
+    box.hidden = false;
+    box.firstElementChild.addEventListener('animationend', () => { box.hidden = true; box.innerHTML = ''; }, { once: true });
+    return;
+  }
   const n = 1 + Math.floor(Math.random() * 45);
   box.innerHTML = mode === 'jp'
     // 일본 공: 크림색에 고른 게임의 상징색 테두리, 그 게임 번호 범위 안의 숫자
