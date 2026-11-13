@@ -426,8 +426,9 @@ def jp_draw_page(key: str, draws, i: int, base: str, paged: set) -> tuple[str, s
         f'<p class="sub">{jp_day(d.date)} 추첨</p>'
         f"{jp_balls(key, d.numbers, d.bonus)}"
         f'<p class="kv">본숫자 {", ".join(map(str, d.numbers))} · 보너스 {", ".join(map(str, d.bonus))}</p>'
+        # 게임 페이지와 같이 번호 바로 아래에 당첨금 표, 버튼은 그 아래
+        f"{jp_prize_table(key, d, caption=f'일본 {g.name} {d.no}회 등수별 당첨금')}"
         f'<a class="cta jp" href="{base}/?mode=jp&amp;game={key}&amp;tab=grade&amp;draw={d.no}">내 번호 {d.no}회 당첨 확인하기</a>'
-        f"<h2>등수별 당첨금</h2>{jp_prize_table(key, d)}"
         f"<h2>조합 특징</h2>"
         f'<div class="tw"><table>'
         f'<tr><th>번호 합계</th><td class="n">{p.total}</td><th>홀수 개수</th><td class="n">{p.odd}개</td></tr>'
